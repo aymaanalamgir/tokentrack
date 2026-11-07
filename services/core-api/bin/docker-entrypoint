@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+mkdir -p tmp/pids log
+rm -f tmp/pids/server.pid
+# Refresh the dependency volume when Gemfile.lock changes.
+bundle check >/dev/null 2>&1 || bundle install
+exec "$@"

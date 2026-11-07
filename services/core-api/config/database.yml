@@ -1,0 +1,25 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  host: <%= ENV.fetch("DB_HOST", "localhost") %>
+  port: <%= ENV.fetch("DB_PORT", 5432) %>
+  username: <%= ENV.fetch("DB_USER", "tokentrack_core") %>
+  password: <%= ENV.fetch("DB_PASSWORD") %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+  schema_search_path: business
+  connect_timeout: 2
+  checkout_timeout: 2
+  variables:
+    statement_timeout: 3000
+
+development:
+  <<: *default
+  database: <%= ENV.fetch("DB_NAME", "tokentrack_development") %>
+
+test:
+  <<: *default
+  database: <%= ENV.fetch("DB_TEST_NAME", "tokentrack_test") %>
+
+production:
+  <<: *default
+  database: <%= ENV.fetch("DB_NAME") %>

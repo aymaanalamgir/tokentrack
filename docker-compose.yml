@@ -1,0 +1,101 @@
+name: tokentrack
+
+services:
+  postgres:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tokentrack_development}
+      POSTGRES_USER: ${POSTGRES_USER:-tokentrack_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_TEST_DB: ${POSTGRES_TEST_DB:-tokentrack_test}
+      CORE_DB_USER: ${CORE_DB_USER:-tokentrack_core}
+      CORE_DB_PASSWORD: ${CORE_DB_PASSWORD:?Set CORE_DB_PASSWORD in .env}
+      USAGE_DB_USER: ${USAGE_DB_USER:-tokentrack_usage}
+      USAGE_DB_PASSWORD: ${USAGE_DB_PASSWORD:?Set USAGE_DB_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sh:/docker-entrypoint-initdb.d/10-schemas.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    stop_grace_period: 20s
+
+  core-api:
+    build:
+      context: ./services/core-api
+      target: development
+    init: true
+    environment:
+      RAILS_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-tokentrack_development}
+      DB_TEST_NAME: ${POSTGRES_TEST_DB:-tokentrack_test}
+      DB_USER: ${CORE_DB_USER:-tokentrack_core}
+      DB_PASSWORD: ${CORE_DB_PASSWORD:?Set CORE_DB_PASSWORD in .env}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+    ports:
+      - "127.0.0.1:${CORE_API_PORT:-3001}:3001"
+    volumes:
+      - ./services/core-api:/app
+      - core_bundle:/usr/local/bundle
+    depends_on:
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 20s
+
+  usage-engine:
+    build:
+      context: ./services/usage-engine
+      target: development
+    init: true
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-tokentrack_development}
+      DB_USER: ${USAGE_DB_USER:-tokentrack_usage}
+      DB_PASSWORD: ${USAGE_DB_PASSWORD:?Set USAGE_DB_PASSWORD in .env}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+    ports:
+      - "127.0.0.1:${USAGE_ENGINE_PORT:-8080}:8080"
+    volumes:
+      - ./services/usage-engine:/app
+      - usage_gradle:/home/gradle/.gradle
+      - usage_build:/app/build
+    depends_on:
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    init: true
+    environment:
+      CORE_API_URL: ${CORE_API_URL:-http://core-api:3001}
+      USAGE_ENGINE_URL: ${USAGE_ENGINE_URL:-http://usage-engine:8080}
+      NEXT_TELEMETRY_DISABLED: "1"
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - frontend_modules:/app/node_modules
+      - frontend_next:/app/.next
+    depends_on:
+      - core-api
+      - usage-engine
+    stop_grace_period: 15s
+
+volumes:
+  postgres_data:
+  core_bundle:
+  usage_gradle:
+  usage_build:
+  frontend_modules:
+  frontend_next:

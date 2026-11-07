@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: usage-engine
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:tokentrack_development}?currentSchema=usage&connectTimeout=3&socketTimeout=3
+    username: ${DB_USER:tokentrack_usage}
+    password: ${DB_PASSWORD}
+    hikari:
+      schema: usage
+      connection-timeout: 2000
+      validation-timeout: 1000
+      initialization-fail-timeout: -1
+      maximum-pool-size: 5
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
+server:
+  port: 8080
+  shutdown: graceful
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+      cors:
+        allowed-origins: ${FRONTEND_ORIGIN:http://localhost:3000}
+        allowed-methods: GET
+  endpoint:
+    health:
+      show-components: always
+      show-details: never
+  health:
+    diskspace:
+      enabled: false
+    ssl:
+      enabled: false

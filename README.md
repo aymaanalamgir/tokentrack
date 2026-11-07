@@ -1,14 +1,44 @@
-# AI Spend Intelligence
+# TokenTrack — AI Spend Intelligence
 
-> **Status:** Architecture and planning stage — implementation has not started.
+> **Status:** Slice 1 implemented: local infrastructure, application shell, and database-aware service health. Product workflows below are planned unless explicitly marked implemented.
 >
-> A local-first, simulated B2B SaaS platform for understanding AI usage, attributing costs to projects, measuring workflow efficiency, and managing budgets through delegated approvals.
+> A local-first B2B SaaS-style platform for understanding AI usage, attributing costs to projects, measuring workflow efficiency, and managing budgets through delegated approvals.
+
+## Start here — implemented foundation
+
+TokenTrack currently runs four services: Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. The Overview has responsive navigation, persistent light/dark themes, and real service/database status. Planned navigation is intentionally disabled. There is no authentication, financial data, ingestion, or analytics yet.
+
+```bash
+cp .env.example .env
+# Replace the three example passwords in .env with distinct local values.
+docker compose up --build
+```
+
+| Service | Local address |
+| --- | --- |
+| Frontend | <http://localhost:3000> |
+| Rails health | <http://localhost:3001/api/v1/health> |
+| Kotlin health | <http://localhost:8080/actuator/health> |
+| PostgreSQL | `localhost:5432` |
+
+Stop with Ctrl+C or `docker compose down`; the database volume persists. Ports are configurable in `.env`. No one-time manual database commands are required.
+
+```bash
+docker compose exec frontend npm run lint
+docker compose exec frontend npm run typecheck
+docker compose exec frontend npm test
+docker compose exec core-api bundle exec rspec
+docker compose exec usage-engine gradle test
+```
+
+See [development and reset instructions](docs/development.md), [current architecture](docs/architecture.md), and [actual verification results](docs/verification.md). The original product vision and conceptual domain design are preserved below; they describe future functionality, not implemented tables or endpoints.
+
 
 ## 1. Problem and product vision
 
 Organizations use LLM APIs, coding assistants, AI subscriptions, and autonomous agents across engineering, product, design, sales, HR, and other functions. Financial leaders need to understand company-wide spending, managers need team and project visibility, and individual contributors need to understand their usage and available allowances.
 
-**AI Spend Intelligence** connects usage observability to financial decisions:
+**TokenTrack** will connect usage observability to financial decisions:
 
 - Analyze token and subscription spending by organization, team, employee, project, tool, model, and time period.
 - Investigate daily, weekly, and monthly spending changes and anomalous agent behavior.
@@ -21,7 +51,7 @@ The project is also intended to demonstrate **Kotlin, Ruby on Rails, relational 
 
 ## 2. Scope and deliberate non-goals
 
-### Initial scope
+### Planned product scope (beyond Slice 1)
 
 - Two example organization structures: a small startup and a larger, multi-team company.
 - Selectable demo identities with real, backend-enforced role and resource scopes.
@@ -47,12 +77,12 @@ The project is also intended to demonstrate **Kotlin, Ruby on Rails, relational 
 | Business API | Ruby on Rails (API-only) | Organizations, users, projects, scopes, budgets, approvals, cost attribution, financial ledger |
 | Usage engine | Kotlin + Spring Boot | CSV ingestion, validation, deduplication, effective-dated pricing, canonical usage events, agent run statistics, usage aggregates |
 | Database | Local PostgreSQL in Docker | Separate logical `business` and `usage` schemas |
-| Local orchestration | Docker Compose | Database, Rails API, Kotlin worker, frontend (optionally) |
+| Local orchestration | Docker Compose | Database, Rails API, Kotlin service, frontend |
 | Tests | RSpec and JUnit 5, plus frontend tests | Business and financial invariants, pricing and ingestion correctness, role access |
 
-**Boundary:** Browsers only call Rails. Kotlin processes usage asynchronously and supplies priced events to Rails for authoritative financial posting. The services may share a PostgreSQL instance for the demo, but **each service exclusively writes its own schema**. Rails may read documented usage views for scoped analytics. Kotlin obtains valid identifiers/reference data through a defined contract rather than modifying business records.
+**Planned business boundary:** Browsers use Next.js, which calls Rails for future business APIs. In Slice 1 the browser calls Next.js `/api/health`, and Next.js checks both backend health endpoints server-side. Kotlin processes usage asynchronously and supplies priced events to Rails for authoritative financial posting. The services may share a PostgreSQL instance for the demo, but **each service exclusively writes its own schema**. Rails may read documented usage views for scoped analytics. Kotlin obtains valid identifiers/reference data through a defined contract rather than modifying business records.
 
-## 4. Local system diagram
+## 4. Conceptual future system diagram
 
 ```mermaid
 flowchart TB
@@ -67,7 +97,7 @@ flowchart TB
     Rails -->|Reference data contract| Worker
 ```
 
-The Kotlin worker does **not** need a publicly exposed HTTP port initially. Its delivery to Rails can use an internal HTTP endpoint on the Compose network. The frontend will use port 3000; Rails will use port 3001. PostgreSQL can be mapped to port 5432 for development tools or kept internal to Docker.
+Slice 1 exposes Kotlin Actuator health on port **8080**, Rails on **3001**, Next.js on **3000**, and PostgreSQL on **5432**. All host ports bind to loopback. Future priced-event delivery can use internal HTTP on the Compose network. The current health-only system diagram is in [docs/architecture.md](docs/architecture.md).
 
 ## 5. Conceptual entity-relationship diagram
 
@@ -301,7 +331,7 @@ The demo persona switcher must select **actual seeded identities and authorizati
 ## 10. Proposed monorepo layout
 
 ```text
-ai-spend-intelligence/
+tokentrack/
 ├── frontend/                     # Next.js, React, TypeScript
 │   ├── app/
 │   ├── components/
@@ -330,83 +360,67 @@ ai-spend-intelligence/
 └── README.md
 ```
 
-## 11. Local development plan
+## 11. Local development — implemented
 
-> The following is a **target workflow**, not a claim that runnable code already exists. Docker Compose files, application scaffolds, migrations, seeds, and scripts must be implemented first.
+Docker Desktop with Compose and Git are sufficient. Containerized development uses Node 24, React 19, Next.js 16, TypeScript strict mode, Tailwind 4, shadcn/ui patterns, Lucide, and bundled Geist fonts; Rails 8.1 on Ruby 3.4; Spring Boot 3.5 with Kotlin 2.2 on JDK 21 and Gradle 8.14.3; PostgreSQL 17. Dependency lockfiles are checked in.
 
-### Prerequisites
+The four Compose services communicate by service name. PostgreSQL initializes separate `business` and `usage` schemas with dedicated restricted roles and a persistent volume. Next.js never receives database credentials. Rails RSpec uses an isolated test database; Kotlin JUnit uses H2 for tests, with live PostgreSQL verified separately.
 
-- Docker Desktop with Docker Compose.
-- Git.
-- Optionally Node.js, Ruby, JDK, and Gradle for running services outside containers.
-
-### Planned setup
-
-```bash
-# Once docker-compose.yml and Dockerfiles are implemented:
-cp .env.example .env
-
-docker compose up --build
-```
-
-Planned local ports:
-
-| Service | URL / Port |
-|---|---|
-| Next.js UI | `http://localhost:3000` |
-| Rails API | `http://localhost:3001` |
-| PostgreSQL | `localhost:5432` when exposed for development |
-| Kotlin worker | No public port required |
-
-Later, we will define explicit migration and seed commands and make `docker compose up` straightforward to use. Keep credentials in `.env` and never commit actual secrets. All seeded identities and company records should be fictional.
+[docs/development.md](docs/development.md) covers environment variables, source reload/restart behavior, schema inspection, failure checks, production image builds, troubleshooting, and destructive reset commands. [docs/verification.md](docs/verification.md) records what was actually tested. Development Compose is the supported local runtime; production image stages do not constitute a deployment.
 
 ## 12. Implementation slices
 
-### Slice 1 — Local foundation
+### Slice 1 — Local foundation (implemented)
 
-- Scaffold Next.js, Rails API-only app, Kotlin Spring Boot project, and Docker Compose.
-- Start local PostgreSQL and establish two database schemas.
-- Create fictional organization, units, users, project membership, and scoped demo authentication.
-- Render a role-aware light/dark dashboard shell.
+- Four-service Docker Compose environment and dedicated database schema owners.
+- Rails database-aware `/api/v1/health` and Kotlin Actuator `/actuator/health`.
+- Next.js server-side health integration with failure handling.
+- Responsive, light/dark application shell and intentional future-feature empty states.
+- Tests, locked dependencies, and developer documentation.
 
-### Slice 2 — Usage and pricing
+### Slice 2 — Organizations and permissions (next)
 
-- Define versioned input-event and priced-event JSON schemas.
-- Build CSV ingestion, validation, deduplication, price snapshots, and Kotlin tests.
-- Persist events and reliable delivery records in the usage schema.
+- Organizations, users, organizational units, memberships, and scoped role assignments in Rails.
+- Authentication/identity design and backend-enforced authorization.
+- Tenant and scope isolation tests, then real identity-aware frontend behavior.
+- No budgets, ledger, or usage pricing until their later slices.
 
-### Slice 3 — Ledger and analytics
+### Slice 3 — Usage and pricing
 
-- Create project/team funding accounts, monthly budget periods, and append-only charge postings.
-- Add idempotent Rails ingestion of Kotlin-priced events.
-- Expose scoped spend endpoints for organization, team, project, and employee views.
-- Ensure total spend reconciles across dimensions.
+- Versioned input-event and priced-event contracts.
+- CSV ingestion, validation, deduplication, effective price snapshots, and Kotlin tests.
+- Canonical usage events and reliable delivery records in `usage`.
 
-### Slice 4 — Limits and approvals
+### Slice 4 — Ledger and analytics
 
-- Implement employee and project sublimits.
-- Implement funding requests, delegated policy routing, approval state machine, audit history, and atomic funding transfers.
+- Funding accounts, budget periods, and append-only charge postings.
+- Idempotent Rails ingestion of priced events.
+- Scoped spend endpoints that reconcile totals across dimensions.
 
-### Slice 5 — Agents and intelligence
+### Slice 5 — Limits and approvals
 
-- Add agent runs and workflow outcomes.
-- Implement weekly/monthly trend comparisons, cost anomaly rules, tool/model breakdowns, and efficiency metrics.
+- Employee and project sublimits, funding requests, delegated routing, approval state transitions, audit history, and atomic funding transfers.
 
-### Slice 6 — Demo polish
+### Slice 6 — Agents and intelligence
 
-- Seed multiple organization structures and realistic anomalies.
-- Add resettable demo scenarios, tests, documentation, and a repeatable local walkthrough.
+- Agent outcomes, trend comparisons, anomaly rules, model breakdowns, and efficiency metrics.
 
-## 13. Acceptance criteria for the first complete vertical slice
+### Slice 7 — Demo polish
 
-- `docker compose up --build` starts the local application after initial setup/migrations.
+- Fictional organization structures, realistic anomalies, resettable scenarios, and a repeatable walkthrough.
+
+## 13. Acceptance scope
+
+Slice 1 establishes startup, real health, schema ownership, a polished shell, and automated checks. See [verification results](docs/verification.md).
+
+The following remain acceptance criteria for a **future complete vertical slice**, not Slice 1:
+
 - A seeded employee belongs to a home team and a cross-functional project.
-- Kotlin ingests a CSV event, prices it deterministically, and stores one canonical event.
-- Rails posts exactly one financial charge for the event, including on repeated delivery.
-- The charge is attributed to the appropriate project and charge owner.
-- Authorized employee, manager, and leadership dashboards show correctly scoped data.
-- Organization spend includes the event exactly once, even if the event is displayed under employee, team, and project reports.
-- Unauthorized cross-team and cross-organization queries are denied by the API.
+- Kotlin ingests and prices one canonical event; Rails posts exactly one charge even on repeated delivery.
+- Project attribution and charge ownership are explicit.
+- Employee, manager, and leadership views enforce tenant and resource scopes.
+- Organization spend counts each event once across analytical dimensions.
+- Unauthorized cross-team and cross-organization access is denied by the API.
 
 ## 14. Open decisions for the implementation stage
 
