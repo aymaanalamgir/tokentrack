@@ -232,6 +232,7 @@ try {
   await main
     .getByText(`${detail.description} Browser-verified edit.`, { exact: true })
     .waitFor();
+  await editor.waitFor({ state: "hidden" });
   await main.getByRole("button", { name: "Edit project", exact: true }).click();
   await editor
     .getByLabel("Description", { exact: true })

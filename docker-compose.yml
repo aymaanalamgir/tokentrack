@@ -39,6 +39,7 @@ services:
       DB_USER: ${CORE_DB_USER:-tokentrack_core}
       DB_PASSWORD: ${CORE_DB_PASSWORD:?Set CORE_DB_PASSWORD in .env}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      USAGE_REFERENCE_TOKEN: ${USAGE_REFERENCE_TOKEN:?Set USAGE_REFERENCE_TOKEN in .env}
     ports:
       - "127.0.0.1:${CORE_API_PORT:-3001}:3001"
     volumes:
@@ -61,10 +62,14 @@ services:
       DB_USER: ${USAGE_DB_USER:-tokentrack_usage}
       DB_PASSWORD: ${USAGE_DB_PASSWORD:?Set USAGE_DB_PASSWORD in .env}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      RAILS_REFERENCE_URL: http://core-api:3001
+      USAGE_REFERENCE_TOKEN: ${USAGE_REFERENCE_TOKEN:?Set USAGE_REFERENCE_TOKEN in .env}
+      USAGE_TEST_DB_NAME: ${POSTGRES_TEST_DB:-tokentrack_test}
     ports:
       - "127.0.0.1:${USAGE_ENGINE_PORT:-8080}:8080"
     volumes:
       - ./services/usage-engine:/app
+      - ./demo:/app/demo
       - usage_gradle:/home/gradle/.gradle
       - usage_build:/app/build
     depends_on:

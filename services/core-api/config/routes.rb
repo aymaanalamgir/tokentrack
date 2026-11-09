@@ -1,6 +1,10 @@
 Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
+      namespace :internal do
+        post "usage-references/validate", to: "usage_references#validate"
+        get "usage-references/demo-snapshot", to: "usage_references#demo_snapshot"
+      end
       get "health", to: "health#show"
       get "demo/identities", to: "demo#identities"
       post "demo/sessions", to: "demo#create"

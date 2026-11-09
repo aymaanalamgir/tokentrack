@@ -1,16 +1,17 @@
 # TokenTrack — AI Spend Intelligence
 
-> **Status:** Slices 1–3 implemented: local infrastructure, organizational modeling, scoped access control, authenticated demo experiences, and cross-functional project management. Product workflows below are planned unless explicitly marked implemented.
+> **Status:** Slices 1–4 implemented: local infrastructure, organizational modeling, scoped access control, authenticated demo experiences, cross-functional project management, and Kotlin usage ingestion. Product workflows below are planned unless explicitly marked implemented.
 >
 > A local-first B2B SaaS-style platform for understanding AI usage, attributing costs to projects, measuring workflow efficiency, and managing budgets through delegated approvals.
 
 ## Start here — implemented workspace
 
-TokenTrack runs Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. Enter Northstar Labs (10 fictional people) or Aperture Technologies (64), then switch authenticated demo identities to explore leadership, manager, project lead, and employee workspaces. Profiles, reporting charts, teams, scoped people/project directories, project creation, contributor assignment/history, ownership transfer, archive/restore, persistent themes, and real health checks work. Project administrators can expand contributors by home team; managers and employees see their authorized project assignments. Financial, usage, budget, and approval features remain explicit placeholders. Demo sign-in is local-only and always disabled in Rails production.
+TokenTrack runs Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. Enter Northstar Labs (10 fictional people) or Aperture Technologies (64), then switch authenticated demo identities to explore leadership, manager, project lead, and employee workspaces. Profiles, reporting charts, teams, scoped people/project directories, project creation, contributor assignment/history, ownership transfer, archive/restore, persistent themes, and real health checks work. Project administrators can expand contributors by home team; managers and employees see their authorized project assignments. A Kotlin CLI imports versioned synthetic CSV usage with reference validation, deduplication, and persistent rejection reports. Frontend usage analytics, pricing, budgets, and approvals remain planned. Demo sign-in is local-only and always disabled in Rails production.
 
 ```bash
 cp .env.example .env
-# Replace the three example passwords in .env with distinct local values.
+# Replace the three example passwords and USAGE_REFERENCE_TOKEN in .env.
+# Generate the service token with: openssl rand -hex 32
 docker compose up --build -d
 # First setup, or after adding migrations:
 docker compose exec core-api bin/rails db:migrate db:seed
@@ -34,7 +35,17 @@ docker compose exec core-api bundle exec rspec
 docker compose exec usage-engine gradle test
 ```
 
-See [development and reset instructions](docs/development.md), [current architecture](docs/architecture.md), and [Slice 3 implementation and verification](docs/slice3.md). Olivia and Maya have explicit organization-scoped project creation grants; Priya has delegated creation authority. An explicit project lead grant permits project administration. A collaboration label, team-manager role, or leadership read grant alone does not.
+See [development and reset instructions](docs/development.md), [current architecture](docs/architecture.md), and [Slice 4 implementation and verification](docs/slice4.md). Olivia and Maya have explicit organization-scoped project creation grants; Priya has delegated creation authority. An explicit project lead grant permits project administration. A collaboration label, team-manager role, or leadership read grant alone does not.
+
+Generate and import usage after startup (choose an explicit date window overlapping the exported project membership periods):
+
+```bash
+demo/generators/generate-usage.sh 2026-11-10 2026-12-10 42
+docker compose exec usage-engine bin/usage import /app/demo/fixtures/usage-events-v1.csv --source demo-synthetic-v1
+# Repeating that import inserts zero new events; inspect batch IDs from its JSON report:
+docker compose exec usage-engine bin/usage list
+docker compose exec usage-engine gradle integrationTest
+```
 
 The original product vision and conceptual domain design are preserved below; they describe future functionality, not implemented tables or endpoints.
 
@@ -60,7 +71,7 @@ The project is also intended to demonstrate **Kotlin, Ruby on Rails, relational 
 
 - Two example organization structures: a small startup and a larger, multi-team company.
 - Selectable demo identities with real, backend-enforced role and resource scopes.
-- Local CSV/synthetic usage ingestion and effective-dated LLM pricing.
+- Local CSV/synthetic usage ingestion (implemented); effective-dated LLM pricing (planned).
 - Metered AI usage and fixed monthly AI subscription costs, accounted for separately.
 - Team, project, employee, tool/model, and agent analytics.
 - Monthly funded pools, spending limits, transfers, requests, delegated approvals, and audit history.
@@ -369,9 +380,9 @@ tokentrack/
 
 Docker Desktop with Compose and Git are sufficient. Containerized development uses Node 24, React 19, Next.js 16, TypeScript strict mode, Tailwind 4, shadcn/ui patterns, Lucide, and bundled Geist fonts; Rails 8.1 on Ruby 3.4; Spring Boot 3.5 with Kotlin 2.2 on JDK 21 and Gradle 8.14.3; PostgreSQL 17. Dependency lockfiles are checked in.
 
-The four Compose services communicate by service name. PostgreSQL initializes separate `business` and `usage` schemas with dedicated restricted roles and a persistent volume. Next.js never receives database credentials. Rails RSpec uses an isolated PostgreSQL test database with transactional examples; Kotlin JUnit uses H2 for tests, with live PostgreSQL verified separately. TanStack Query scopes client data to organization and identity; switching cancels requests and clears sensitive caches.
+The four Compose services communicate by service name. PostgreSQL initializes separate `business` and `usage` schemas with dedicated restricted roles and a persistent volume. Next.js never receives database credentials. Rails RSpec uses an isolated PostgreSQL test database with transactional examples; Kotlin JUnit uses H2 for health tests and isolated PostgreSQL for ingestion integration tests. TanStack Query scopes client data to organization and identity; switching cancels requests and clears sensitive caches.
 
-[docs/development.md](docs/development.md) covers environment variables, source reload/restart behavior, schema inspection, failure checks, production image builds, troubleshooting, and destructive reset commands. [docs/slice3.md](docs/slice3.md) records the current implementation and executed checks; [docs/slice2.md](docs/slice2.md) preserves Slice 2; [docs/verification.md](docs/verification.md) preserves the earlier Slice 1 report. Development Compose is the supported local runtime; production image stages do not constitute a deployment.
+[docs/development.md](docs/development.md) covers environment variables, source reload/restart behavior, schema inspection, failure checks, production image builds, troubleshooting, and destructive reset commands. [docs/slice4.md](docs/slice4.md) records the current implementation and executed checks; [docs/slice3.md](docs/slice3.md) preserves Slice 3; [docs/slice2.md](docs/slice2.md) preserves Slice 2; [docs/verification.md](docs/verification.md) preserves the earlier Slice 1 report. Development Compose is the supported local runtime; production image stages do not constitute a deployment.
 
 ## 12. Implementation slices
 
@@ -397,33 +408,40 @@ The four Compose services communicate by service name. PostgreSQL initializes se
 - Planned/active/archive/restore lifecycle with stable project UUIDs and preserved history.
 - Lazy team groups, connected profiles/manager views, scoped cache refresh, and tenant/integrity tests.
 
-### Slice 4 — Usage and pricing (next)
+### Slice 4 — Usage ingestion (implemented)
 
-- Versioned input-event and priced-event contracts.
-- CSV ingestion, validation, deduplication, effective price snapshots, and Kotlin tests.
-- Canonical usage events and reliable delivery records in `usage`.
+- Versioned CSV, strict parsing/validation, batched Rails reference validation, and event-time project membership.
+- JDBC/Flyway persistence in usage, immutable event deduplication/conflict detection, and durable import/rejection reports.
+- Deterministic synthetic workloads and CLI commands through Docker Compose.
+- Parser/validator/generator tests and real PostgreSQL concurrency/partial-retry integration tests.
 
-### Slice 5 — Ledger and analytics
+### Slice 5 — Pricing and financial event delivery (next)
+
+- Versioned provider/model pricing and effective price snapshots.
+- Separate input/output/cached token pricing, precise money units, and explicit rounding.
+- Idempotent priced-event delivery interfaces; no price or financial posting is implemented yet.
+
+### Slice 6 — Ledger and analytics
 
 - Funding accounts, budget periods, and append-only charge postings.
 - Idempotent Rails ingestion of priced events.
 - Scoped spend endpoints that reconcile totals across dimensions.
 
-### Slice 6 — Limits and approvals
+### Slice 7 — Limits and approvals
 
 - Employee and project sublimits, funding requests, delegated routing, approval state transitions, audit history, and atomic funding transfers.
 
-### Slice 7 — Agents and intelligence
+### Slice 8 — Agents and intelligence
 
 - Agent outcomes, trend comparisons, anomaly rules, model breakdowns, and efficiency metrics.
 
-### Slice 8 — Demo polish
+### Slice 9 — Demo polish
 
 - Fictional organization structures, realistic anomalies, resettable scenarios, and a repeatable walkthrough.
 
 ## 13. Acceptance scope
 
-Slice 1 establishes startup, real health, schema ownership, a polished shell, and automated checks. Slice 2 adds server-enforced organizational access and four demo experiences. Slice 3 adds functional project management and cross-functional staffing. See [current verification results](docs/slice3.md).
+Slice 1 establishes startup, real health, schema ownership, a polished shell, and automated checks. Slice 2 adds server-enforced organizational access and four demo experiences. Slice 3 adds functional project management and cross-functional staffing. Slice 4 adds canonical usage ingestion and operational import reporting. See [current verification results](docs/slice4.md).
 
 The following remain acceptance criteria for a **future complete vertical slice**, not Slice 1:
 

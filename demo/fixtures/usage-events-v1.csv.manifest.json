@@ -1,0 +1,14 @@
+{
+  "generator_version" : 1,
+  "schema_version" : 1,
+  "seed" : 42,
+  "from_inclusive" : "2026-11-10",
+  "to_exclusive" : "2026-12-10",
+  "snapshot_sha256" : "94e0c71cea01a56785276f55c945e67dc62cad586b5222ec860cbb99290137ce",
+  "rows" : 7737,
+  "organization_count" : 2,
+  "primary_team_count" : 16,
+  "project_count" : 8,
+  "unassigned_rows" : 1569,
+  "providers" : [ "anthropic", "local", "openai" ]
+}

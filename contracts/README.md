@@ -10,7 +10,7 @@ The Slice 1 health contracts remain unchanged:
 
 Next.js accepts database connectivity only from a recognized backend health response. Missing fields, invalid JSON, non-success status codes, timeouts, and network errors cannot produce a green service indicator. Database status requires confirmation from both services. If a backend is unreachable, this means its database connection **cannot be confirmed**, not that the PostgreSQL process is necessarily stopped.
 
-Future slices will add versioned reference-data and priced-event contracts here. Kotlin will obtain valid business identifiers through those contracts and deliver priced events to Rails. Rails will authorize and post financial transactions idempotently. These contracts and operations do not exist yet.
+Slice 4 adds the [CSV usage-event v1 contract](usage-event-v1.md) and the narrow Rails reference contract below. Priced-event delivery, pricing, and Rails financial posting remain future work.
 
 ## Slice 2 organizational API
 
@@ -97,3 +97,26 @@ Planned ↔ active; either → archived; archived → planned or active. Restore
 Project responses extend the Slice 2 fields with `created_by_id` (null for unknown legacy creators), `administrators`, `permissions` (`edit`, `members_manage`, `ownership_transfer`, `lifecycle_manage`, `history`), `available_statuses`, and `restore_status`. `leads` means owner/lead collaboration labels; `administrators` means actual explicit grants. `/me/access` capabilities summarize granted operations; per-project flags remain authoritative for rendering actions. `/me` and `/me/access` include `scope_key`, a fingerprint used to clear obsolete client caches when effective grants/visibility change.
 
 Validation conflicts/invalid lifecycle/last administrator return 422, missing required parameters 400, absent authentication 401, forbidden visible actions 403, and foreign/out-of-scope users/projects/membership IDs 404. Existing resource authorization is applied before member lookup. A `Lead` label never grants access to private management projections or reporting context.
+
+
+## Slice 4 internal reference API
+
+These routes are Rails-only and are **not** included in the public Next.js proxy. They require `Authorization: Bearer <USAGE_REFERENCE_TOKEN>` (at least 32 configured characters); demo cookies, identity headers, and browser Origins confer no service authority. Tokens are compared through fixed-length SHA-256 digests with constant-time comparison. Replies are no-store/private and contain no employee names, emails, reporting graphs, or private permissions. Credentials belong only to the two backend environments.
+
+`POST /api/v1/internal/usage-references/validate` accepts JSON up to 128 KiB with 1–100 references and unique opaque keys:
+
+```json
+{"references":[{"key":"opaque_reference_hash","organization_id":"ORG-UUID","user_id":"USER-UUID","project_id":null,"occurred_at":"2026-11-10T14:30:00Z"}]}
+```
+
+UUID placeholders stand for full UUID strings; use JSON null or omit project_id for unassigned usage. Replies preserve keys and do not return organizational records:
+
+```json
+{"policy_version":"membership-period-v1","data":[{"key":"opaque_reference_hash","valid":false,"code":"PROJECT_MEMBERSHIP_NOT_ESTABLISHED","field":"project_id","message":"No recorded project membership covers the event time"}]}
+```
+
+Valid entries contain only key and valid=true. Organization/user/project tenancy and current user eligibility are checked in bounded queries; membership uses recorded `[joined_at,left_at)` periods. Current project archive status does not invalidate recorded membership. The v1 contract documents unavailable employment/status history and gaps. Invalid references return 200 with per-entry invalid results, malformed batch syntax 400, missing/incorrect service credentials 401. Outage/non-JSON/unknown-policy/invalid-result responses become retryable infrastructure errors in Kotlin, never false unknown-user rejections.
+
+`GET /api/v1/internal/usage-references/demo-snapshot` additionally requires demo mode in development/test and returns 404 otherwise. Its data contains snapshot_version=1, policy_version, organization IDs/slugs, active flagged fictional user IDs/job functions/primary unit IDs, project IDs/organization/slugs/current status, and recorded membership periods. The synthetic generator saves this input and its canonical SHA-256 hash; UUID lists are not recreated or maintained separately inside Kotlin. This export is for fictional local fixtures, not an employee export API.
+
+The only Kotlin web exposure remains Actuator health. Operational import/list/report/generate commands use the local CLI; CSV structure, fingerprint identity, stable error codes, counts, limits, and exit statuses are defined in [usage-event-v1.md](usage-event-v1.md).

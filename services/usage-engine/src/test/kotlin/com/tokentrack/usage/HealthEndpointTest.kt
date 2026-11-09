@@ -12,6 +12,7 @@ import java.sql.SQLException
 import javax.sql.DataSource
 
 @SpringBootTest(properties = [
+    "spring.flyway.enabled=false",
     "spring.datasource.url=jdbc:h2:mem:health;DATABASE_TO_LOWER=TRUE;INIT=CREATE SCHEMA IF NOT EXISTS usage",
     "spring.datasource.username=sa",
     "spring.datasource.password=",

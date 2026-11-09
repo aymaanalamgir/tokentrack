@@ -1,6 +1,6 @@
 # TokenTrack architecture
 
-Slices 1–3 implement the local four-service system, organizational data, demo sessions, scoped authorization, a themed multi-role workspace, and cross-functional project management. Usage ingestion, pricing, finance, and approvals remain planned.
+Slices 1–4 implement the local four-service system, organizational data, demo sessions, scoped authorization, a themed multi-role workspace, cross-functional project management, and Kotlin usage ingestion. Pricing, finance, and approvals remain planned.
 
 ```mermaid
 flowchart TB
@@ -8,6 +8,8 @@ flowchart TB
   Browser -->|Same-origin /api/health| Next
   Next -->|Opaque cookie / versioned JSON API| Rails["Rails :3001 / sessions + AccessPolicy"]
   Next -->|Actuator health only| Kotlin["Kotlin + Spring Boot :8080"]
+  Kotlin -->|Service credential: bounded reference validation| Rails
+  CSV["Synthetic CSV / local CLI"] --> Kotlin
   Rails -->|Core database role| Business[("PostgreSQL / business")]
   Kotlin -->|Usage database role| Usage[("PostgreSQL / usage")]
   subgraph Database["One persistent PostgreSQL 17 instance"]
@@ -22,7 +24,7 @@ flowchart TB
 
 **Rails** owns organizations, units, people, memberships, reporting relationships, projects, permission grants, and their constraints. Every organizational API resolves a backend session and applies a request-scoped `AccessPolicy`. Presenters choose an allowed projection instead of serializing complete models. ProjectManagement handles creation, metadata/lifecycle changes, contributor periods, and atomic ownership transfer. Controllers validate input and presenters expose explicit per-project action flags. Future financial posting, budgets, attribution, and approvals belong here.
 
-**Kotlin/Spring Boot** retains standard database-aware Actuator health and a schema-bound JDBC pool. It has no organizational tables or business endpoints. Future ingestion, validation, pricing, canonical usage events, execution statistics, and reliable delivery belong here.
+**Kotlin/Spring Boot** owns CSV parsing/validation, reference orchestration, canonical usage persistence, deduplication, deterministic generation, and CLI import reports. Standard database-aware Actuator health remains the only public web endpoint. Flyway migrates usage with the restricted usage role; Spring JDBC writes events, import batches, and rejections. Pricing and reliable financial delivery remain future work.
 
 ## Implemented data model
 
@@ -101,16 +103,46 @@ Skeletons cover initial content. Explicit actions use small pending indicators a
 
 PostgreSQL has development and isolated Rails test databases. The core role owns only `business`; the usage role owns only `usage`; neither can create databases or access the other's schema. Application tenant isolation is enforced separately by Rails policies and tenant-bound foreign keys.
 
-Docker initialization provisions roles/databases/schemas only on fresh volumes. Rails migrations evolve business tables. SQL snapshots preserve checks and triggers; a small Rails task hook removes schema-creation SQL because Docker, rather than the restricted role, provisions `business`. Load snapshots only into an empty bootstrapped schema. Future Kotlin tables will use a migration tool when introduced; no usage tables were added now.
+Docker initialization provisions roles/databases/schemas only on fresh volumes. Rails migrations evolve business tables. SQL snapshots preserve checks and triggers; a small Rails task hook removes schema-creation SQL because Docker, rather than the restricted role, provisions `business`. Load snapshots only into an empty bootstrapped schema. Flyway owns Kotlin migration history and the usage import/event/rejection tables. create-schemas=false preserves Docker-owned provisioning, and clean is disabled. Rails SQL snapshots remain business-only and unchanged by Kotlin migrations.
 
 Compose uses source mounts and dependency volumes. Rails and Next.js reload source; restart usage-engine after Kotlin edits. PostgreSQL readiness gates backend startup. Ports remain configurable localhost 3000/3001/8080/5432. Init processes and grace periods support shutdown. CORS permits the configured frontend Origin and does not replace authentication.
 
-Production stages use Next.js standalone, Rails production mode, and a Kotlin jar/JRE. They are build/runtime artifacts, not a deployment. Production authentication, service authentication, HTTPS hosting, credential rotation, and deployment hardening remain future work.
+Production stages use Next.js standalone, Rails production mode, and a Kotlin jar/JRE. They are build/runtime artifacts, not a deployment. Production user authentication, HTTPS hosting, service credential rotation, and deployment hardening remain future work. The local internal reference contract now uses a backend-only shared credential.
 
 ## Why two backends and what comes next?
 
 Rails supports transactional workflows and authorization; Kotlin provides a separate typed processing pipeline. This adds build/operational cost but keeps processing separate from financial decisions. Sharing one local PostgreSQL instance keeps infrastructure small without sharing write ownership.
 
-Future Kotlin events will reference the organization/user UUIDs through versioned contracts and tenant-aware validation. Kotlin must not write business records. Priced-event delivery will require idempotency, reconciliation, and service authentication; the shared instance does not make cross-service work one transaction. A broker is not required for the planned local flow. Read-only usage views may be granted to Rails later; no cross-schema grants exist now.
+Kotlin events now reference organization/user/project UUIDs through the versioned CSV and tenant-aware Rails reference contract. Kotlin must not write business records. Priced-event delivery will require idempotency, reconciliation, and service authentication; the shared instance does not make cross-service work one transaction. A broker is not required for the planned local flow. Read-only usage views may be granted to Rails later; no cross-schema grants exist now.
 
-Budget read/manage/approve permissions will be explicit scoped additions to the mapping and policy tests. Project participation, a manager title, or the current read grant must never silently become financial authority. No financial permission is active in Slice 3.
+Budget read/manage/approve permissions will be explicit scoped additions to the mapping and policy tests. Project participation, a manager title, or the current read grant must never silently become financial authority. No financial permission is active in Slice 4.
+
+
+## Slice 4 ingestion boundary
+
+```mermaid
+flowchart TD
+  Snapshot["Credential-protected Rails demo snapshot"] --> Generator["Seed + explicit UTC window"]
+  Generator --> CSV["CSV v1"]
+  CSV --> Parser["Strict CSV parser + field validation"]
+  Parser --> Refs["Batched Rails reference validation"]
+  Refs -->|"Valid"| Insert["JDBC chunk / ON CONFLICT + fingerprint"]
+  Insert --> Events[("usage.usage_events")]
+  Parser -->|"Rejected"| Outcomes[("usage.import_rejections")]
+  Refs -->|"Invalid business reference"| Outcomes
+  Insert -->|"Conflicting identity"| Outcomes
+  Parser --> Reports[("usage.import_batches")]
+  Refs -->|"Infrastructure failure: partial/failed"| Reports
+  Insert --> Reports
+  Reports --> CLI["CLI summary / report / list"]
+```
+
+Rails POST `/api/v1/internal/usage-references/validate` accepts at most 100 keyed organization/user/optional-project/time references. A backend-only `USAGE_REFERENCE_TOKEN` authenticates it independently of demo cookies and browser Origins. The BFF does not expose internal routes. Replies contain validity and fixed error codes/fields, without employee names, emails, grants, or charts. A separate demo-only authenticated snapshot exports minimal fictional identifiers/functions/home-team IDs and recorded membership periods for deterministic generation. Kotlin gets neither business-schema access nor copies of organizational tables.
+
+The event-time policy requires a known organization and currently active same-tenant user; project attribution additionally needs a same-tenant project and a recorded membership covering `[joined_at,left_at)`. Home-team ownership is irrelevant. Archive status does not erase history. Unknown past employment/status and historical project status cannot be inferred; events before known project membership are rejected, while unassigned usage remains valid. The generator avoids inventing old memberships and selects currently unarchived projects for its simulated workload.
+
+Imports use at most 250 rows per normal transaction, with batched reference checks and a bounded import-local cache keyed by IDs and exact UTC event time. PostgreSQL uniqueness on organization/source/event ID handles concurrent replays. A canonical SHA-256 fingerprint distinguishes identical replay from conflicting payloads; original events are immutable. Import counts and row outcomes commit together. A file can mix tenants, but every row independently passes the Rails policy.
+
+Malformed-column rows are rejected without dropping neighboring valid rows. Unsafe quoting stops scanning after preceding complete rows are committed. Infrastructure failures preserve earlier chunks and report unknown/unprocessed work instead of inventing invalid employees. Durable fifteen-minute heartbeat leases identify abandoned runs; recovered workers cannot resume committing. Restart/retry uses immutable identity keys rather than overwriting old data. The CSV contract defines exact counts, limits, error categories, and CLI exit codes.
+
+See [usage-event-v1.md](../contracts/usage-event-v1.md) and [Slice 4 report](slice4.md). No pricing, financial delivery, or analytics endpoints were added.

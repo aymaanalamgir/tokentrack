@@ -11,6 +11,11 @@ spring:
       validation-timeout: 1000
       initialization-fail-timeout: -1
       maximum-pool-size: 5
+  flyway:
+    schemas: usage
+    default-schema: usage
+    create-schemas: false
+    clean-disabled: true
   lifecycle:
     timeout-per-shutdown-phase: 15s
 server:
@@ -33,3 +38,8 @@ management:
       enabled: false
     ssl:
       enabled: false
+
+tokentrack:
+  references:
+    url: ${RAILS_REFERENCE_URL:http://localhost:3001}
+    token: ${USAGE_REFERENCE_TOKEN:}

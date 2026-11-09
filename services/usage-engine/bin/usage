@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+cd /app
+# Compile using the pinned container toolchain; Java receives original arguments
+# without flattening filenames or placing credentials in process arguments.
+gradle --quiet classes writeCliClasspath >&2
+exec java -Dspring.devtools.restart.enabled=false -cp "$(cat build/cli-classpath.txt)" com.tokentrack.usage.cli.UsageCliKt "$@"

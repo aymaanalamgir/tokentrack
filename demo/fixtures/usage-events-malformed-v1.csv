@@ -1,0 +1,4 @@
+schema_version,event_id,organization_id,user_id,project_id,provider,model,tool,input_tokens,output_tokens,occurred_at,cached_input_tokens,agent_run_id,workflow_type
+1,syn-46c7fd102dc3fe2fabbb67e9cdfa3c3d8dcb7321,2eb5ea05-764a-d475-df9a-96a48e187a48,0158284f-9a68-f6c2-5f41-cb45e9744564,85d9c854-6924-05a9-bfc9-5c7f0882bd55,openai,demo-code-v1,documentation-assistant,4544,793,2026-11-10T19:13:04Z,2272,,requirements
+1,syn-7afbd07cc72fe03c955200d84b233debe50e8551,2eb5ea05-764a-d475-df9a-96a48e187a48,ffc829c5-cbd3-3acf-4efe-3ea9b4086a95,,anthropic,demo-reasoning-v1,code-review-agent,59056,2300,2026-12-09T14:16:55Z,11811,run-f986293447c80640f27ca048,code-review
+"unterminated
