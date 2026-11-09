@@ -40,5 +40,8 @@ module CoreApi
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+    # Preserve PostgreSQL constraints and hierarchy triggers in the canonical schema.
+    config.active_record.schema_format = :sql
+    config.generators { |g| g.orm :active_record, primary_key_type: :uuid }
   end
 end

@@ -1,17 +1,20 @@
 # TokenTrack — AI Spend Intelligence
 
-> **Status:** Slice 1 implemented: local infrastructure, application shell, and database-aware service health. Product workflows below are planned unless explicitly marked implemented.
+> **Status:** Slices 1–2 implemented: local infrastructure, organizational modeling, scoped access control, and authenticated demo experiences. Product workflows below are planned unless explicitly marked implemented.
 >
 > A local-first B2B SaaS-style platform for understanding AI usage, attributing costs to projects, measuring workflow efficiency, and managing budgets through delegated approvals.
 
-## Start here — implemented foundation
+## Start here — implemented workspace
 
-TokenTrack currently runs four services: Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. The Overview has responsive navigation, persistent light/dark themes, and real service/database status. Planned navigation is intentionally disabled. There is no authentication, financial data, ingestion, or analytics yet.
+TokenTrack runs Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. Enter Northstar Labs (10 fictional people) or Aperture Technologies (64), then switch authenticated demo identities to explore leadership, manager, project lead, and employee workspaces. Profiles, reporting charts, teams, scoped people/project directories, project metadata editing, persistent themes, and real health checks work. Financial, usage, budget, and approval features remain explicit placeholders. Demo sign-in is local-only and always disabled in Rails production.
 
 ```bash
 cp .env.example .env
 # Replace the three example passwords in .env with distinct local values.
-docker compose up --build
+docker compose up --build -d
+# First setup, or after adding migrations:
+docker compose exec core-api bin/rails db:migrate db:seed
+docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
 ```
 
 | Service | Local address |
@@ -21,7 +24,7 @@ docker compose up --build
 | Kotlin health | <http://localhost:8080/actuator/health> |
 | PostgreSQL | `localhost:5432` |
 
-Stop with Ctrl+C or `docker compose down`; the database volume persists. Ports are configurable in `.env`. No one-time manual database commands are required.
+Open the frontend and choose an organization and identity. Stop with `docker compose down`; the database volume persists. Ports and `DEMO_AUTH_ENABLED` are configurable in `.env`. The migration/seed command above is required on a fresh database; seeds are repeatable.
 
 ```bash
 docker compose exec frontend npm run lint
@@ -31,7 +34,7 @@ docker compose exec core-api bundle exec rspec
 docker compose exec usage-engine gradle test
 ```
 
-See [development and reset instructions](docs/development.md), [current architecture](docs/architecture.md), and [actual verification results](docs/verification.md). The original product vision and conceptual domain design are preserved below; they describe future functionality, not implemented tables or endpoints.
+See [development and reset instructions](docs/development.md), [current architecture](docs/architecture.md), and [Slice 2 implementation and verification](docs/slice2.md). The original product vision and conceptual domain design are preserved below; they describe future functionality, not implemented tables or endpoints.
 
 
 ## 1. Problem and product vision
@@ -51,7 +54,7 @@ The project is also intended to demonstrate **Kotlin, Ruby on Rails, relational 
 
 ## 2. Scope and deliberate non-goals
 
-### Planned product scope (beyond Slice 1)
+### Product scope (implemented organizational features, planned financial features)
 
 - Two example organization structures: a small startup and a larger, multi-team company.
 - Selectable demo identities with real, backend-enforced role and resource scopes.
@@ -80,7 +83,7 @@ The project is also intended to demonstrate **Kotlin, Ruby on Rails, relational 
 | Local orchestration | Docker Compose | Database, Rails API, Kotlin service, frontend |
 | Tests | RSpec and JUnit 5, plus frontend tests | Business and financial invariants, pricing and ingestion correctness, role access |
 
-**Planned business boundary:** Browsers use Next.js, which calls Rails for future business APIs. In Slice 1 the browser calls Next.js `/api/health`, and Next.js checks both backend health endpoints server-side. Kotlin processes usage asynchronously and supplies priced events to Rails for authoritative financial posting. The services may share a PostgreSQL instance for the demo, but **each service exclusively writes its own schema**. Rails may read documented usage views for scoped analytics. Kotlin obtains valid identifiers/reference data through a defined contract rather than modifying business records.
+**Planned business boundary:** Browsers call Next.js. Its `/api/core/*` proxy forwards an HTTP-only demo session to Rails for organizational APIs, while `/api/health` checks both backends server-side. In future slices Kotlin will process usage asynchronously and supplies priced events to Rails for authoritative financial posting. The services may share a PostgreSQL instance for the demo, but **each service exclusively writes its own schema**. Rails may read documented usage views for scoped analytics. Kotlin obtains valid identifiers/reference data through a defined contract rather than modifying business records.
 
 ## 4. Conceptual future system diagram
 
@@ -97,7 +100,7 @@ flowchart TB
     Rails -->|Reference data contract| Worker
 ```
 
-Slice 1 exposes Kotlin Actuator health on port **8080**, Rails on **3001**, Next.js on **3000**, and PostgreSQL on **5432**. All host ports bind to loopback. Future priced-event delivery can use internal HTTP on the Compose network. The current health-only system diagram is in [docs/architecture.md](docs/architecture.md).
+Slice 1 exposes Kotlin Actuator health on port **8080**, Rails on **3001**, Next.js on **3000**, and PostgreSQL on **5432**. All host ports bind to loopback. Future priced-event delivery can use internal HTTP on the Compose network. The current system and identity diagrams is in [docs/architecture.md](docs/architecture.md).
 
 ## 5. Conceptual entity-relationship diagram
 
@@ -252,7 +255,7 @@ erDiagram
 
 **Physical-model refinements planned:**
 
-- `approval_policies`, `reporting_relationships`, `subscription_assignments`, `subscription_charges`, `usage_outbox`, delivery attempts, and `ledger_transaction_groups` will be defined when implementing those slices.
+- `reporting_relationships` is implemented in Slice 2. `approval_policies`, `subscription_assignments`, `subscription_charges`, `usage_outbox`, delivery attempts, and `ledger_transaction_groups` will be defined when implementing those slices.
 - Funding movements require paired debit/credit postings or a transaction group with balanced legs; the diagram abbreviates these as `BUDGET_TRANSACTIONS`.
 - Budget ownership is scoped to organization, organizational unit, or project. Prefer validated owner references/constraints over unchecked polymorphic references where practicable.
 - `SPENDING_LIMITS` can include a nullable project ID for employee project sublimits; it is **not** a funded pool.
@@ -317,7 +320,7 @@ Token usage is **consumption**, not productivity. Compare cost per successful ag
 
 ## 9. Demo data and identities
 
-Use a deterministic generator with a fixed seed and checked-in CSV fixture examples. Suggested scenarios:
+Current deterministic organizational seeds are described in [demo/README.md](demo/README.md). Future usage scenarios will use a deterministic generator and CSV fixtures; these are not implemented yet:
 
 - Small startup: flat organization, founder manages funding, staff works across several projects.
 - Larger company: engineering/product/design/operations teams, hierarchical budgets and delegated approvals.
@@ -364,9 +367,9 @@ tokentrack/
 
 Docker Desktop with Compose and Git are sufficient. Containerized development uses Node 24, React 19, Next.js 16, TypeScript strict mode, Tailwind 4, shadcn/ui patterns, Lucide, and bundled Geist fonts; Rails 8.1 on Ruby 3.4; Spring Boot 3.5 with Kotlin 2.2 on JDK 21 and Gradle 8.14.3; PostgreSQL 17. Dependency lockfiles are checked in.
 
-The four Compose services communicate by service name. PostgreSQL initializes separate `business` and `usage` schemas with dedicated restricted roles and a persistent volume. Next.js never receives database credentials. Rails RSpec uses an isolated test database; Kotlin JUnit uses H2 for tests, with live PostgreSQL verified separately.
+The four Compose services communicate by service name. PostgreSQL initializes separate `business` and `usage` schemas with dedicated restricted roles and a persistent volume. Next.js never receives database credentials. Rails RSpec uses an isolated PostgreSQL test database with transactional examples; Kotlin JUnit uses H2 for tests, with live PostgreSQL verified separately. TanStack Query scopes client data to organization and identity; switching cancels requests and clears sensitive caches.
 
-[docs/development.md](docs/development.md) covers environment variables, source reload/restart behavior, schema inspection, failure checks, production image builds, troubleshooting, and destructive reset commands. [docs/verification.md](docs/verification.md) records what was actually tested. Development Compose is the supported local runtime; production image stages do not constitute a deployment.
+[docs/development.md](docs/development.md) covers environment variables, source reload/restart behavior, schema inspection, failure checks, production image builds, troubleshooting, and destructive reset commands. [docs/slice2.md](docs/slice2.md) records the current implementation and executed checks; [docs/verification.md](docs/verification.md) preserves the earlier Slice 1 report. Development Compose is the supported local runtime; production image stages do not constitute a deployment.
 
 ## 12. Implementation slices
 
@@ -378,14 +381,14 @@ The four Compose services communicate by service name. PostgreSQL initializes se
 - Responsive, light/dark application shell and intentional future-feature empty states.
 - Tests, locked dependencies, and developer documentation.
 
-### Slice 2 — Organizations and permissions (next)
+### Slice 2 — Organizations and permissions (implemented)
 
 - Organizations, users, organizational units, memberships, and scoped role assignments in Rails.
-- Authentication/identity design and backend-enforced authorization.
-- Tenant and scope isolation tests, then real identity-aware frontend behavior.
+- Server-side demo sessions, backend-enforced scoped authorization, and permission-driven navigation.
+- Tenant/scope isolation tests, deterministic seeds, identity-specific overviews, and organizational/project/profile explorers.
 - No budgets, ledger, or usage pricing until their later slices.
 
-### Slice 3 — Usage and pricing
+### Slice 3 — Usage and pricing (next)
 
 - Versioned input-event and priced-event contracts.
 - CSV ingestion, validation, deduplication, effective price snapshots, and Kotlin tests.
@@ -411,7 +414,7 @@ The four Compose services communicate by service name. PostgreSQL initializes se
 
 ## 13. Acceptance scope
 
-Slice 1 establishes startup, real health, schema ownership, a polished shell, and automated checks. See [verification results](docs/verification.md).
+Slice 1 establishes startup, real health, schema ownership, a polished shell, and automated checks. Slice 2 adds server-enforced organizational access and four demo experiences. See [current verification results](docs/slice2.md).
 
 The following remain acceptance criteria for a **future complete vertical slice**, not Slice 1:
 
@@ -426,7 +429,7 @@ The following remain acceptance criteria for a **future complete vertical slice*
 
 These are intentionally left explicit rather than silently assumed:
 
-- How to implement seeded demo authentication locally (session-based Rails auth versus a development-only identity switch mechanism).
+- Replacing local demo selection with real identity verification and production authentication. Local selection now uses revocable opaque server-side sessions and HTTP-only cookies.
 - Exact event identifiers, pricing rate units and rounding precision.
 - Detailed budget ledger posting schema and handling of late or reclassified charges.
 - Whether pre-aggregated statistics are required initially or SQL queries are sufficient for the seeded dataset.

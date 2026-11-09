@@ -1,5 +1,13 @@
 # Core API
 
-API-only Rails service. Owns the `business` PostgreSQL schema. Only `GET /api/v1/health` is implemented. It runs `SELECT 1`, returns JSON and HTTP 503 on database failure, and never returns connection details.
+Rails API owns the `business` PostgreSQL schema. Slice 2 adds tenant-scoped organizational entities, revocable server-side demo sessions, reusable authorization policies, directory/management projections, and limited project metadata editing. Health remains public and database-aware.
 
-Run `docker compose exec core-api bundle exec rspec` from the repository root. See [development instructions](../../docs/development.md) for configuration and future migrations.
+From the repository root:
+
+```bash
+docker compose exec core-api bin/rails db:migrate db:seed
+docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
+docker compose exec core-api bundle exec rspec
+```
+
+Demo selection/seed/reset require `DEMO_AUTH_ENABLED=true` in development/test and are always disabled in production. See [architecture](../../docs/architecture.md), [contracts](../../contracts/README.md), and [development](../../docs/development.md).

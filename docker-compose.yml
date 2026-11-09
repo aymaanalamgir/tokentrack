@@ -31,6 +31,7 @@ services:
     init: true
     environment:
       RAILS_ENV: development
+      DEMO_AUTH_ENABLED: ${DEMO_AUTH_ENABLED:-true}
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB:-tokentrack_development}
@@ -79,6 +80,7 @@ services:
     environment:
       CORE_API_URL: ${CORE_API_URL:-http://core-api:3001}
       USAGE_ENGINE_URL: ${USAGE_ENGINE_URL:-http://usage-engine:8080}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
       NEXT_TELEMETRY_DISABLED: "1"
       WATCHPACK_POLLING: "true"
     ports:

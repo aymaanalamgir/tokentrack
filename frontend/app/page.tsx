@@ -1,156 +1,224 @@
-import {
-  ArrowDownToLine,
-  ArrowRight,
-  Bot,
-  ChartNoAxesCombined,
-  Check,
-  Code2,
-  FolderKanban,
-  LockKeyhole,
-  Terminal,
-  Wallet,
-} from "lucide-react";
+"use client";
+import Link from "next/link";
+import { ArrowRight, Check, ChevronDown, ShieldCheck } from "lucide-react";
+import { useSession } from "@/components/session-provider";
+import { useWorkspaceQuery } from "@/lib/use-workspace-query";
+import type { Overview } from "@/lib/workspace-types";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  ErrorState,
+  humanize,
+  PageHeading,
+  Panel,
+  PeopleTable,
+  PersonName,
+  ProjectList,
+  Skeleton,
+} from "@/components/workspace-ui";
 import { SystemStatus } from "@/components/system-status";
 
-const workspaces = [
-  {
-    name: "Usage analytics",
-    description:
-      "Understand every token. See spending across your tools and models.",
-    icon: ChartNoAxesCombined,
-    tag: "VISIBILITY",
-  },
-  {
-    name: "Project spending",
-    description: "Connect AI costs to the projects and teams behind them.",
-    icon: FolderKanban,
-    tag: "ATTRIBUTION",
-  },
-  {
-    name: "Budget management",
-    description: "Give every team a clear view of its funding and limits.",
-    icon: Wallet,
-    tag: "CONTROL",
-  },
-  {
-    name: "Agent intelligence",
-    description: "Explore execution costs, retries, and cost per outcome.",
-    icon: Bot,
-    tag: "EFFICIENCY",
-  },
-];
+const titles = {
+  leadership: "Organization overview",
+  manager: "Team workspace",
+  project_lead: "Project workspace",
+  employee: "My workspace",
+};
 
-export default function Overview() {
+export default function OverviewPage() {
+  const { me } = useSession();
+  const query = useWorkspaceQuery<Overview>("me/overview");
+  if (!me || query.isPending) return <Skeleton />;
+  if (query.error)
+    return <ErrorState error={query.error} retry={query.refetch} />;
+  const data = query.data.data;
   return (
     <>
-      <div className="mb-9 flex flex-wrap items-start justify-between gap-5">
-        <div>
-          <p className="mb-3 font-mono text-[10px] uppercase tracking-[.18em] text-muted-foreground">
-            Workspace / overview
-          </p>
-          <h1 className="text-[28px] font-medium tracking-[-.045em] sm:text-[32px]">
-            A clearer view of your AI spend.
-          </h1>
-          <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
-            One workspace to understand usage, connect costs, and make better
-            decisions. Your foundation is taking shape.
-          </p>
-        </div>
-        <Badge className="mt-1 gap-2 px-2.5 py-1.5 text-muted-foreground">
-          <Code2 size={12} />
-          SLICE 01 <span className="text-border">/</span> FOUNDATION
-        </Badge>
-      </div>
-      <div className="mb-9 flex items-start gap-3 rounded-md border border-border bg-muted/40 px-4 py-3.5">
-        <Terminal size={15} className="mt-0.5 shrink-0 text-muted-foreground" />
-        <div>
-          <p className="text-xs font-medium">
-            Local environment. Real connections.
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            This workspace checks your running services. Analytics will arrive
-            in future slices; no spending data is simulated here.
-          </p>
-        </div>
-      </div>
-      <SystemStatus />
-      <section
-        aria-labelledby="analytics-workspace"
-        className="mt-11 border-t border-border pt-8"
+      <PageHeading
+        title={titles[data.persona]}
+        description={`${me.organization.name} / ${me.user.name}`}
       >
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 id="analytics-workspace" className="text-sm font-medium">
-              Analytics workspace
-            </h2>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              The next layer of your spending intelligence.
+        <Badge className="text-muted-foreground">
+          <ShieldCheck size={11} />
+          {humanize(data.persona)}
+        </Badge>
+      </PageHeading>
+      <div
+        className={`mb-6 grid grid-cols-2 gap-3 ${data.counts.length === 4 ? "xl:grid-cols-4" : "md:grid-cols-3"}`}
+      >
+        {data.counts.map((count) => (
+          <div
+            key={count.label}
+            className="rounded-lg border border-border bg-surface px-4 py-4"
+          >
+            <p className="font-mono text-[10px] text-muted-foreground">
+              {count.label}
+            </p>
+            <p className="mt-3 font-mono text-2xl tracking-tight">
+              {count.value}
             </p>
           </div>
-          <Badge className="text-muted-foreground">COMING SOON</Badge>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {workspaces.map(({ name, description, icon: Icon, tag }) => (
-            <article
-              key={name}
-              className="group rounded-lg border border-border bg-surface p-5 sm:p-6"
-            >
-              <div className="flex items-center justify-between">
-                <Icon
-                  size={19}
-                  strokeWidth={1.5}
-                  className="text-muted-foreground"
-                />
-                <LockKeyhole size={12} className="text-muted-foreground/60" />
-              </div>
-              <h3 className="mt-5 text-sm font-medium">{name}</h3>
-              <p className="mt-2 max-w-xs text-xs leading-relaxed text-muted-foreground">
-                {description}
-              </p>
-              <div className="mt-6 flex items-center justify-between border-t border-border pt-3 font-mono text-[9px] tracking-wider text-muted-foreground">
-                <span>{tag}</span>
-                <span className="flex items-center gap-1.5">
-                  PLANNED
-                  <ArrowRight size={12} />
-                </span>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-      <section
-        aria-labelledby="foundation"
-        className="my-9 rounded-lg border border-border bg-surface"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
-          <h2
-            id="foundation"
-            className="flex items-center gap-2 text-xs font-medium"
+        ))}
+      </div>
+      {data.persona === "employee" ? (
+        <div className="mb-5 grid gap-5 lg:grid-cols-2">
+          <Panel
+            title="My organizational position"
+            action={
+              <Link className="entity-link text-[10px]" href="/profile">
+                Explore profile →
+              </Link>
+            }
           >
-            <ArrowDownToLine size={14} className="text-muted-foreground" />A
-            foundation with clear boundaries
-          </h2>
-          <span className="font-mono text-[9px] text-muted-foreground">
-            LOCAL-FIRST ARCHITECTURE
-          </span>
-        </div>
-        <div className="grid gap-5 p-5 sm:grid-cols-3">
-          {[
-            "Business logic in Rails",
-            "Usage processing in Kotlin",
-            "One database, two schemas",
-          ].map((label) => (
-            <div
-              key={label}
-              className="flex items-center gap-2 text-[11px] text-muted-foreground"
-            >
-              <Check size={12} className="text-success" />
-              {label}
+            <div className="space-y-4 p-4">
+              <div>
+                <p className="scope-label">Home team</p>
+                {me.user.primary_team ? (
+                  <Link
+                    href={`/organization/${me.user.primary_team.id}`}
+                    className="entity-link mt-1.5 block text-sm"
+                  >
+                    {me.user.primary_team.name}
+                  </Link>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    No primary team assigned
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="scope-label">Reporting manager</p>
+                {me.user.managers?.length ? (
+                  me.user.managers.map((manager) => (
+                    <p className="mt-1.5 text-xs" key={manager.id}>
+                      <PersonName person={manager} />
+                      <span className="ml-2 text-muted-foreground">
+                        {manager.job_title}
+                      </span>
+                    </p>
+                  ))
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    No reporting manager assigned
+                  </p>
+                )}
+              </div>
+              <p className="border-t border-border pt-3 text-xs text-muted-foreground">
+                {me.user.job_title} · {me.user.job_function}
+              </p>
             </div>
-          ))}
+          </Panel>
+          <Panel title="My access">
+            <div className="space-y-3 p-4">
+              {me.access.grants.map((grant, index) => (
+                <p key={index} className="flex items-center gap-2 text-xs">
+                  <Check size={12} className="text-success" />
+                  {humanize(grant.role)}
+                  <span className="ml-auto text-[10px] text-muted-foreground">
+                    {grant.scope_name}
+                  </span>
+                </p>
+              ))}
+              <Link
+                href="/profile"
+                className="entity-link inline-flex items-center gap-2 pt-2 text-xs"
+              >
+                View capabilities and restrictions
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+          </Panel>
         </div>
-      </section>
+      ) : (
+        <div className="mb-5 grid items-start gap-5 xl:grid-cols-[1fr_1.3fr]">
+          <Panel
+            title={
+              data.persona === "leadership"
+                ? "Organization structure"
+                : data.persona === "manager"
+                  ? "Managed teams"
+                  : "Participating teams"
+            }
+            action={
+              <Link href="/organization" className="entity-link text-[10px]">
+                Explore →
+              </Link>
+            }
+          >
+            <div className="divide-y divide-border">
+              {data.units
+                .filter(
+                  (unit) =>
+                    !unit.parent_unit_id ||
+                    !data.units.some(
+                      (parent) => parent.id === unit.parent_unit_id,
+                    ),
+                )
+                .map((unit) => (
+                  <Link
+                    href={`/organization/${unit.id}`}
+                    key={unit.id}
+                    className="flex items-center justify-between gap-3 px-4 py-3.5 hover:bg-muted/40"
+                  >
+                    <div>
+                      <p className="text-xs font-medium">{unit.name}</p>
+                      <p className="mt-1 font-mono text-[9px] text-muted-foreground">
+                        {unit.unit_type}
+                      </p>
+                    </div>
+                    <span className="font-mono text-[10px] text-muted-foreground">
+                      {unit.subtree_member_count} people in subtree
+                    </span>
+                  </Link>
+                ))}
+            </div>
+          </Panel>
+          <Panel
+            title={
+              data.persona === "manager"
+                ? "Team members & reports"
+                : data.persona === "project_lead"
+                  ? "Authorized collaborators"
+                  : "People"
+            }
+          >
+            <PeopleTable people={data.people} />
+          </Panel>
+        </div>
+      )}
+      <Panel
+        title={
+          data.persona === "employee" ? "My projects" : "Projects in your scope"
+        }
+        action={
+          <Link href="/projects" className="entity-link text-[10px]">
+            All projects →
+          </Link>
+        }
+      >
+        <ProjectList projects={data.projects} />
+      </Panel>
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed border-border px-4 py-3 text-xs text-muted-foreground">
+        <span>AI usage, spending, and budget intelligence</span>
+        <div className="flex items-center gap-3">
+          <Badge>COMING SOON</Badge>
+          <Button asChild variant="ghost" className="h-6 px-1 text-[10px]">
+            <Link href="/analytics">
+              View workspace
+              <ArrowRight />
+            </Link>
+          </Button>
+        </div>
+      </div>
+      <details className="mt-7 border-t border-border pt-4">
+        <summary className="flex cursor-pointer list-none items-center justify-between text-[11px] text-muted-foreground">
+          System connectivity
+          <ChevronDown size={13} />
+        </summary>
+        <div className="pt-5">
+          <SystemStatus />
+        </div>
+      </details>
     </>
   );
 }
