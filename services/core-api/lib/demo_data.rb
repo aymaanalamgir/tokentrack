@@ -10,6 +10,11 @@ module DemoData
 
   def save(model, key, attributes)
     record = model.find_or_initialize_by(id: uuid(key))
+    if model == ProjectMembership
+      # Restore the stable fixture row without colliding with a later rejoin period.
+      ProjectMembership.active.where(project_id: attributes[:project].id, user_id: attributes[:user].id).where.not(id: record.id).update_all(left_at: Time.current)
+      attributes = attributes.merge(left_at: nil)
+    end
     record.update!(attributes)
     record
   end
@@ -47,6 +52,7 @@ module DemoData
       save(RoleAssignment, "#{slug}/employee/#{key}", organization: org, user: person, role: "employee", scope_type: "self", organizational_unit: nil, project: nil)
     end
     executive = people.values.first
+    save(RoleAssignment, "#{slug}/creator", organization: org, user: executive, role: "project_creator", scope_type: "organization")
     save(RoleAssignment, "#{slug}/executive", organization: org, user: executive, role: "organization_viewer", scope_type: "organization")
     team_manager_keys.each do |team, key|
       save(RoleAssignment, "#{slug}/manager/#{team}", organization: org, user: people.fetch(key), role: "team_manager", scope_type: "unit", organizational_unit: units.fetch(team))
@@ -59,9 +65,11 @@ module DemoData
     end
     projects = {}
     project_specs.each do |key, label, lead, status|
-      project = save(Project, "#{slug}/project/#{key}", organization: org, name: label, slug: key, status: status, description: "A fictional cross-functional initiative: #{label}.")
+      project = save(Project, "#{slug}/project/#{key}", organization: org, created_by: executive, name: label, slug: key, status: status, description: "A fictional cross-functional initiative: #{label}.")
       projects[key] = project
       save(ProjectMembership, "#{slug}/project-member/#{key}/#{lead}", organization: org, project: project, user: people.fetch(lead), project_role: "owner")
+      RoleAssignment.where(organization: org, project: project, role: "project_lead").where.not(id: uuid("#{slug}/project-lead/#{key}")).delete_all
+      project.active_project_memberships.where(project_role: %w[owner lead]).where.not(user_id: people.fetch(lead).id).update_all(project_role: "contributor")
       save(RoleAssignment, "#{slug}/project-lead/#{key}", organization: org, user: people.fetch(lead), role: "project_lead", scope_type: "project", project: project)
     end
     person_specs.each_with_index do |(key, *_), index|
@@ -139,9 +147,11 @@ module DemoData
       ["ai-sales-assistant", "AI Sales Assistant", "colleague-7", "planned"],
       ["knowledge-automation", "Internal Knowledge Automation", "alex", "active"]
     ], { "marcus" => "ellis", "dana" => "ellis", "imani" => "ellis", "priya" => "rowan", "sofia" => "rowan", "jordan" => "marcus" }, { "engineering" => "ellis", "platform" => "marcus", "infrastructure" => "dana", "applications" => "imani", "product" => "rowan", "product-management" => "rowan", "design" => "rowan", "data" => "alex", "finance" => "casey", "operations" => "riley" })
-    %w[fraud-detection customer-analytics ai-sales-assistant].each do |key|
+    %w[fraud-detection developer-productivity customer-analytics ai-sales-assistant].each do |key|
       save(ProjectMembership, "aperture-technologies/project-member/#{key}/jordan", organization: org, project: projects.fetch(key), user: users.fetch("jordan"), project_role: "contributor")
     end
+    save(RoleAssignment, "aperture-technologies/delegated-project-creator/priya", organization: org, user: users.fetch("priya"), role: "project_creator", scope_type: "organization")
+    save(ProjectMembership, "aperture-technologies/project-member/fraud-detection/sofia", organization: org, project: projects.fetch("fraud-detection"), user: users.fetch("sofia"), project_role: "contributor")
     save(OrganizationalMembership, "aperture-technologies/additional/jordan", organization: org, user: users.fetch("jordan"), organizational_unit: units.fetch("data"), is_primary: false, membership_type: "working_group")
   end
 end

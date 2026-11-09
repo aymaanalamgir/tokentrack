@@ -18,6 +18,34 @@ SET row_security = off;
 
 
 --
+-- Name: check_project_administration(uuid); Type: FUNCTION; Schema: business; Owner: -
+--
+
+CREATE FUNCTION business.check_project_administration(p uuid) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF p IS NULL THEN RETURN; END IF;
+  PERFORM id FROM business.projects WHERE id = p FOR UPDATE;
+  IF NOT FOUND THEN RETURN; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM business.role_assignments r
+    JOIN business.users u ON u.id = r.user_id AND u.status = 'active'
+    JOIN business.project_memberships m ON m.project_id = r.project_id AND m.user_id = r.user_id AND m.left_at IS NULL
+    WHERE r.project_id = p AND r.role = 'project_lead'
+  ) THEN RAISE EXCEPTION 'A project requires an active authorized administrator' USING ERRCODE = '23514'; END IF;
+  IF EXISTS (
+    SELECT 1 FROM business.role_assignments r JOIN business.users u ON u.id = r.user_id
+    WHERE r.project_id = p AND r.role = 'project_lead' AND (
+      u.status <> 'active' OR NOT EXISTS (
+        SELECT 1 FROM business.project_memberships m WHERE m.project_id = p AND m.user_id = r.user_id AND m.left_at IS NULL
+      )
+    )
+  ) THEN RAISE EXCEPTION 'Project authority requires active participation' USING ERRCODE = '23514'; END IF;
+END $$;
+
+
+--
 -- Name: check_reporting_cycle(); Type: FUNCTION; Schema: business; Owner: -
 --
 
@@ -57,6 +85,27 @@ BEGIN
     ) SELECT 1 FROM ancestors WHERE id = NEW.id
   ) THEN RAISE EXCEPTION 'Organizational unit cycle' USING ERRCODE = '23514'; END IF;
   RETURN NEW;
+END $$;
+
+
+--
+-- Name: validate_project_administration(); Type: FUNCTION; Schema: business; Owner: -
+--
+
+CREATE FUNCTION business.validate_project_administration() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF TG_TABLE_NAME = 'projects' THEN
+    IF TG_OP <> 'DELETE' THEN PERFORM business.check_project_administration(NEW.id); END IF;
+  ELSIF TG_TABLE_NAME = 'users' THEN
+    PERFORM business.check_project_administration(r.project_id) FROM business.role_assignments r
+      WHERE r.user_id = NEW.id AND r.role = 'project_lead';
+  ELSE
+    IF TG_OP <> 'INSERT' THEN PERFORM business.check_project_administration(OLD.project_id); END IF;
+    IF TG_OP <> 'DELETE' THEN PERFORM business.check_project_administration(NEW.project_id); END IF;
+  END IF;
+  RETURN NULL;
 END $$;
 
 
@@ -151,6 +200,9 @@ CREATE TABLE business.project_memberships (
     project_role character varying DEFAULT 'contributor'::character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    joined_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    left_at timestamp(6) without time zone,
+    CONSTRAINT valid_membership_period CHECK (((left_at IS NULL) OR (left_at >= joined_at))),
     CONSTRAINT valid_project_role CHECK (((project_role)::text = ANY (ARRAY[('owner'::character varying)::text, ('lead'::character varying)::text, ('contributor'::character varying)::text, ('reviewer'::character varying)::text])))
 );
 
@@ -168,6 +220,9 @@ CREATE TABLE business.projects (
     status character varying DEFAULT 'active'::character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    created_by_id uuid,
+    archived_from_status character varying,
+    CONSTRAINT valid_project_restore_status CHECK (((archived_from_status IS NULL) OR ((archived_from_status)::text = ANY ((ARRAY['planned'::character varying, 'active'::character varying])::text[])))),
     CONSTRAINT valid_project_status CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('planned'::character varying)::text, ('archived'::character varying)::text])))
 );
 
@@ -203,7 +258,7 @@ CREATE TABLE business.role_assignments (
     project_id uuid,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT valid_role_and_explicit_scope CHECK (((((role)::text = 'employee'::text) AND ((scope_type)::text = 'self'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = 'organization_viewer'::text) AND ((scope_type)::text = 'organization'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = 'team_manager'::text) AND ((scope_type)::text = 'unit'::text) AND (organizational_unit_id IS NOT NULL) AND (project_id IS NULL)) OR (((role)::text = 'project_lead'::text) AND ((scope_type)::text = 'project'::text) AND (project_id IS NOT NULL) AND (organizational_unit_id IS NULL))))
+    CONSTRAINT valid_role_and_explicit_scope CHECK (((((role)::text = 'employee'::text) AND ((scope_type)::text = 'self'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = ANY ((ARRAY['organization_viewer'::character varying, 'project_creator'::character varying])::text[])) AND ((scope_type)::text = 'organization'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = 'team_manager'::text) AND ((scope_type)::text = 'unit'::text) AND (organizational_unit_id IS NOT NULL) AND (project_id IS NULL)) OR (((role)::text = 'project_lead'::text) AND ((scope_type)::text = 'project'::text) AND (project_id IS NOT NULL) AND (organizational_unit_id IS NULL))))
 );
 
 
@@ -345,6 +400,13 @@ CREATE INDEX idx_on_organization_id_parent_unit_id_3f231201a8 ON business.organi
 
 
 --
+-- Name: idx_on_organization_id_project_id_left_at_65363c72a7; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX idx_on_organization_id_project_id_left_at_65363c72a7 ON business.project_memberships USING btree (organization_id, project_id, left_at);
+
+
+--
 -- Name: idx_on_report_id_relationship_type_79f0209472; Type: INDEX; Schema: business; Owner: -
 --
 
@@ -422,17 +484,17 @@ CREATE INDEX index_project_memberships_on_organization_id_and_user_id ON busines
 
 
 --
--- Name: index_project_memberships_on_project_id_and_user_id; Type: INDEX; Schema: business; Owner: -
---
-
-CREATE UNIQUE INDEX index_project_memberships_on_project_id_and_user_id ON business.project_memberships USING btree (project_id, user_id);
-
-
---
 -- Name: index_projects_on_organization_id; Type: INDEX; Schema: business; Owner: -
 --
 
 CREATE INDEX index_projects_on_organization_id ON business.projects USING btree (organization_id);
+
+
+--
+-- Name: index_projects_on_organization_id_and_created_by_id; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX index_projects_on_organization_id_and_created_by_id ON business.projects USING btree (organization_id, created_by_id);
 
 
 --
@@ -513,6 +575,13 @@ CREATE UNIQUE INDEX one_primary_home_team ON business.organizational_memberships
 
 
 --
+-- Name: unique_active_project_membership; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX unique_active_project_membership ON business.project_memberships USING btree (project_id, user_id) WHERE (left_at IS NULL);
+
+
+--
 -- Name: unique_scoped_role; Type: INDEX; Schema: business; Owner: -
 --
 
@@ -538,6 +607,34 @@ CREATE TRIGGER prevent_reporting_cycle BEFORE INSERT OR UPDATE ON business.repor
 --
 
 CREATE TRIGGER prevent_unit_cycle BEFORE INSERT OR UPDATE ON business.organizational_units FOR EACH ROW EXECUTE FUNCTION business.check_unit_cycle();
+
+
+--
+-- Name: project_memberships project_memberships_administration_guard; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE CONSTRAINT TRIGGER project_memberships_administration_guard AFTER INSERT OR DELETE OR UPDATE ON business.project_memberships DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION business.validate_project_administration();
+
+
+--
+-- Name: projects projects_administration_guard; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE CONSTRAINT TRIGGER projects_administration_guard AFTER INSERT OR DELETE OR UPDATE ON business.projects DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION business.validate_project_administration();
+
+
+--
+-- Name: role_assignments role_assignments_administration_guard; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE CONSTRAINT TRIGGER role_assignments_administration_guard AFTER INSERT OR DELETE OR UPDATE ON business.role_assignments DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION business.validate_project_administration();
+
+
+--
+-- Name: users users_administration_guard; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE CONSTRAINT TRIGGER users_administration_guard AFTER UPDATE ON business.users DEFERRABLE INITIALLY DEFERRED FOR EACH ROW WHEN (((old.status)::text IS DISTINCT FROM (new.status)::text)) EXECUTE FUNCTION business.validate_project_administration();
 
 
 --
@@ -586,6 +683,14 @@ ALTER TABLE ONLY business.organizational_units
 
 ALTER TABLE ONLY business.project_memberships
     ADD CONSTRAINT fk_rails_329479fb2c FOREIGN KEY (organization_id, project_id) REFERENCES business.projects(organization_id, id);
+
+
+--
+-- Name: projects fk_rails_53626d53e6; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.projects
+    ADD CONSTRAINT fk_rails_53626d53e6 FOREIGN KEY (organization_id, created_by_id) REFERENCES business.users(organization_id, id);
 
 
 --
@@ -699,5 +804,6 @@ ALTER TABLE ONLY business.reporting_relationships
 SET search_path TO business;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261109000100'),
 ('20261107000100');
 

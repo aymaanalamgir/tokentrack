@@ -12,8 +12,8 @@ module Api
         user = policy.users.includes(*WorkspacePresenter::USER_INCLUDES).find(params[:id])
         return unless authorize!(policy.profile?(user))
         return unless params[:view] != "management" || authorize!(policy.management_profile?(user))
-        projects = policy.projects.where(id: ProjectMembership.where(organization_id: policy.organization_id, user_id: user.id).select(:project_id))
-        render_data(presenter.user(user).merge(projects: projects.includes(WorkspacePresenter::PROJECT_INCLUDES).order(:name).map { |p| presenter.project(p).merge(member_role: p.project_memberships.find { |m| m.user_id == user.id }&.project_role) }, can_view_reporting: policy.reporting_context?(user)))
+        projects = policy.projects.where(id: ProjectMembership.active.where(organization_id: policy.organization_id, user_id: user.id).select(:project_id))
+        render_data(presenter.user(user).merge(projects: projects.includes(WorkspacePresenter::PROJECT_INCLUDES).order(:name).map { |p| presenter.project(p).merge(member_role: user.project_memberships.find { |m| m.project_id == p.id }&.project_role) }, can_view_reporting: policy.reporting_context?(user)))
       end
 
       def reporting_context

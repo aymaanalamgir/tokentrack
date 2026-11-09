@@ -1,12 +1,12 @@
 # TokenTrack — AI Spend Intelligence
 
-> **Status:** Slices 1–2 implemented: local infrastructure, organizational modeling, scoped access control, and authenticated demo experiences. Product workflows below are planned unless explicitly marked implemented.
+> **Status:** Slices 1–3 implemented: local infrastructure, organizational modeling, scoped access control, authenticated demo experiences, and cross-functional project management. Product workflows below are planned unless explicitly marked implemented.
 >
 > A local-first B2B SaaS-style platform for understanding AI usage, attributing costs to projects, measuring workflow efficiency, and managing budgets through delegated approvals.
 
 ## Start here — implemented workspace
 
-TokenTrack runs Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. Enter Northstar Labs (10 fictional people) or Aperture Technologies (64), then switch authenticated demo identities to explore leadership, manager, project lead, and employee workspaces. Profiles, reporting charts, teams, scoped people/project directories, project metadata editing, persistent themes, and real health checks work. Financial, usage, budget, and approval features remain explicit placeholders. Demo sign-in is local-only and always disabled in Rails production.
+TokenTrack runs Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. Enter Northstar Labs (10 fictional people) or Aperture Technologies (64), then switch authenticated demo identities to explore leadership, manager, project lead, and employee workspaces. Profiles, reporting charts, teams, scoped people/project directories, project creation, contributor assignment/history, ownership transfer, archive/restore, persistent themes, and real health checks work. Project administrators can expand contributors by home team; managers and employees see their authorized project assignments. Financial, usage, budget, and approval features remain explicit placeholders. Demo sign-in is local-only and always disabled in Rails production.
 
 ```bash
 cp .env.example .env
@@ -34,7 +34,9 @@ docker compose exec core-api bundle exec rspec
 docker compose exec usage-engine gradle test
 ```
 
-See [development and reset instructions](docs/development.md), [current architecture](docs/architecture.md), and [Slice 2 implementation and verification](docs/slice2.md). The original product vision and conceptual domain design are preserved below; they describe future functionality, not implemented tables or endpoints.
+See [development and reset instructions](docs/development.md), [current architecture](docs/architecture.md), and [Slice 3 implementation and verification](docs/slice3.md). Olivia and Maya have explicit organization-scoped project creation grants; Priya has delegated creation authority. An explicit project lead grant permits project administration. A collaboration label, team-manager role, or leadership read grant alone does not.
+
+The original product vision and conceptual domain design are preserved below; they describe future functionality, not implemented tables or endpoints.
 
 
 ## 1. Problem and product vision
@@ -369,7 +371,7 @@ Docker Desktop with Compose and Git are sufficient. Containerized development us
 
 The four Compose services communicate by service name. PostgreSQL initializes separate `business` and `usage` schemas with dedicated restricted roles and a persistent volume. Next.js never receives database credentials. Rails RSpec uses an isolated PostgreSQL test database with transactional examples; Kotlin JUnit uses H2 for tests, with live PostgreSQL verified separately. TanStack Query scopes client data to organization and identity; switching cancels requests and clears sensitive caches.
 
-[docs/development.md](docs/development.md) covers environment variables, source reload/restart behavior, schema inspection, failure checks, production image builds, troubleshooting, and destructive reset commands. [docs/slice2.md](docs/slice2.md) records the current implementation and executed checks; [docs/verification.md](docs/verification.md) preserves the earlier Slice 1 report. Development Compose is the supported local runtime; production image stages do not constitute a deployment.
+[docs/development.md](docs/development.md) covers environment variables, source reload/restart behavior, schema inspection, failure checks, production image builds, troubleshooting, and destructive reset commands. [docs/slice3.md](docs/slice3.md) records the current implementation and executed checks; [docs/slice2.md](docs/slice2.md) preserves Slice 2; [docs/verification.md](docs/verification.md) preserves the earlier Slice 1 report. Development Compose is the supported local runtime; production image stages do not constitute a deployment.
 
 ## 12. Implementation slices
 
@@ -388,33 +390,40 @@ The four Compose services communicate by service name. PostgreSQL initializes se
 - Tenant/scope isolation tests, deterministic seeds, identity-specific overviews, and organizational/project/profile explorers.
 - No budgets, ledger, or usage pricing until their later slices.
 
-### Slice 3 — Usage and pricing (next)
+### Slice 3 — Project management (implemented)
+
+- Explicitly authorized creation and project administration, separate from collaboration labels.
+- Cross-functional assignment, membership periods, role editing, and atomic ownership transfer.
+- Planned/active/archive/restore lifecycle with stable project UUIDs and preserved history.
+- Lazy team groups, connected profiles/manager views, scoped cache refresh, and tenant/integrity tests.
+
+### Slice 4 — Usage and pricing (next)
 
 - Versioned input-event and priced-event contracts.
 - CSV ingestion, validation, deduplication, effective price snapshots, and Kotlin tests.
 - Canonical usage events and reliable delivery records in `usage`.
 
-### Slice 4 — Ledger and analytics
+### Slice 5 — Ledger and analytics
 
 - Funding accounts, budget periods, and append-only charge postings.
 - Idempotent Rails ingestion of priced events.
 - Scoped spend endpoints that reconcile totals across dimensions.
 
-### Slice 5 — Limits and approvals
+### Slice 6 — Limits and approvals
 
 - Employee and project sublimits, funding requests, delegated routing, approval state transitions, audit history, and atomic funding transfers.
 
-### Slice 6 — Agents and intelligence
+### Slice 7 — Agents and intelligence
 
 - Agent outcomes, trend comparisons, anomaly rules, model breakdowns, and efficiency metrics.
 
-### Slice 7 — Demo polish
+### Slice 8 — Demo polish
 
 - Fictional organization structures, realistic anomalies, resettable scenarios, and a repeatable walkthrough.
 
 ## 13. Acceptance scope
 
-Slice 1 establishes startup, real health, schema ownership, a polished shell, and automated checks. Slice 2 adds server-enforced organizational access and four demo experiences. See [current verification results](docs/slice2.md).
+Slice 1 establishes startup, real health, schema ownership, a polished shell, and automated checks. Slice 2 adds server-enforced organizational access and four demo experiences. Slice 3 adds functional project management and cross-functional staffing. See [current verification results](docs/slice3.md).
 
 The following remain acceptance criteria for a **future complete vertical slice**, not Slice 1:
 

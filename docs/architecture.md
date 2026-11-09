@@ -1,6 +1,6 @@
 # TokenTrack architecture
 
-Slices 1–2 implement the local four-service system, organizational data, demo sessions, scoped authorization, and a themed multi-role workspace. Usage ingestion, pricing, finance, and approvals remain planned.
+Slices 1–3 implement the local four-service system, organizational data, demo sessions, scoped authorization, a themed multi-role workspace, and cross-functional project management. Usage ingestion, pricing, finance, and approvals remain planned.
 
 ```mermaid
 flowchart TB
@@ -20,7 +20,7 @@ flowchart TB
 
 **Next.js** owns presentation, responsive navigation, persistent themes, in-memory client caching, a narrow backend-for-frontend proxy, and server-side health aggregation. Organizational data comes from Rails. Neither Docker URLs nor database credentials reach the browser. Health remains independent and public; visible cards are in Settings and the Overview's expandable System connectivity section. Both backends are checked concurrently with four-second timeouts; database connectivity requires confirmation from both.
 
-**Rails** owns organizations, units, people, memberships, reporting relationships, projects, permission grants, and their constraints. Every organizational API resolves a backend session and applies a request-scoped `AccessPolicy`. Presenters choose an allowed projection instead of serializing complete models. Only project name, description, and status can be edited in this slice. Future financial posting, budgets, attribution, and approvals belong here.
+**Rails** owns organizations, units, people, memberships, reporting relationships, projects, permission grants, and their constraints. Every organizational API resolves a backend session and applies a request-scoped `AccessPolicy`. Presenters choose an allowed projection instead of serializing complete models. ProjectManagement handles creation, metadata/lifecycle changes, contributor periods, and atomic ownership transfer. Controllers validate input and presenters expose explicit per-project action flags. Future financial posting, budgets, attribution, and approvals belong here.
 
 **Kotlin/Spring Boot** retains standard database-aware Actuator health and a schema-bound JDBC pool. It has no organizational tables or business endpoints. Future ingestion, validation, pricing, canonical usage events, execution statistics, and reliable delivery belong here.
 
@@ -44,11 +44,11 @@ erDiagram
   USERS ||--o{ DEMO_SESSIONS : authenticates
 ```
 
-IDs are UUIDs. Every tenant-owned row has `organization_id`. Composite foreign keys bind references to both the UUID and tenant; model validations provide readable errors. Unique constraints prevent duplicate memberships/grants. A partial unique index allows at most one primary home team per person, with optional additional memberships and many projects.
+IDs are UUIDs. Every tenant-owned row has `organization_id`. Composite foreign keys bind references to both the UUID and tenant; model validations provide readable errors. Unique constraints prevent duplicate organizational memberships/grants. Project membership periods have joined_at/left_at; a partial unique index permits one active period per project/person and preserves prior periods when someone rejoins. A partial unique index allows at most one primary home team per person, with optional additional memberships and many projects.
 
 Units support arbitrary depth. Model checks and PostgreSQL triggers prevent unit/reporting cycles. The triggers acquire an organization-specific transaction advisory lock before checking ancestry, serializing hierarchy changes. Reporting supports line-manager and dotted-line edges. The profile chart renders the primary chain and labels additional relationships separately.
 
-Role scopes use explicit unit/project foreign keys, not unvalidated polymorphic IDs. A database check permits only `employee/self`, `organization_viewer/organization`, `team_manager/unit`, and `project_lead/project`. An employee self scope resolves to its assigned user; organization scope resolves to the grant's tenant.
+Role scopes use explicit unit/project foreign keys, not unvalidated polymorphic IDs. A database check permits only `employee/self`, `organization_viewer/organization`, `project_creator/organization`, `team_manager/unit`, and `project_lead/project`. An employee self scope resolves to its assigned user; organization scope resolves to the grant's tenant.
 
 ## Demo authentication
 
@@ -66,7 +66,8 @@ This is local demo impersonation: anyone with access to the local app can choose
 | --- | --- | --- |
 | Organization viewer | Own tenant's structure and management profiles | None implied |
 | Team manager | Assigned unit subtree/members, reporting descendants, relevant projects | No project editing unless separately granted |
-| Project lead | Explicit projects, participant directory metadata, relevant teams | Explicitly granted project metadata |
+| Project creator | No additional organization-wide read scope | Create projects in the granted organization and explicitly appoint an initial administrator |
+| Project lead | Explicit projects, participant directory metadata, relevant teams | Metadata, staffing, ownership transfer, lifecycle; archived projects permit restoration only |
 | Employee | Self, memberships, manager context, assigned projects, relevant directory | None implied |
 | Project owner/lead membership label | Participation and directory context | No permission grant by itself |
 
@@ -76,11 +77,23 @@ Directory projections contain name, title, function, and primary-team context. S
 
 Queries start with the active tenant, then narrow by policy. Out-of-scope lookups return 404; unauthorized actions on an otherwise visible resource return 403. `view=management` requests stricter access and cannot bypass policy. Search, filters, and pagination follow authorization. PostgreSQL supplies all counts. Distinct subtree counts avoid inflating departments when memberships overlap.
 
+## Project lifecycle and collaboration
+
+Projects retain their UUID when archived/restored. Planned and active can transition to each other or archived; archived can restore to planned or active. The UI restores the previous status, falling back to active for legacy archived rows. Archived projects remain readable with retained assignments/history, but metadata and staffing are read-only.
+
+Creation derives organization and creator from the authenticated actor. A creator receives an owner membership and explicit project_lead grant by default. Choosing another initial lead explicitly grants that person authority and keeps the creator as a reviewer. In this local demo, initial/transfer administrators must be active selectable identities so responsibility stays reachable; ordinary contributors can be any active same-tenant employee.
+
+Every staffing/lifecycle/transfer transaction locks the project row and checks a fresh policy inside that lock. Transfer creates or updates the target's active owner membership, downgrades former owner/lead labels to contributor, replaces all old project_lead grants with the target's grant, and commits together. Removing a member closes their period and revokes their project grants. The final administrator cannot be removed.
+
+PostgreSQL deferred constraint triggers independently require at least one active administrator and require every project_lead grant to have an active same-tenant participant. The constraint is checked at commit, allowing multi-record creation/transfer. Tenant-bound foreign keys, role/status checks, period-order checks, and partial active uniqueness remain database-enforced. Existing project/membership IDs survive migration; historical creator can be unknown. The migration is deliberately irreversible because returning to all-time membership uniqueness needs history reconciliation.
+
+Project lists batch contributor, lead, administrator, and primary-team summaries. Team groups aggregate active memberships by primary home unit (or unassigned). Expanding a group fetches a bounded member page; no graph library or full-organization participant payload is needed. Manager roster links derive from authorized active project assignments. Joining a project never changes home memberships or reporting relationships.
+
 ## Cache and UX boundaries
 
-TanStack Query keys contain organization ID, user ID, and resource/filter path. Organizational data has a 30-second stale time and five-minute inactive in-memory retention. Project mutations invalidate relevant project, overview, unit-detail, and profile queries.
+TanStack Query keys contain organization ID, user ID, and resource/filter path. Organizational data has a 30-second stale time and five-minute inactive in-memory retention. Project mutations invalidate project, overview, organization-summary, unit, and profile queries for the current organization/user. Only active views refetch; this does not reload the document.
 
-Identity changes hide old content first, cancel in-flight requests, clear caches, change the backend session, and refetch `/me`. Generation checks prevent older identity requests from restoring stale state. BroadcastChannel tells other tabs to clear and restore their sessions too. An expired session detected on a protected request returns the app to identity selection. Theme storage remains independent.
+Identity changes hide old content first, cancel in-flight requests, clear caches, change the backend session, and refetch `/me`. Generation checks prevent older identity requests from restoring stale state. BroadcastChannel tells other tabs to clear and restore their sessions too. An expired session detected on a protected request returns the app to identity selection. Theme storage remains independent. A separate project BroadcastChannel refreshes access and affected views in other same-origin tabs. The backend returns a fingerprint of effective grants and visibility; reduced/changed scope hides content and clears the old private cache before restoring it. Successful creation/assignment can safely expand access without blanking the page. Visible project views refresh every ten seconds; session access refreshes on focus and every fifteen seconds while visible. Other browser sessions discover revocation on a subsequent request, focus, or polling cycle; this is not push delivery. Rails denies revoked requests immediately, including queued writes after taking the project lock.
 
 Skeletons cover initial content. Explicit actions use small pending indicators and disabled controls. Views have local error/retry states. Native expandable trees and focused reporting components avoid a graphing framework. Tables scroll inside their panels on narrow screens. There is no distributed cache.
 
@@ -100,4 +113,4 @@ Rails supports transactional workflows and authorization; Kotlin provides a sepa
 
 Future Kotlin events will reference the organization/user UUIDs through versioned contracts and tenant-aware validation. Kotlin must not write business records. Priced-event delivery will require idempotency, reconciliation, and service authentication; the shared instance does not make cross-service work one transaction. A broker is not required for the planned local flow. Read-only usage views may be granted to Rails later; no cross-schema grants exist now.
 
-Budget read/manage/approve permissions will be explicit scoped additions to the mapping and policy tests. Project participation, a manager title, or the current read grant must never silently become financial authority. No financial permission is active in Slice 2.
+Budget read/manage/approve permissions will be explicit scoped additions to the mapping and policy tests. Project participation, a manager title, or the current read grant must never silently become financial authority. No financial permission is active in Slice 3.

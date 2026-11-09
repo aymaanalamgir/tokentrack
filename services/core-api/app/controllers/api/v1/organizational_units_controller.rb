@@ -12,7 +12,7 @@ module Api
         return unless authorize!(policy.unit?(unit))
         members = policy.users.joins(:organizational_memberships).where(organizational_memberships: { organizational_unit_id: unit.id }).distinct
         roster, meta = page(members.order(:name))
-        projects = policy.projects.where(id: ProjectMembership.where(organization_id: policy.organization_id, user_id: members.select(:id)).select(:project_id))
+        projects = policy.projects.where(id: ProjectMembership.active.where(organization_id: policy.organization_id, user_id: members.select(:id)).select(:project_id))
         render_data(presenter.unit(unit, members: members).merge(
           members: roster.includes(*WorkspacePresenter::USER_INCLUDES).map { |u| presenter.user(u, directory_only: !policy.team_roster?(unit)) },
           children: policy.units.where(parent_unit_id: unit.id).order(:name).map { |u| presenter.unit(u) },

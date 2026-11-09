@@ -2,7 +2,8 @@ class User < ApplicationRecord
   include TenantRecord
   has_many :organizational_memberships
   has_many :organizational_units, through: :organizational_memberships
-  has_many :project_memberships
+  has_many :project_memberships, -> { active }
+  has_many :project_membership_history, class_name: "ProjectMembership"
   has_many :projects, through: :project_memberships
   has_many :role_assignments
   has_many :manager_relationships, class_name: "ReportingRelationship", foreign_key: :report_id

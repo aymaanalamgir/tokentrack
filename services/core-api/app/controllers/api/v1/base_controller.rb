@@ -13,6 +13,15 @@ module Api
       rescue_from ActionController::ParameterMissing do
         render_error(:invalid_request, "Required request parameters are missing", :bad_request)
       end
+      rescue_from ProjectManagement::Forbidden do |error|
+        render_error(:forbidden, error.message, :forbidden)
+      end
+      rescue_from ProjectManagement::InvalidOperation do |error|
+        render_error(:invalid_project_operation, error.message, :unprocessable_content)
+      end
+      rescue_from ActiveRecord::RecordNotUnique do
+        render_error(:conflict, "A project slug or active membership already exists", :unprocessable_content)
+      end
 
       private
 

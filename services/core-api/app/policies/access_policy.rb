@@ -1,3 +1,5 @@
+require "digest"
+
 # One request-scoped policy combines explicit grants. Job titles and project
 # membership labels never grant management, editing, or financial authority.
 class AccessPolicy
@@ -30,13 +32,18 @@ class AccessPolicy
   def projects
     base = Project.where(organization_id: organization_id)
     return base if organization_viewer?
-    membership_ids = ProjectMembership.where(organization_id: organization_id, user_id: manager? ? managed_user_ids : actor.id).select(:project_id)
+    membership_ids = ProjectMembership.active.where(organization_id: organization_id, user_id: manager? ? managed_user_ids : actor.id).select(:project_id)
     grant_ids = grants.filter_map { |g| g.project_id if g.role == "project_lead" }
     base.where(id: membership_ids).or(base.where(id: grant_ids))
   end
 
   def project?(project) = project.organization_id == organization_id && projects.exists?(id: project.id)
-  def edit_project?(project) = project.organization_id == organization_id && grants.any? { |g| g.role == "project_lead" && g.project_id == project.id }
+  def create_project? = grants.any? { |g| g.role == "project_creator" && g.scope_type == "organization" && g.organization_id == organization_id }
+  def project_administrator?(project) = project.organization_id == organization_id && grants.any? { |g| g.role == "project_lead" && g.project_id == project.id }
+  def edit_project?(project) = project_administrator?(project) && !project.archived?
+  def manage_project_members?(project) = edit_project?(project)
+  def transfer_project?(project) = edit_project?(project)
+  def lifecycle_project?(project) = project_administrator?(project)
 
   def management_profile?(user)
     user.organization_id == organization_id && (organization_viewer? || managed_user_ids.include?(user.id))
@@ -46,7 +53,7 @@ class AccessPolicy
     @directory_ids ||= begin
       own_units = actor.organizational_memberships.pluck(:organizational_unit_id)
       colleagues = OrganizationalMembership.where(organization_id: organization_id, organizational_unit_id: own_units).pluck(:user_id)
-      collaborators = ProjectMembership.where(organization_id: organization_id, project_id: projects.select(:id)).pluck(:user_id)
+      collaborators = ProjectMembership.active.where(organization_id: organization_id, project_id: projects.select(:id)).pluck(:user_id)
       # Manager ancestry is useful directory context, not an implicit management grant.
       ancestors = []
       frontier = [actor.id]
@@ -95,8 +102,11 @@ class AccessPolicy
     permissions += ["organization.read", "employees.read.organization"] if organization_viewer?
     permissions += ["teams.read.managed", "employees.read.managed", "reporting.read.managed"] if manager?
     permissions += ["projects.read.led", "projects.edit.led"] if project_lead?
+    permissions += ["projects.members.manage", "projects.ownership.transfer", "projects.lifecycle.manage"] if project_lead?
+    permissions << "projects.create.organization" if create_project?
     {
       persona: persona,
+      scope_key: Digest::SHA256.hexdigest([grants.map { |g| [g.id, g.role, g.organizational_unit_id, g.project_id] }.sort_by(&:first), organization_viewer? ? [] : projects.order(:id).pluck(:id), organization_viewer? ? [] : directory_ids.sort].to_json),
       grants: grants.map { |g| { role: g.role, scope_type: g.scope_type, scope_id: g.organizational_unit_id || g.project_id || (g.scope_type == "self" ? actor.id : organization_id), scope_name: g.organizational_unit&.name || g.project&.name || (g.scope_type == "self" ? actor.name : actor.organization.name) } },
       capabilities: permissions,
       restricted: ["Organization administration", "Financial approvals (not implemented)", "Budget and usage data (not implemented)"] + (organization_viewer? ? [] : ["Unrelated employees' private profiles"]),

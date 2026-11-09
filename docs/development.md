@@ -8,7 +8,7 @@ Install Docker Desktop with Compose and Git. Host Node, Ruby, Java, Gradle, and 
 cp .env.example .env
 # Edit .env: replace the three example passwords with different local values.
 docker compose up --build -d
-# Required on a fresh database; repeat safely when setting up Slice 2:
+# Required on a fresh database; repeat safely when setting up Slice 3:
 docker compose exec core-api bin/rails db:migrate db:seed
 docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
 ```
@@ -23,7 +23,7 @@ docker compose ps
 docker compose logs --tail=100
 ```
 
-`.env` is ignored. Do not commit real passwords, Rails keys, or credentials. Environment examples contain explicitly non-sensitive placeholders. The initialization script creates roles, both schemas, and the Rails test database on first volume startup. Slice 2 requires the Rails migration/seed commands above. Demo entry expects these business tables to exist; health checks test connectivity independently.
+`.env` is ignored. Do not commit real passwords, Rails keys, or credentials. Environment examples contain explicitly non-sensitive placeholders. The initialization script creates roles, both schemas, and the Rails test database on first volume startup. Slice 3 requires the Rails migration/seed commands above. Demo entry expects these business tables to exist; health checks test connectivity independently.
 
 ## Services and variables
 
@@ -95,11 +95,16 @@ docker run --rm --network tokentrack_default \
   -e BASE_URL=http://frontend:3000 \
   -v "$PWD/frontend:/app" -w /app \
   mcr.microsoft.com/playwright:v1.56.1-noble npm run test:access
+# Create/staff/transfer/archive a real project; leaves an archived review record:
+docker run --rm --network tokentrack_default \
+  -e BASE_URL=http://frontend:3000 \
+  -v "$PWD/frontend:/app" -w /app \
+  mcr.microsoft.com/playwright:v1.56.1-noble npm run test:projects
 ```
 
-This uses `frontend/node_modules`, installed by the first command independently of Compose's dependency volume. Screenshots are written to `/tmp/tokentrack-browser` in the test container; bind-mount that directory to preserve them. Add `-e EXPECT_USAGE_DOWN=1` while usage-engine is stopped to check the visible failure state. The browser check is optional for normal startup.
+This uses `frontend/node_modules`, installed by the first command independently of Compose's dependency volume. Shell/access screenshots are written to `/tmp/tokentrack-browser`, and project screenshots to `/tmp/tokentrack-slice3`, in the test container; bind-mount that directory to preserve them. Add `-e EXPECT_USAGE_DOWN=1` while usage-engine is stopped to check the visible failure state. The browser check is optional for normal startup.
 
-Rails specs use real PostgreSQL in `tokentrack_test`, seed before the suite, and roll each example back. They cover relationships, constraints, grants, tenant scope, sessions, project edits, and health. Connection failure specs simulate errors; live outage checks separately exercise PostgreSQL. Kotlin's application/Actuator tests use an in-memory H2 database with the `usage` schema and a failing DataSource for the negative case. Live Compose checks separately verify PostgreSQL and full database outages. Frontend tests cover actual response contracts, invalid bodies, invalid JSON, timeouts, and network failures.
+Rails specs use real PostgreSQL in `tokentrack_test`, seed before the suite, and roll ordinary examples back. The concurrent-transfer spec uses separate committed connections and explicitly cleans up its own generated project. They cover relationships, constraints, grants, tenant scope, sessions, project edits, membership periods, creation, staffing, lifecycle, atomic transfer/revocation, concurrency, and health. Connection failure specs simulate errors; live outage checks separately exercise PostgreSQL. Kotlin's application/Actuator tests use an in-memory H2 database with the `usage` schema and a failing DataSource for the negative case. Live Compose checks separately verify PostgreSQL and full database outages. Frontend tests cover actual response contracts, invalid bodies, invalid JSON, timeouts, and network failures.
 
 Inspect schema ownership without printing passwords:
 
@@ -125,7 +130,7 @@ docker build --target production -t tokentrack-core-api:production services/core
 docker build --target production -t tokentrack-usage-engine:production services/usage-engine
 ```
 
-These image builds do not deploy anything. Rails production needs a separately supplied `SECRET_KEY_BASE`; application databases, credentials, and URLs must also be configured at runtime. See [slice2.md](slice2.md) for current executed checks and limits; [verification.md](verification.md) preserves the earlier Slice 1 report.
+These image builds do not deploy anything. Rails production needs a separately supplied `SECRET_KEY_BASE`; application databases, credentials, and URLs must also be configured at runtime. See [slice3.md](slice3.md) for current executed checks and limits; [slice2.md](slice2.md) records historical Slice 2 checks; [verification.md](verification.md) preserves the earlier Slice 1 report.
 
 ## Migrations and demo resets
 
@@ -147,7 +152,11 @@ PostgreSQL-specific checks/triggers are preserved in `db/structure.sql`. The sch
 docker compose exec core-api bin/rails demo:reset
 ```
 
-Both seed/reset require demo mode in development/test. All Slice 2 entities are in `business`; `usage` remains without domain tables.
+Both seed/reset require demo mode in development/test. All Slice 3 entities are in `business`; `usage` remains without domain tables.
+
+Slice 3 migration `20261109000100` preserves existing IDs, adds creator/restore metadata and membership periods, and checks administrator integrity with deferred PostgreSQL triggers. Its rollback is intentionally irreversible: multiple historical periods must be reconciled before restoring the old all-time uniqueness rule. Review/back up real data before adapting demo migrations outside this local workflow.
+
+Project creation requires an organization-scoped `project_creator` grant; seed identities Olivia/Maya/Priya have one. Existing `project_lead` grants explicitly authorize staffing/lifecycle/transfer on that project. `owner` and `lead` membership labels alone do not. Archived projects are read-only until restored. Use the UI to transfer before removing the final administrator. The API has no project-delete action. Browser project checks retain an archived `Slice 3 Collaboration ...` review project/history, restore Priya's administration, and close other contributors' periods. Repeated runs add review projects; `demo:reset` deliberately removes all demo edits if a clean fixture set is needed.
 
 The development migration-check middleware is disabled so a database outage can always reach the health controller and return structured JSON. Run migration commands explicitly after adding migrations. Avoid `db:reset`, `db:create`, or `db:drop` with the restricted application role. When Kotlin first owns tables, add a normal schema migration tool rather than editing initialization SQL.
 
@@ -178,7 +187,7 @@ Destructive volume resets and host-native service commands were not executed dur
 - **Password authentication failed after editing `.env`:** initialization runs only on a fresh volume. Restore matching credentials, rotate roles explicitly as administrator, or perform the documented destructive database reset if data is disposable.
 - **Picker fails after a fresh setup:** run `docker compose exec core-api bin/rails db:migrate db:seed`; confirm `DEMO_AUTH_ENABLED=true`. Rails production intentionally refuses demo entry.
 - **401 after a reset or eight hours:** choose an identity again. Reset/switch/logout revokes sessions.
-- **403 on selection or project updates:** use the same-origin UI, check `FRONTEND_ORIGIN` matches the browser URL, and confirm an explicit project lead grant for metadata edits.
+- **403 on selection or project updates:** use the same-origin UI, check `FRONTEND_ORIGIN` matches the browser URL, and confirm an explicit project lead grant for edits/staffing and project_creator grant for creation. Restore archived projects before staffing.
 - **Backend unreachable:** use `docker compose ps` and `docker compose logs core-api usage-engine postgres --tail=100`. Initial Kotlin dependency resolution may take a few minutes.
 - **Docker socket access or daemon error:** start Docker Desktop and ensure your terminal can run `docker info`.
 - **Frontend shows an error:** `/api/health` reports each service independently. A malformed response is an error; an unreachable service is disconnected. Database status means both backend connections are verified, not a direct browser query.

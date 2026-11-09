@@ -3,6 +3,7 @@ import { ThemeProvider } from "next-themes";
 import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "./session-provider";
+import { NoticeProvider } from "./ui/notice-provider";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -21,7 +22,9 @@ export function Providers({ children }: { children: ReactNode }) {
       disableTransitionOnChange
     >
       <QueryClientProvider client={client}>
-        <SessionProvider>{children}</SessionProvider>
+        <NoticeProvider>
+          <SessionProvider>{children}</SessionProvider>
+        </NoticeProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

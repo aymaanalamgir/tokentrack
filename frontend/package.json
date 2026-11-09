@@ -13,7 +13,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "tsx --test lib/health-check.test.ts",
     "test:browser": "node e2e/smoke.mjs",
-    "test:access": "node e2e/access-control.mjs"
+    "test:access": "node e2e/access-control.mjs",
+    "test:projects": "node e2e/project-management.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",

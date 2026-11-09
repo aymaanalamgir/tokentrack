@@ -22,6 +22,12 @@ export type Person = PersonLink & {
   projects?: Project[];
   can_view_reporting?: boolean;
   project_role?: string;
+  project_assignments?: {
+    id: string;
+    name: string;
+    status: string;
+    project_role: string;
+  }[];
   relationship_type?: string;
 };
 export type Organization = {
@@ -36,6 +42,7 @@ export type Organization = {
   project_count?: number;
 };
 export type Access = {
+  scope_key: string;
   persona: "leadership" | "manager" | "project_lead" | "employee";
   grants: {
     role: string;
@@ -77,6 +84,17 @@ export type Project = {
   my_role: string | null;
   member_role?: string;
   can_edit: boolean;
+  created_by_id?: string | null;
+  administrators: PersonLink[];
+  restore_status: string;
+  permissions: {
+    edit: boolean;
+    members_manage: boolean;
+    ownership_transfer: boolean;
+    lifecycle_manage: boolean;
+    history: boolean;
+  };
+  available_statuses: string[];
   members?: Person[];
   members_meta?: Pagination;
   role_assignments?: { role: string; user: PersonLink }[];
@@ -95,3 +113,15 @@ export type ReportingContext = {
 };
 export type Pagination = { total: number; limit: number; offset: number };
 export type ApiResponse<T> = { data: T; meta?: Pagination };
+export type ProjectMembership = {
+  id: string;
+  user: Person;
+  project_role: string;
+  joined_at: string;
+  left_at: string | null;
+  status: string;
+  administrator: boolean;
+  can_update: boolean;
+  can_remove: boolean;
+};
+export type ProjectGroup = { unit: UnitLink; member_count: number };

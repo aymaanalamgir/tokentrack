@@ -13,7 +13,13 @@ Rails.application.routes.draw do
       resources :users, only: [:index, :show] do
         get "reporting-context", on: :member, action: :reporting_context
       end
-      resources :projects, only: [:index, :show, :update]
+      resources :projects, only: [:index, :show, :create, :update] do
+        get "eligible-users", on: :collection, action: :eligible_users
+        get "eligible-users", on: :member, action: :eligible_users
+        get "team-groups", on: :member, action: :team_groups
+        post "transfer-ownership", on: :member, action: :transfer_ownership
+        resources :memberships, controller: :project_memberships, only: [:index, :create, :update, :destroy]
+      end
     end
   end
 end

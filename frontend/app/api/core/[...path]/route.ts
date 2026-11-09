@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 const cookieName = "tokentrack_demo_session";
 const uuid = "[0-9a-f-]{36}";
 const getPaths = new RegExp(
-  `^(demo/identities|me(?:/access|/overview)?|organizations/${uuid}|organizational-units(?:/${uuid})?|users(?:/${uuid}(?:/reporting-context)?)?|projects(?:/${uuid})?)$`,
+  `^(demo/identities|me(?:/access|/overview)?|organizations/${uuid}|organizational-units(?:/${uuid})?|users(?:/${uuid}(?:/reporting-context)?)?|projects(?:/eligible-users|/${uuid}(?:/eligible-users|/team-groups|/memberships)?)?)$`,
 );
 
 async function proxy(
@@ -17,10 +17,18 @@ async function proxy(
     method === "GET"
       ? getPaths.test(path)
       : method === "POST"
-        ? path === "demo/sessions"
+        ? path === "demo/sessions" ||
+          path === "projects" ||
+          new RegExp(
+            `^projects/${uuid}/(?:memberships|transfer-ownership)$`,
+          ).test(path)
         : method === "DELETE"
-          ? path === "demo/session"
-          : method === "PATCH" && new RegExp(`^projects/${uuid}$`).test(path);
+          ? path === "demo/session" ||
+            new RegExp(`^projects/${uuid}/memberships/${uuid}$`).test(path)
+          : method === "PATCH" &&
+            new RegExp(`^projects/${uuid}(?:/memberships/${uuid})?$`).test(
+              path,
+            );
   const error = (code: string, message: string, status: number) =>
     NextResponse.json(
       { error: { code, message } },
@@ -71,6 +79,9 @@ async function proxy(
           "offset",
           "view",
           "managed",
+          "state",
+          "team",
+          "include_members",
         ].includes(key)
       )
         target.searchParams.set(key, value);

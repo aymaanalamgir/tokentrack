@@ -150,6 +150,8 @@ export function PeopleTable({
   context?: "team" | "project";
 }) {
   if (!people.length) return <EmptyState title="No people in this view" />;
+  const showProjects =
+    context === "team" && people.some((person) => !!person.project_assignments);
   return (
     <div className="overflow-x-auto">
       <table className="workspace-table">
@@ -158,6 +160,7 @@ export function PeopleTable({
             <th>Person</th>
             <th>Home team</th>
             <th>{context === "project" ? "Project role" : "Visibility"}</th>
+            {showProjects && <th>Active projects</th>}
           </tr>
         </thead>
         <tbody>
@@ -190,6 +193,25 @@ export function PeopleTable({
                   )}
                 </Badge>
               </td>
+              {showProjects && (
+                <td>
+                  <div className="flex max-w-64 flex-wrap gap-1.5">
+                    {person.project_assignments
+                      ?.filter((project) => project.status === "active")
+                      .map((project) => (
+                        <Link
+                          key={project.id}
+                          href={`/projects/${project.id}`}
+                          className="rounded border border-border px-1.5 py-1 text-[9px] hover:bg-muted"
+                        >
+                          {project.name}
+                        </Link>
+                      )) ?? (
+                      <span className="text-muted-foreground">Restricted</span>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -221,6 +243,18 @@ export function ProjectList({ projects }: { projects: Project[] }) {
               {(project.member_role ?? project.my_role)
                 ? ` · ${humanize(project.member_role ?? project.my_role ?? "")}`
                 : ""}
+            </p>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Lead:{" "}
+              {project.administrators
+                ?.map((person) => person.name)
+                .join(", ") || "Unassigned"}{" "}
+              ·{" "}
+              {project.teams
+                .map((team) => team.name)
+                .slice(0, 2)
+                .join(", ")}
+              {project.teams.length > 2 ? ` +${project.teams.length - 2}` : ""}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-3">

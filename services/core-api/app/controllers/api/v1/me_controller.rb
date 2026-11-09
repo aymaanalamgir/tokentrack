@@ -19,7 +19,7 @@ module Api
           [["Managed units", policy.managed_unit_ids.size], ["Direct reports", current_user.report_relationships.count], ["Team members", policy.managed_user_ids.size], ["Active team projects", projects.where(status: "active").count]]
         when "project_lead"
           led = projects.where(id: policy.grants.filter_map { |g| g.project_id if g.role == "project_lead" })
-          [["Led projects", led.count], ["Contributors", ProjectMembership.where(organization_id: policy.organization_id, project_id: led.select(:id)).distinct.count(:user_id)], ["Participating teams", OrganizationalMembership.where(organization_id: policy.organization_id, user_id: ProjectMembership.where(project_id: led.select(:id)).select(:user_id)).distinct.count(:organizational_unit_id)]]
+          [["Led projects", led.count], ["Contributors", ProjectMembership.active.where(organization_id: policy.organization_id, project_id: led.select(:id)).distinct.count(:user_id)], ["Participating teams", OrganizationalMembership.where(organization_id: policy.organization_id, is_primary: true, user_id: ProjectMembership.active.where(project_id: led.select(:id)).select(:user_id)).distinct.count(:organizational_unit_id)]]
         else
           [["My projects", current_user.project_memberships.count], ["Team memberships", current_user.organizational_memberships.count], ["Access grants", policy.grants.size]]
         end

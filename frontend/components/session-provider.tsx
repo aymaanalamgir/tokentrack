@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api-client";
 import type { ApiResponse, Me } from "@/lib/workspace-types";
+import { invalidateProjectViews } from "@/lib/project-cache";
 
 type Session = {
   me: Me | null;
@@ -22,6 +23,7 @@ type Session = {
   logout: () => Promise<void>;
   reload: () => void;
   expire: () => void;
+  refreshAccess: (allowExpansion?: boolean) => Promise<void>;
 };
 const SessionContext = createContext<Session | null>(null);
 
@@ -89,6 +91,65 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setError("Your demo session expired. Choose an identity to continue.");
   }, [clear]);
 
+  const refreshAccess = useCallback(
+    async (allowExpansion = false) => {
+      if (!me || busy.current) return;
+      const epoch = generation.current;
+      try {
+        const result = await api<ApiResponse<Me>>("me");
+        if (epoch !== generation.current) return;
+        if (
+          result.data.user.id !== me.user.id ||
+          result.data.organization.id !== me.organization.id
+        ) {
+          reload();
+          return;
+        }
+        if (
+          result.data.access.scope_key !== me.access.scope_key &&
+          !allowExpansion
+        ) {
+          const changedEpoch = ++generation.current;
+          setReady(false);
+          await clear();
+          if (generation.current !== changedEpoch) return;
+        }
+        setMe(result.data);
+        setReady(true);
+      } catch (reason) {
+        if (
+          epoch === generation.current &&
+          reason instanceof ApiError &&
+          reason.status === 401
+        )
+          expire();
+      }
+    },
+    [me, clear, expire, reload],
+  );
+
+  useEffect(() => {
+    if (!me) return;
+    const updates = new BroadcastChannel("tokentrack-projects");
+    updates.onmessage = (event) => {
+      if (event.data?.organizationId === me.organization.id) {
+        void refreshAccess().then(() =>
+          invalidateProjectViews(client, me.organization.id, me.user.id),
+        );
+      }
+    };
+    const focus = () => {
+      if (document.visibilityState === "visible") void refreshAccess();
+    };
+    window.addEventListener("focus", focus);
+    const interval = setInterval(focus, 15000);
+    return () => {
+      updates.close();
+      window.removeEventListener("focus", focus);
+      clearInterval(interval);
+    };
+  }, [me, refreshAccess, client]);
+
   async function change(id?: string) {
     if (busy.current) return;
     busy.current = true;
@@ -132,6 +193,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         logout: () => change(),
         reload,
         expire,
+        refreshAccess,
       }}
     >
       {children}
