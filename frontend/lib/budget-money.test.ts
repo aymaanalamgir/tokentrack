@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {units,decimal,allocationTotal} from './budget-money';
+test('partitions are summed exactly without floating point',()=>{assert.equal(decimal(allocationTotal(['0.1','0.2'])!),'0.3');assert.equal(decimal(allocationTotal(['250','150'])!),'400');assert.equal(decimal(units('500')!-allocationTotal(['250','150'])!),'100');});
+test('accepts all ledger precision and rejects signs, exponent, floats text and excessive scale',()=>{assert.equal(decimal(units('0.000000000000001')!),'0.000000000000001');for(const v of ['-1','1e2','NaN','Infinity','.1','1.0000000000000001','01'])assert.equal(units(v),null);assert.equal(allocationTotal(['100','bad']),null);});
+test('local capacity validation compares exact integral units including overruns',()=>{assert(allocationTotal(['300','250'])!>units('500')!);assert.equal(decimal(units('250')!-units('275')!),'-25');});

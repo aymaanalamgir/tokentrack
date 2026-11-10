@@ -1,0 +1,328 @@
+{
+  "verified_at_utc": "2026-11-10",
+  "baseline": {
+    "usage_events": 7753,
+    "canonical_checksum": "6a12d8cba38e9026692218e10a206ba5",
+    "ledger_entries": 7417,
+    "financial_transactions": 7364,
+    "net_expenditure": "500.789210275",
+    "funding": "400000"
+  },
+  "analytics": {
+    "organizations": [
+      {
+        "id": "2eb5ea05-764a-d475-df9a-96a48e187a48",
+        "name": "Aperture Technologies",
+        "summary": {
+          "events": 6665,
+          "priced_events": 6281,
+          "unpriced_events": 384,
+          "input_tokens": "234955596",
+          "output_tokens": "72992173",
+          "cached_input_tokens": "67095468",
+          "active_users": 64,
+          "attributed_projects": 5,
+          "unsupported_profiles": 377,
+          "missing_rates": 7,
+          "pending_delivery": 0,
+          "original_expenditure": "423.92216928",
+          "adjustments": "-0.0065",
+          "net_expenditure": "423.91566928",
+          "pricing_coverage_percent": "94.23855963990997749437359339835",
+          "total_tokens": 307947769,
+          "unresolved_charge_owner": 0
+        },
+        "group_totals": {
+          "timeseries": "423.91566928",
+          "models": "423.91566928",
+          "tools": "423.91566928",
+          "employees": "423.91566928",
+          "teams": "423.91566928",
+          "projects": "423.91566928"
+        },
+        "ledger_net": "423.91566928",
+        "budget": {
+          "funding": "200000",
+          "expenditure": "423.91566928",
+          "remaining": "199576.08433072",
+          "utilization_percent": "0.21195783464"
+        }
+      },
+      {
+        "id": "25954160-1cbe-14ad-c639-e7f1687fb9b1",
+        "name": "Northstar Labs",
+        "summary": {
+          "events": 1088,
+          "priced_events": 1024,
+          "unpriced_events": 64,
+          "input_tokens": "41780926",
+          "output_tokens": "12456631",
+          "cached_input_tokens": "12519453",
+          "active_users": 10,
+          "attributed_projects": 3,
+          "unsupported_profiles": 64,
+          "missing_rates": 0,
+          "pending_delivery": 0,
+          "original_expenditure": "76.873540995",
+          "adjustments": "0",
+          "net_expenditure": "76.873540995",
+          "pricing_coverage_percent": "94.117647058823529411764705882353",
+          "total_tokens": 54237557,
+          "unresolved_charge_owner": 0
+        },
+        "group_totals": {
+          "timeseries": "76.873540995",
+          "models": "76.873540995",
+          "tools": "76.873540995",
+          "employees": "76.873540995",
+          "teams": "76.873540995",
+          "projects": "76.873540995"
+        },
+        "ledger_net": "76.873540995",
+        "budget": {
+          "funding": "200000",
+          "expenditure": "76.873540995",
+          "remaining": "199923.126459005",
+          "utilization_percent": "0.0384367704975"
+        }
+      }
+    ],
+    "personas": [
+      {
+        "name": "Olivia Chen",
+        "scope": "leadership",
+        "summary": {
+          "events": 6665,
+          "priced_events": 6281,
+          "unpriced_events": 384,
+          "input_tokens": "234955596",
+          "output_tokens": "72992173",
+          "cached_input_tokens": "67095468",
+          "active_users": 64,
+          "attributed_projects": 5,
+          "unsupported_profiles": 377,
+          "missing_rates": 7,
+          "pending_delivery": 0,
+          "original_expenditure": "423.92216928",
+          "adjustments": "-0.0065",
+          "net_expenditure": "423.91566928",
+          "pricing_coverage_percent": "94.23855963990997749437359339835",
+          "total_tokens": 307947769,
+          "unresolved_charge_owner": 0
+        },
+        "budget": {
+          "funding": "200000",
+          "expenditure": "423.91566928",
+          "remaining": "199576.08433072",
+          "utilization_percent": "0.21195783464"
+        },
+        "account_names": [
+          "AI Sales Assistant project AI budget",
+          "Aperture Technologies reserve AI budget",
+          "Aperture Technologies unassigned AI budget",
+          "Application Engineering unit AI budget",
+          "Customer Analytics project AI budget",
+          "Data & AI unit AI budget",
+          "Developer Productivity project AI budget",
+          "Engineering unit AI budget",
+          "Executive Leadership unit AI budget",
+          "Finance unit AI budget",
+          "Fraud Detection Platform project AI budget",
+          "Infrastructure unit AI budget",
+          "Internal Knowledge Automation project AI budget",
+          "Marketing unit AI budget",
+          "Operations unit AI budget",
+          "Platform Engineering unit AI budget",
+          "Product Design unit AI budget",
+          "Product Management unit AI budget",
+          "Product unit AI budget"
+        ],
+        "employee_count": 64,
+        "project_names": [
+          "Customer Analytics",
+          "Unassigned activity",
+          "AI Sales Assistant",
+          "Internal Knowledge Automation",
+          "Fraud Detection Platform",
+          "Developer Productivity"
+        ]
+      },
+      {
+        "name": "Marcus Rivera",
+        "scope": "manager",
+        "summary": {
+          "events": 1890,
+          "priced_events": 1776,
+          "unpriced_events": 114,
+          "input_tokens": "70154890",
+          "output_tokens": "20799711",
+          "cached_input_tokens": "20460095",
+          "active_users": 25,
+          "attributed_projects": 5,
+          "unsupported_profiles": 110,
+          "missing_rates": 4,
+          "pending_delivery": 0,
+          "original_expenditure": "122.668215865",
+          "adjustments": "-0.0065",
+          "net_expenditure": "122.661715865",
+          "pricing_coverage_percent": "93.968253968253968253968253968254",
+          "total_tokens": 90954601,
+          "unresolved_charge_owner": 0
+        },
+        "budget": {
+          "funding": "13333.333333333333334",
+          "expenditure": "44.68826502",
+          "remaining": "13288.645068313333334",
+          "utilization_percent": "0.3351619876499999999832419006175"
+        },
+        "account_names": [
+          "Developer Productivity project AI budget",
+          "Platform Engineering unit AI budget"
+        ],
+        "employee_count": 25,
+        "project_names": [
+          "Developer Productivity",
+          "Customer Analytics",
+          "Unassigned activity",
+          "AI Sales Assistant",
+          "Fraud Detection Platform",
+          "Internal Knowledge Automation"
+        ]
+      },
+      {
+        "name": "Priya Shah",
+        "scope": "project_lead",
+        "summary": {
+          "events": 2317,
+          "priced_events": 2172,
+          "unpriced_events": 145,
+          "input_tokens": "85182441",
+          "output_tokens": "27259549",
+          "cached_input_tokens": "24229568",
+          "active_users": 36,
+          "attributed_projects": 2,
+          "unsupported_profiles": 141,
+          "missing_rates": 4,
+          "pending_delivery": 0,
+          "original_expenditure": "154.98614106",
+          "adjustments": "-0.0065",
+          "net_expenditure": "154.97964106",
+          "pricing_coverage_percent": "93.741907639188605955977557186016",
+          "total_tokens": 112441990,
+          "unresolved_charge_owner": 0
+        },
+        "budget": {
+          "funding": "19000",
+          "expenditure": "154.74265006",
+          "remaining": "18845.25734994",
+          "utilization_percent": "0.81443500031578947368421052631579"
+        },
+        "account_names": [
+          "Customer Analytics project AI budget",
+          "Fraud Detection Platform project AI budget"
+        ],
+        "employee_count": 36,
+        "project_names": [
+          "Customer Analytics",
+          "Fraud Detection Platform",
+          "Unassigned activity"
+        ]
+      },
+      {
+        "name": "Jordan Lee",
+        "scope": "employee",
+        "summary": {
+          "events": 153,
+          "priced_events": 135,
+          "unpriced_events": 18,
+          "input_tokens": "8842884",
+          "output_tokens": "2810202",
+          "cached_input_tokens": "2313473",
+          "active_users": 1,
+          "attributed_projects": 5,
+          "unsupported_profiles": 17,
+          "missing_rates": 1,
+          "pending_delivery": 0,
+          "original_expenditure": "12.82676142",
+          "adjustments": "-0.0065",
+          "net_expenditure": "12.82026142",
+          "pricing_coverage_percent": "88.235294117647058823529411764706",
+          "total_tokens": 11653086,
+          "unresolved_charge_owner": 0
+        },
+        "budget": null,
+        "account_names": null,
+        "employee_count": 1,
+        "project_names": [
+          "Fraud Detection Platform",
+          "Internal Knowledge Automation",
+          "AI Sales Assistant",
+          "Unassigned activity",
+          "Customer Analytics",
+          "Developer Productivity"
+        ]
+      }
+    ],
+    "totals": {
+      "events": 7753,
+      "priced": 7305,
+      "unpriced": 448,
+      "net_expenditure": "500.789210275",
+      "input_tokens": 276736522,
+      "output_tokens": 85448804,
+      "cached_input_tokens": 79614921
+    }
+  },
+  "financial_reconciliation": {
+    "status": "balanced_with_unpriced_usage",
+    "priced_events": 7305,
+    "posted_events": 7305,
+    "pending_delivery": 0,
+    "dead_deliveries": 0,
+    "unresolved_charge_owner": 0,
+    "delivered_missing_postings": 0,
+    "missing_outbox": 0,
+    "amount_discrepancies": 0,
+    "payload_conflicts": 0,
+    "ledger_integrity": {
+      "invalid_operation_entries": 0,
+      "duplicate_expenses": 0,
+      "unbalanced_transfers": 0,
+      "posted_receipts_missing_transactions": 0
+    },
+    "priced_total_usd": "500.795710275",
+    "posted_original_usd": "500.795710275",
+    "authorized_adjustment_delta_usd": "-0.0065",
+    "net_expenditure_usd": "500.789210275",
+    "unpriced_events": 448
+  },
+  "performance_milliseconds": {
+    "overview": [
+      611.76,
+      314.21,
+      316.37
+    ],
+    "timeseries_week": [
+      299.11,
+      225.0,
+      338.88
+    ],
+    "project": [
+      253.91,
+      78.33,
+      114.82
+    ],
+    "employee": [
+      157.41,
+      104.21,
+      96.18
+    ]
+  },
+  "tests": {
+    "rails": 119,
+    "kotlin_unit": 49,
+    "kotlin_postgresql": 37,
+    "frontend_unit": 8,
+    "browser_suites": 4
+  }
+}

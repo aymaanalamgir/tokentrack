@@ -110,7 +110,7 @@ function Sidebar({ close }: { close?: () => void }) {
                 >
                   <Icon size={15} />
                   <span>{item.label}</span>
-                  {["/analytics", "/budgets", "/requests"].includes(
+                  {["/requests"].includes(
                     item.href,
                   ) && (
                     <span className="ml-auto text-[9px] opacity-60">soon</span>
@@ -303,7 +303,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Activity size={11} />
             TokenTrack · Local demo
           </span>
-          <span>Organizational data is fictional · No AI spend recorded</span>
+          <span>Fictional demo data · Modeled metered AI expenditure</span>
         </footer>
       </div>
       {me && (

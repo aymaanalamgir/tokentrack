@@ -163,6 +163,39 @@ END $$;
 
 
 --
+-- Name: guard_spending_allocation_insert(); Type: FUNCTION; Schema: business; Owner: -
+--
+
+CREATE FUNCTION business.guard_spending_allocation_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF NOT EXISTS(SELECT 1 FROM business.spending_limit_revisions WHERE id=NEW.spending_limit_revision_id AND write_transaction_id=txid_current()) THEN RAISE EXCEPTION 'Allocations must be inserted with their revision' USING ERRCODE='23514'; END IF;
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: guard_spending_control(); Type: FUNCTION; Schema: business; Owner: -
+--
+
+CREATE FUNCTION business.guard_spending_control() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF TG_OP IN ('DELETE','TRUNCATE') THEN RAISE EXCEPTION 'Spending control history is append-only' USING ERRCODE='23514'; END IF;
+  IF TG_TABLE_NAME='spending_limits' THEN
+    IF NEW.organization_id<>OLD.organization_id OR NEW.user_id<>OLD.user_id OR NEW.month_start<>OLD.month_start OR NEW.currency<>OLD.currency OR NEW.created_at<>OLD.created_at
+    THEN RAISE EXCEPTION 'Spending limit identity is immutable' USING ERRCODE='23514'; END IF;
+    RETURN NEW;
+  ELSIF TG_TABLE_NAME='allowance_delegations' AND OLD.revoked_at IS NULL AND NEW.revoked_at IS NOT NULL AND NEW.revoked_by_id IS NOT NULL AND (to_jsonb(NEW)-'revoked_at'-'revoked_by_id')=(to_jsonb(OLD)-'revoked_at'-'revoked_by_id') THEN
+    RETURN NEW;
+  END IF;
+  RAISE EXCEPTION 'Spending control history is append-only' USING ERRCODE='23514';
+END $$;
+
+
+--
 -- Name: protect_budget_identity(); Type: FUNCTION; Schema: business; Owner: -
 --
 
@@ -246,9 +279,55 @@ BEGIN
 END $$;
 
 
+--
+-- Name: validate_spending_revision(); Type: FUNCTION; Schema: business; Owner: -
+--
+
+CREATE FUNCTION business.validate_spending_revision() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE root_id uuid; current_id uuid; ceiling numeric; allocated numeric; root_org uuid; maximum_revision integer;
+BEGIN
+  IF TG_TABLE_NAME='spending_limits' THEN root_id=NEW.id;
+  ELSIF TG_TABLE_NAME='spending_limit_allocations' THEN SELECT spending_limit_id INTO root_id FROM business.spending_limit_revisions WHERE id=NEW.spending_limit_revision_id;
+  ELSE root_id=NEW.spending_limit_id; END IF;
+  SELECT current_revision_id,organization_id INTO current_id,root_org FROM business.spending_limits WHERE id=root_id;
+  IF current_id IS NULL OR NOT EXISTS(SELECT 1 FROM business.spending_limit_revisions WHERE id=current_id AND spending_limit_id=root_id AND organization_id=root_org) THEN
+    RAISE EXCEPTION 'A spending limit needs its own current revision' USING ERRCODE='23514'; END IF;
+  SELECT MAX(revision_number) INTO maximum_revision FROM business.spending_limit_revisions WHERE spending_limit_id=root_id;
+  IF NOT EXISTS(SELECT 1 FROM business.spending_limit_revisions WHERE id=current_id AND revision_number=maximum_revision) THEN RAISE EXCEPTION 'Current revision must be latest' USING ERRCODE='23514'; END IF;
+  IF EXISTS(SELECT 1 FROM business.spending_limit_revisions r LEFT JOIN business.spending_limit_allocations a ON a.spending_limit_revision_id=r.id WHERE r.spending_limit_id=root_id GROUP BY r.id HAVING COALESCE(SUM(a.limit_amount),0)>r.limit_amount) THEN
+    RAISE EXCEPTION 'Project sublimits exceed personal ceiling' USING ERRCODE='23514'; END IF;
+  RETURN NULL;
+END $$;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: allowance_delegations; Type: TABLE; Schema: business; Owner: -
+--
+
+CREATE TABLE business.allowance_delegations (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    organization_id uuid NOT NULL,
+    manager_id uuid NOT NULL,
+    organizational_unit_id uuid NOT NULL,
+    granted_by_id uuid NOT NULL,
+    maximum_amount numeric(38,15) NOT NULL,
+    effective_from_month date NOT NULL,
+    effective_until_month date NOT NULL,
+    request_key character varying(128) NOT NULL,
+    request_fingerprint character varying(64) NOT NULL,
+    reason character varying(500) NOT NULL,
+    revoked_at timestamp(6) without time zone,
+    revoked_by_id uuid,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT allowance_delegations_check CHECK (((maximum_amount >= (0)::numeric) AND (maximum_amount < 'Infinity'::numeric) AND (EXTRACT(day FROM effective_from_month) = (1)::numeric) AND (EXTRACT(day FROM effective_until_month) = (1)::numeric) AND (effective_from_month <= effective_until_month) AND ((revoked_at IS NULL) = (revoked_by_id IS NULL))))
+);
+
 
 --
 -- Name: ar_internal_metadata; Type: TABLE; Schema: business; Owner: -
@@ -507,7 +586,7 @@ CREATE TABLE business.role_assignments (
     project_id uuid,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT valid_role_and_explicit_scope CHECK (((((role)::text = 'employee'::text) AND ((scope_type)::text = 'self'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = ANY ((ARRAY['organization_viewer'::character varying, 'project_creator'::character varying, 'financial_operator'::character varying])::text[])) AND ((scope_type)::text = 'organization'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = 'team_manager'::text) AND ((scope_type)::text = 'unit'::text) AND (organizational_unit_id IS NOT NULL) AND (project_id IS NULL)) OR (((role)::text = 'project_lead'::text) AND ((scope_type)::text = 'project'::text) AND (project_id IS NOT NULL) AND (organizational_unit_id IS NULL))))
+    CONSTRAINT valid_role_and_explicit_scope CHECK (((((role)::text = 'employee'::text) AND ((scope_type)::text = 'self'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = ANY ((ARRAY['organization_viewer'::character varying, 'organization_budget_reader'::character varying, 'project_creator'::character varying, 'financial_operator'::character varying])::text[])) AND ((scope_type)::text = 'organization'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = ANY ((ARRAY['team_manager'::character varying, 'team_budget_reader'::character varying])::text[])) AND ((scope_type)::text = 'unit'::text) AND (organizational_unit_id IS NOT NULL) AND (project_id IS NULL)) OR (((role)::text = ANY ((ARRAY['project_lead'::character varying, 'project_budget_reader'::character varying])::text[])) AND ((scope_type)::text = 'project'::text) AND (project_id IS NOT NULL) AND (organizational_unit_id IS NULL))))
 );
 
 
@@ -517,6 +596,60 @@ CREATE TABLE business.role_assignments (
 
 CREATE TABLE business.schema_migrations (
     version character varying NOT NULL
+);
+
+
+--
+-- Name: spending_limit_allocations; Type: TABLE; Schema: business; Owner: -
+--
+
+CREATE TABLE business.spending_limit_allocations (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    organization_id uuid NOT NULL,
+    spending_limit_revision_id uuid NOT NULL,
+    project_id uuid NOT NULL,
+    limit_amount numeric(38,15) NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT spending_limit_allocations_limit_amount_check CHECK (((limit_amount >= (0)::numeric) AND (limit_amount < 'Infinity'::numeric)))
+);
+
+
+--
+-- Name: spending_limit_revisions; Type: TABLE; Schema: business; Owner: -
+--
+
+CREATE TABLE business.spending_limit_revisions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    organization_id uuid NOT NULL,
+    spending_limit_id uuid NOT NULL,
+    revision_number integer NOT NULL,
+    limit_amount numeric(38,15) NOT NULL,
+    set_by_id uuid NOT NULL,
+    kind character varying NOT NULL,
+    request_key character varying(128) NOT NULL,
+    request_fingerprint character varying(64) NOT NULL,
+    reason character varying(500) NOT NULL,
+    write_transaction_id bigint DEFAULT txid_current() NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT spending_limit_revisions_check CHECK (((limit_amount >= (0)::numeric) AND (limit_amount < 'Infinity'::numeric) AND (revision_number > 0) AND ((kind)::text = ANY ((ARRAY['ceiling'::character varying, 'reallocation'::character varying])::text[])) AND (length((reason)::text) > 0)))
+);
+
+
+--
+-- Name: spending_limits; Type: TABLE; Schema: business; Owner: -
+--
+
+CREATE TABLE business.spending_limits (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    organization_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    month_start date NOT NULL,
+    currency character varying DEFAULT 'USD'::character varying NOT NULL,
+    status character varying DEFAULT 'active'::character varying NOT NULL,
+    current_revision_id uuid,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT spending_limits_check CHECK ((((currency)::text = 'USD'::text) AND ((status)::text = ANY ((ARRAY['active'::character varying, 'closed'::character varying])::text[])) AND (EXTRACT(day FROM month_start) = (1)::numeric) AND ((month_start >= '2000-01-01'::date) AND (month_start <= '2099-12-01'::date))))
 );
 
 
@@ -537,6 +670,14 @@ CREATE TABLE business.users (
     updated_at timestamp(6) without time zone NOT NULL,
     CONSTRAINT valid_user_status CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('inactive'::character varying)::text])))
 );
+
+
+--
+-- Name: allowance_delegations allowance_delegations_pkey; Type: CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.allowance_delegations
+    ADD CONSTRAINT allowance_delegations_pkey PRIMARY KEY (id);
 
 
 --
@@ -660,11 +801,70 @@ ALTER TABLE ONLY business.schema_migrations
 
 
 --
+-- Name: spending_limit_allocations spending_limit_allocations_pkey; Type: CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limit_allocations
+    ADD CONSTRAINT spending_limit_allocations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: spending_limit_revisions spending_limit_revisions_pkey; Type: CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limit_revisions
+    ADD CONSTRAINT spending_limit_revisions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: spending_limits spending_limits_pkey; Type: CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limits
+    ADD CONSTRAINT spending_limits_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: business; Owner: -
 --
 
 ALTER TABLE ONLY business.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: active_allowance_delegations; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX active_allowance_delegations ON business.allowance_delegations USING btree (organization_id, manager_id, revoked_at);
+
+
+--
+-- Name: financial_correction_parent; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX financial_correction_parent ON business.financial_transactions USING btree (original_transaction_id);
+
+
+--
+-- Name: financial_posting_time; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX financial_posting_time ON business.financial_transactions USING btree (organization_id, created_at);
+
+
+--
+-- Name: idempotent_allowance_delegation; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX idempotent_allowance_delegation ON business.allowance_delegations USING btree (organization_id, request_key);
+
+
+--
+-- Name: idempotent_allowance_revision; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX idempotent_allowance_revision ON business.spending_limit_revisions USING btree (spending_limit_id, request_key);
 
 
 --
@@ -700,6 +900,13 @@ CREATE INDEX idx_on_organization_id_project_id_left_at_65363c72a7 ON business.pr
 --
 
 CREATE UNIQUE INDEX idx_on_report_id_relationship_type_79f0209472 ON business.reporting_relationships USING btree (report_id, relationship_type);
+
+
+--
+-- Name: index_allowance_delegations_on_organization_id_and_id; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX index_allowance_delegations_on_organization_id_and_id ON business.allowance_delegations USING btree (organization_id, id);
 
 
 --
@@ -899,6 +1106,27 @@ CREATE INDEX index_role_assignments_on_organization_id_and_user_id ON business.r
 
 
 --
+-- Name: index_spending_limit_allocations_on_organization_id_and_id; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX index_spending_limit_allocations_on_organization_id_and_id ON business.spending_limit_allocations USING btree (organization_id, id);
+
+
+--
+-- Name: index_spending_limit_revisions_on_organization_id_and_id; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX index_spending_limit_revisions_on_organization_id_and_id ON business.spending_limit_revisions USING btree (organization_id, id);
+
+
+--
+-- Name: index_spending_limits_on_organization_id_and_id; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX index_spending_limits_on_organization_id_and_id ON business.spending_limits USING btree (organization_id, id);
+
+
+--
 -- Name: index_users_on_organization_id; Type: INDEX; Schema: business; Owner: -
 --
 
@@ -927,6 +1155,13 @@ CREATE INDEX index_users_on_organization_id_and_name ON business.users USING btr
 
 
 --
+-- Name: one_monthly_personal_ceiling; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX one_monthly_personal_ceiling ON business.spending_limits USING btree (organization_id, user_id, month_start, currency);
+
+
+--
 -- Name: one_operation_per_correction_side; Type: INDEX; Schema: business; Owner: -
 --
 
@@ -948,6 +1183,13 @@ CREATE UNIQUE INDEX one_primary_home_team ON business.organizational_memberships
 
 
 --
+-- Name: one_project_per_allowance_revision; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX one_project_per_allowance_revision ON business.spending_limit_allocations USING btree (spending_limit_revision_id, project_id);
+
+
+--
 -- Name: one_reversal_per_operation; Type: INDEX; Schema: business; Owner: -
 --
 
@@ -955,10 +1197,38 @@ CREATE UNIQUE INDEX one_reversal_per_operation ON business.financial_transaction
 
 
 --
+-- Name: receipts_analytics_project; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX receipts_analytics_project ON business.priced_usage_receipts USING btree (organization_id, project_id, occurred_at);
+
+
+--
+-- Name: receipts_analytics_time; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX receipts_analytics_time ON business.priced_usage_receipts USING btree (organization_id, occurred_at);
+
+
+--
+-- Name: receipts_analytics_user; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX receipts_analytics_user ON business.priced_usage_receipts USING btree (organization_id, user_id, occurred_at);
+
+
+--
 -- Name: unique_active_project_membership; Type: INDEX; Schema: business; Owner: -
 --
 
 CREATE UNIQUE INDEX unique_active_project_membership ON business.project_memberships USING btree (project_id, user_id) WHERE (left_at IS NULL);
+
+
+--
+-- Name: unique_allowance_revision_number; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX unique_allowance_revision_number ON business.spending_limit_revisions USING btree (spending_limit_id, revision_number);
 
 
 --
@@ -1001,6 +1271,27 @@ CREATE UNIQUE INDEX unique_unit_budget_account ON business.budget_accounts USING
 --
 
 CREATE UNIQUE INDEX unique_unit_membership ON business.organizational_memberships USING btree (user_id, organizational_unit_id);
+
+
+--
+-- Name: spending_limit_allocations allocation_same_transaction; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER allocation_same_transaction BEFORE INSERT ON business.spending_limit_allocations FOR EACH ROW EXECUTE FUNCTION business.guard_spending_allocation_insert();
+
+
+--
+-- Name: allowance_delegations allowance_delegations_immutable; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER allowance_delegations_immutable BEFORE DELETE OR UPDATE ON business.allowance_delegations FOR EACH ROW EXECUTE FUNCTION business.guard_spending_control();
+
+
+--
+-- Name: allowance_delegations allowance_delegations_no_truncate; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER allowance_delegations_no_truncate BEFORE TRUNCATE ON business.allowance_delegations FOR EACH STATEMENT EXECUTE FUNCTION business.guard_spending_control();
 
 
 --
@@ -1116,10 +1407,113 @@ CREATE CONSTRAINT TRIGGER role_assignments_administration_guard AFTER INSERT OR 
 
 
 --
+-- Name: spending_limit_allocations spending_limit_allocations_immutable; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER spending_limit_allocations_immutable BEFORE DELETE OR UPDATE ON business.spending_limit_allocations FOR EACH ROW EXECUTE FUNCTION business.guard_spending_control();
+
+
+--
+-- Name: spending_limit_allocations spending_limit_allocations_no_truncate; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER spending_limit_allocations_no_truncate BEFORE TRUNCATE ON business.spending_limit_allocations FOR EACH STATEMENT EXECUTE FUNCTION business.guard_spending_control();
+
+
+--
+-- Name: spending_limit_allocations spending_limit_allocations_valid_revision; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE CONSTRAINT TRIGGER spending_limit_allocations_valid_revision AFTER INSERT OR UPDATE ON business.spending_limit_allocations DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION business.validate_spending_revision();
+
+
+--
+-- Name: spending_limit_revisions spending_limit_revisions_immutable; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER spending_limit_revisions_immutable BEFORE DELETE OR UPDATE ON business.spending_limit_revisions FOR EACH ROW EXECUTE FUNCTION business.guard_spending_control();
+
+
+--
+-- Name: spending_limit_revisions spending_limit_revisions_no_truncate; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER spending_limit_revisions_no_truncate BEFORE TRUNCATE ON business.spending_limit_revisions FOR EACH STATEMENT EXECUTE FUNCTION business.guard_spending_control();
+
+
+--
+-- Name: spending_limit_revisions spending_limit_revisions_valid_revision; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE CONSTRAINT TRIGGER spending_limit_revisions_valid_revision AFTER INSERT OR UPDATE ON business.spending_limit_revisions DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION business.validate_spending_revision();
+
+
+--
+-- Name: spending_limits spending_limits_identity; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER spending_limits_identity BEFORE DELETE OR UPDATE ON business.spending_limits FOR EACH ROW EXECUTE FUNCTION business.guard_spending_control();
+
+
+--
+-- Name: spending_limits spending_limits_no_truncate; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER spending_limits_no_truncate BEFORE TRUNCATE ON business.spending_limits FOR EACH STATEMENT EXECUTE FUNCTION business.guard_spending_control();
+
+
+--
+-- Name: spending_limits spending_limits_valid_revision; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE CONSTRAINT TRIGGER spending_limits_valid_revision AFTER INSERT OR UPDATE ON business.spending_limits DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION business.validate_spending_revision();
+
+
+--
 -- Name: users users_administration_guard; Type: TRIGGER; Schema: business; Owner: -
 --
 
 CREATE CONSTRAINT TRIGGER users_administration_guard AFTER UPDATE ON business.users DEFERRABLE INITIALLY DEFERRED FOR EACH ROW WHEN (((old.status)::text IS DISTINCT FROM (new.status)::text)) EXECUTE FUNCTION business.validate_project_administration();
+
+
+--
+-- Name: allowance_delegations allowance_delegations_organization_id_granted_by_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.allowance_delegations
+    ADD CONSTRAINT allowance_delegations_organization_id_granted_by_id_fkey FOREIGN KEY (organization_id, granted_by_id) REFERENCES business.users(organization_id, id);
+
+
+--
+-- Name: allowance_delegations allowance_delegations_organization_id_manager_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.allowance_delegations
+    ADD CONSTRAINT allowance_delegations_organization_id_manager_id_fkey FOREIGN KEY (organization_id, manager_id) REFERENCES business.users(organization_id, id);
+
+
+--
+-- Name: allowance_delegations allowance_delegations_organization_id_organizational_unit__fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.allowance_delegations
+    ADD CONSTRAINT allowance_delegations_organization_id_organizational_unit__fkey FOREIGN KEY (organization_id, organizational_unit_id) REFERENCES business.organizational_units(organization_id, id);
+
+
+--
+-- Name: allowance_delegations allowance_delegations_organization_id_revoked_by_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.allowance_delegations
+    ADD CONSTRAINT allowance_delegations_organization_id_revoked_by_id_fkey FOREIGN KEY (organization_id, revoked_by_id) REFERENCES business.users(organization_id, id);
+
+
+--
+-- Name: spending_limits current_revision_same_tenant; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limits
+    ADD CONSTRAINT current_revision_same_tenant FOREIGN KEY (organization_id, current_revision_id) REFERENCES business.spending_limit_revisions(organization_id, id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1128,6 +1522,14 @@ CREATE CONSTRAINT TRIGGER users_administration_guard AFTER UPDATE ON business.us
 
 ALTER TABLE ONLY business.budget_periods
     ADD CONSTRAINT fk_rails_013a1cf3ac FOREIGN KEY (organization_id, budget_account_id) REFERENCES business.budget_accounts(organization_id, id);
+
+
+--
+-- Name: spending_limits fk_rails_063e9851b0; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limits
+    ADD CONSTRAINT fk_rails_063e9851b0 FOREIGN KEY (organization_id) REFERENCES business.organizations(id);
 
 
 --
@@ -1235,6 +1637,22 @@ ALTER TABLE ONLY business.reporting_relationships
 
 
 --
+-- Name: allowance_delegations fk_rails_5997549a9a; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.allowance_delegations
+    ADD CONSTRAINT fk_rails_5997549a9a FOREIGN KEY (organization_id) REFERENCES business.organizations(id);
+
+
+--
+-- Name: spending_limit_revisions fk_rails_5d80d1d2ed; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limit_revisions
+    ADD CONSTRAINT fk_rails_5d80d1d2ed FOREIGN KEY (organization_id) REFERENCES business.organizations(id);
+
+
+--
 -- Name: ledger_entries fk_rails_5e43ced659; Type: FK CONSTRAINT; Schema: business; Owner: -
 --
 
@@ -1256,6 +1674,14 @@ ALTER TABLE ONLY business.financial_transactions
 
 ALTER TABLE ONLY business.organizational_memberships
     ADD CONSTRAINT fk_rails_68eac7feb9 FOREIGN KEY (organization_id) REFERENCES business.organizations(id);
+
+
+--
+-- Name: spending_limit_allocations fk_rails_7bd1b28a82; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limit_allocations
+    ADD CONSTRAINT fk_rails_7bd1b28a82 FOREIGN KEY (organization_id) REFERENCES business.organizations(id);
 
 
 --
@@ -1435,12 +1861,55 @@ ALTER TABLE ONLY business.budget_periods
 
 
 --
+-- Name: spending_limit_allocations spending_limit_allocations_organization_id_project_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limit_allocations
+    ADD CONSTRAINT spending_limit_allocations_organization_id_project_id_fkey FOREIGN KEY (organization_id, project_id) REFERENCES business.projects(organization_id, id);
+
+
+--
+-- Name: spending_limit_allocations spending_limit_allocations_organization_id_spending_limit__fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limit_allocations
+    ADD CONSTRAINT spending_limit_allocations_organization_id_spending_limit__fkey FOREIGN KEY (organization_id, spending_limit_revision_id) REFERENCES business.spending_limit_revisions(organization_id, id);
+
+
+--
+-- Name: spending_limit_revisions spending_limit_revisions_organization_id_set_by_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limit_revisions
+    ADD CONSTRAINT spending_limit_revisions_organization_id_set_by_id_fkey FOREIGN KEY (organization_id, set_by_id) REFERENCES business.users(organization_id, id);
+
+
+--
+-- Name: spending_limit_revisions spending_limit_revisions_organization_id_spending_limit_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limit_revisions
+    ADD CONSTRAINT spending_limit_revisions_organization_id_spending_limit_id_fkey FOREIGN KEY (organization_id, spending_limit_id) REFERENCES business.spending_limits(organization_id, id);
+
+
+--
+-- Name: spending_limits spending_limits_organization_id_user_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.spending_limits
+    ADD CONSTRAINT spending_limits_organization_id_user_id_fkey FOREIGN KEY (organization_id, user_id) REFERENCES business.users(organization_id, id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO business;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261110000300'),
+('20261110000200'),
+('20261110000100'),
 ('20261109000300'),
 ('20261109000200'),
 ('20261109000100'),

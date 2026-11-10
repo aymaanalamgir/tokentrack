@@ -10,7 +10,7 @@ The Slice 1 health contracts remain unchanged:
 
 Next.js accepts database connectivity only from a recognized backend health response. Missing fields, invalid JSON, non-success status codes, timeouts, and network errors cannot produce a green service indicator. Database status requires confirmation from both services. If a backend is unreachable, this means its database connection **cannot be confirmed**, not that the PostgreSQL process is necessarily stopped.
 
-Slice 4 adds the [CSV usage-event v1 contract](usage-event-v1.md) and the narrow Rails reference contract below. Priced-event delivery, pricing, and Rails financial posting remain future work.
+Slice 4 adds the [CSV usage-event v1 contract](usage-event-v1.md) and the narrow Rails reference contract below. Slice 5 added priced-event delivery and financial posting; Slice 6 adds the analytics contract linked below.
 
 ## Slice 2 organizational API
 
@@ -119,8 +119,16 @@ Valid entries contain only key and valid=true. Organization/user/project tenancy
 
 `GET /api/v1/internal/usage-references/demo-snapshot` additionally requires demo mode in development/test and returns 404 otherwise. Its data contains snapshot_version=1, policy_version, organization IDs/slugs, active flagged fictional user IDs/job functions/primary unit IDs, project IDs/organization/slugs/current status, and recorded membership periods. The synthetic generator saves this input and its canonical SHA-256 hash; UUID lists are not recreated or maintained separately inside Kotlin. This export is for fictional local fixtures, not an employee export API.
 
-The only Kotlin web exposure remains Actuator health. Operational import/list/report/generate commands use the local CLI; CSV structure, fingerprint identity, stable error codes, counts, limits, and exit statuses are defined in [usage-event-v1.md](usage-event-v1.md).
+Kotlin exposes public Actuator health and the separately authenticated internal Slice 6 aggregate endpoint. Operational import/list/report/generate commands use the local CLI; CSV structure, fingerprint identity, stable error codes, counts, limits, and exit statuses are defined in [usage-event-v1.md](usage-event-v1.md).
 
 ## Slice 5 financial service contract
 
 [Priced usage event v1](priced-usage-event-v1.md) defines the separate financial bearer credential, exact monetary-string payload, idempotent expense acknowledgement, unresolved-owner retries, and read-only reconciliation. These internal routes are excluded from the browser proxy. Existing usage-event v1 fields/fingerprints are unchanged; resolved price identity is additional immutable provenance.
+
+## Slice 6 analytics
+
+[Analytics contract v1](../docs/analytics-contract.md) defines the authorized Rails `GET /api/v1/analytics` report and bounded Kotlin `POST /internal/v1/analytics` aggregate request. Only the Rails GET route is allowed through Next.js. A separate analytics service token never reaches browsers. Money comes from Rails ledger entries, tokens from Kotlin; reader scopes, current-home-team semantics, UTC comparisons, coverage and accounting/posting/activity dates are explicit.
+
+## Slice 7 budget and allowance API
+
+[Budget/allowance API v1](../docs/budget-allowances.md) specifies the coherent session-authenticated `GET /api/v1/budgets` report and exact scoped POST operations for transfers, reserve funding, empty periods, ceiling revisions, own project partitions and capped delegation/revocation. Monetary values are decimal strings; expected revision IDs and stable operation keys protect writes. BFF allowlists only these exact paths. No internal financial bearer token or unrestricted ledger correction route reaches browsers.

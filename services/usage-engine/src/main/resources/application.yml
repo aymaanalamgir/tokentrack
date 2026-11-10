@@ -46,3 +46,6 @@ tokentrack:
 
   financial:
     token: ${USAGE_FINANCIAL_TOKEN:}
+
+  analytics:
+    token: ${USAGE_ANALYTICS_TOKEN:}

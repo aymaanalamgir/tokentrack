@@ -1,0 +1,15 @@
+"use client";
+import {useEffect} from 'react';
+import Link from 'next/link';
+import {useQuery,useQueryClient} from '@tanstack/react-query';
+import {useSession} from './session-provider';
+import {api} from '@/lib/api-client';
+import {money} from '@/lib/analytics';
+import type {BudgetReport} from '@/lib/budget-types';
+export function BudgetContext({month,userId,projectId,unitId}:{month:string;userId?:string;projectId?:string;unitId?:string}){
+ const {me}=useSession();const client=useQueryClient();const identity=[me?.organization.id,me?.user.id,me?.access.scope_key].join('/');const params=new URLSearchParams({month});if(userId)params.set('user_id',userId);if(projectId)params.set('project_id',projectId);if(unitId&&!projectId)params.set('organization_unit_id',unitId);
+ const path='budgets?'+params.toString();const q=useQuery({queryKey:['budgets',identity,path],queryFn:({signal})=>api<{data:BudgetReport}>(path,{signal}),enabled:!!me,staleTime:15000,retry:false});
+ useEffect(()=>{const channel=new BroadcastChannel('tokentrack-budgets');channel.onmessage=e=>{if(e.data?.organizationId===me?.organization.id){void client.invalidateQueries({queryKey:['budgets',identity]});void client.invalidateQueries({queryKey:['analytics',identity]});}};return()=>channel.close();},[client,identity,me?.organization.id]);
+ const r=q.data?.data;
+ return <section className="rounded-lg border border-border bg-surface p-4"><div className="flex items-center justify-between gap-2"><h2 className="text-xs font-medium">Budget controls · {month}</h2><Link className="text-[10px] underline" href={'/budgets?'+params.toString()}>Open budget workspace →</Link></div>{q.isPending?<p className="mt-2 animate-pulse text-[10px] text-muted-foreground">Loading authorized monthly controls…</p>:!r?<p className="mt-2 text-[10px] text-muted-foreground">Personal ceilings require self, direct-report or financial authority. The activity report above retains its separate scope.</p>:<><div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs"><span>Personal ceiling <b className="font-mono">{r.own_allowance.ceiling?money(r.own_allowance.ceiling):'Not established'}</b></span><span>Own/selected consumption <b className="font-mono">{money(r.own_allowance.consumption)}</b></span><span>Remaining allowance <b className="font-mono">{r.own_allowance.remaining!==null?money(r.own_allowance.remaining):'N/A'}</b></span>{r.summary&&<><span>Authorized account funding <b className="font-mono">{money(r.summary.funding)}</b></span><span>Account available <b className="font-mono">{money(r.summary.remaining)}</b></span></>}</div><p className="mt-2 text-[10px] text-muted-foreground">Single UTC accounting month, separate from the activity range. Allowances do not create funds. {r.accounts.filter(a=>Number(a.control.overage)>0).length} over-budget accounts.</p>{projectId&&r.accounts[0]?.forecast.projected&&<p className="mt-1 text-[10px] text-muted-foreground">Project estimated month-end expenditure {money(r.accounts[0].forecast.projected)} · linear run rate through {r.as_of}; incomplete coverage may understate costs.</p>}</>}</section>;
+}

@@ -59,3 +59,29 @@ Original CSV/snapshot/manifest remain unchanged. `demo/generators/generate-prici
 The original illustrative model identifiers map explicitly to pricing profiles; the local/demo-small-v1 → Gemini mapping is a synthetic proxy, not a claim of Google usage. Conservative profile limits leave 440 original main events unpriced. Do not change fingerprints or inflate workloads to hide this limitation.
 
 Run [development commands](../docs/development.md#slice-5-pricing-and-finance-operations) to initialize synthetic funding, price, deliver and reconcile. `finance:demo_setup` is an explicit local action granting financial_operator to Maya/Olivia separately from normal seeds; funding is 100,000 USD per organization/month, not actual spend. [Slice 5 report](../docs/slice5.md) traces Jordan's Fraud Detection expense, a 3,000 USD Platform-to-project transfer, duplicate HTTP replay, and an append-only correction. Finance exists in backend operations; no new dashboard is implied.
+
+## Analytics walkthrough (Slice 6)
+
+Reuse the current canonical events and financial ledger; no extra usage fixture or reset is required. Generate a separate backend analytics token, migrate, and run `bin/rails analytics:demo_access` inside core-api to explicitly grant manager/project-lead account read examples. This command grants no financial mutation authority.
+
+1. Enter as Olivia and open Analytics. The default range follows the recorded demo dates. Inspect corrected net expenditure, unpriced coverage and current-home-team activity.
+2. Choose Engineering, then Fraud Detection Platform. Model and employee drill-down preserve dates. Funded accounts represent separate account-owned expenditure across full UTC accounting months.
+3. Compare Models and Tools; original fictional names remain visible alongside synthetic pricing profiles. Open measured weekly contributors to inspect token components and model/tool/project changes.
+4. Switch to Marcus. His team scope combines with his explicit Developer Productivity lead grant; cross-team activity is restricted to that project. Budget readers see only explicitly granted accounts.
+5. Switch to Priya and inspect Fraud Detection contributor activity; opening Jordan does not grant Jordan's unrelated private project history.
+6. Switch to Jordan. Only personal consumption appears; coworker and team-wide API requests are denied, and organizational allocations are restricted.
+7. Change granularity, use a custom empty range, and inspect loading/retry and light/dark responsive states. Export downloads only the authorized report JSON.
+
+Comparisons outside the recorded historical window show partial coverage rather than fabricated ordinary growth percentages. Tokens measure consumption, not productivity. Reports cover modeled metered usage, excluding fixed subscriptions and unsupported billing scenarios. [Slice 6](../docs/slice6.md) records actual totals and tests.
+
+## Operational budgets and personal controls (Slice 7)
+
+Run the explicit `budgets:demo_setup` rake task after migrations. Jordan starts with a 500 USD ceiling, 250 Fraud Detection and 150 Developer Productivity capacity, leaving 100 unallocated. These are controls, not funded accounts; actual consumption remains the existing modest dataset. Personal partitions for other used projects remain zero until explicitly assigned and can warn despite overall capacity remaining.
+
+Marcus receives an explicit 1,000 USD maximum delegation for direct reports in Platform Engineering during the demo months. He can edit Jordan's ceiling within that cap, but cannot edit unrelated employees or transfer funding. Priya sees authorized project budgets and project-specific contributor expense, without unrelated personal ceilings. Olivia can manage own-tenant financial operations and delegation.
+
+Sofia's explicitly small 0.05 USD ceiling demonstrates actual posted overage without adding a fictional 275 USD charge. Optional `SMALL_BUDGET_SCENARIO=true` returns unused December Fraud Detection funding to reserve through an audited, repeatable transfer; the retained project allocation is near 95% utilized and its recorded-day run rate projects an overage. Organization funding and expense totals remain unchanged.
+
+Use the accounting-month selector and forecast-only as-of date, inspect warning/coverage labels, adjust multiple personal partitions atomically and review a transfer before confirming. Employee allocations never create financial transactions. Transfers retain actor, reason, date, accounting month and source/destination legs. Full-month totals and recorded-date estimates are distinct. [Slice 7 report](../docs/slice7.md) records the actual current values after browser demonstrations; [control rules](../docs/budget-allowances.md) explain unused-capacity floors and eligible projects.
+
+The browser budget workflow intentionally appends immutable personal revisions and distinct authorized 3 USD UI transfers. Its stable-key 3,000 USD transfer replays without duplication. Do not reset history to repeat the walkthrough. Funding requests and approval inboxes remain Slice 8.

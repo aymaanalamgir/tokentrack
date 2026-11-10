@@ -32,6 +32,9 @@ module DemoData
     raise "Demo reset is disabled" unless DemoSession.enabled?
     ApplicationRecord.transaction do
       ids = Organization.where(demo: true).pluck(:id)
+      if (SpendingLimit.table_exists? && SpendingLimit.where(organization_id:ids).exists?) || (AllowanceDelegation.table_exists? && AllowanceDelegation.where(organization_id:ids).exists?)
+        raise "Demo reset is disabled for organizations with spending-control history"
+      end
       if FinancialTransaction.table_exists? && FinancialTransaction.where(organization_id: ids).exists?
         raise "Demo reset is disabled for organizations with append-only financial history"
       end

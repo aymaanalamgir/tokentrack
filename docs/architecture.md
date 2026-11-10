@@ -1,6 +1,6 @@
 # TokenTrack architecture
 
-Slices 1–4 implement the local four-service system, organizational data, demo sessions, scoped authorization, a themed multi-role workspace, cross-functional project management, and Kotlin usage ingestion. Pricing, finance, and approvals remain planned.
+Slices 1–7 implement the local four-service system, scoped identity/project workflows, canonical ingestion, pricing/outbox, an append-only financial ledger role-aware analytics, and operational budget/spending controls. Funding request and approval workflows remain planned.
 
 ```mermaid
 flowchart TB
@@ -9,6 +9,7 @@ flowchart TB
   Next -->|Opaque cookie / versioned JSON API| Rails["Rails :3001 / sessions + AccessPolicy"]
   Next -->|Actuator health only| Kotlin["Kotlin + Spring Boot :8080"]
   Kotlin -->|Service credential: bounded reference validation| Rails
+  Rails -->|Separate analytics credential: scoped aggregate queries| Kotlin
   CSV["Synthetic CSV / local CLI"] --> Kotlin
   Rails -->|Core database role| Business[("PostgreSQL / business")]
   Kotlin -->|Usage database role| Usage[("PostgreSQL / usage")]
@@ -24,7 +25,7 @@ flowchart TB
 
 **Rails** owns organizations, units, people, memberships, reporting relationships, projects, permission grants, and their constraints. Every organizational API resolves a backend session and applies a request-scoped `AccessPolicy`. Presenters choose an allowed projection instead of serializing complete models. ProjectManagement handles creation, metadata/lifecycle changes, contributor periods, and atomic ownership transfer. Controllers validate input and presenters expose explicit per-project action flags. Rails also owns budget accounts/periods, project-first attribution, idempotent expenses, transfers, corrections and reconciliation. Approval workflows remain future work.
 
-**Kotlin/Spring Boot** owns CSV parsing/validation, reference orchestration, canonical usage persistence, deduplication, deterministic generation, and CLI import reports. Standard database-aware Actuator health remains the only public web endpoint. Flyway migrates usage with the restricted usage role; Spring JDBC writes events, import batches, and rejections. Kotlin also owns effective-dated pricing, exact BigDecimal calculation, immutable price snapshots, a transactional outbox and bounded delivery/reconciliation commands.
+**Kotlin/Spring Boot** owns CSV parsing/validation, reference orchestration, canonical usage persistence, deduplication, deterministic generation, and CLI import reports. Actuator health is public; the new bounded usage analytics endpoint requires its own backend service credential. Flyway migrates usage with the restricted usage role; Spring JDBC writes events, import batches, and rejections. Kotlin also owns effective-dated pricing, exact BigDecimal calculation, immutable price snapshots, a transactional outbox and bounded delivery/reconciliation commands.
 
 ## Implemented data model
 
@@ -50,7 +51,7 @@ IDs are UUIDs. Every tenant-owned row has `organization_id`. Composite foreign k
 
 Units support arbitrary depth. Model checks and PostgreSQL triggers prevent unit/reporting cycles. The triggers acquire an organization-specific transaction advisory lock before checking ancestry, serializing hierarchy changes. Reporting supports line-manager and dotted-line edges. The profile chart renders the primary chain and labels additional relationships separately.
 
-Role scopes use explicit unit/project foreign keys, not unvalidated polymorphic IDs. A database check permits only `employee/self`, `organization_viewer/organization`, `project_creator/organization`, `team_manager/unit`, and `project_lead/project`. An employee self scope resolves to its assigned user; organization scope resolves to the grant's tenant.
+Role scopes use explicit unit/project foreign keys, not unvalidated polymorphic IDs. A database check permits only `employee/self`, `organization_viewer/organization`, `project_creator/organization`, `team_manager/unit`, `project_lead/project`, `financial_operator/organization`, `team_budget_reader/unit`, and `project_budget_reader/project`. An employee self scope resolves to its assigned user; organization scope resolves to the grant's tenant.
 
 ## Demo authentication
 
@@ -167,3 +168,31 @@ flowchart TD
 Snapshot/outbox insertion shares a usage transaction. Claims use SKIP LOCKED, leases and durable attempts. Rails commits receipt resolution, original expense and ledger entry atomically; unique canonical usage identity makes repeated delivery safe. Unsupported metadata remains unpriced; unresolved charge ownership remains held. Financial corrections append linked reversal/replacement entries, preserving original price/acknowledgement. Funding transfers have two equal/opposite funding legs and no expense.
 
 Rails migrations own business tables; additive Flyway V2–V5 own pricing/delivery tables. Existing V1 canonical migration and original fingerprints are unchanged. No direct cross-schema writes, broker, dashboard, or browser financial endpoint is added. The financial bearer token is separate from read-only reference validation. See [financial ledger](financial-ledger.md), [pricing policy](model-pricing.md), [contract](../contracts/priced-usage-event-v1.md), and [executed verification](slice5.md).
+
+## Slice 6 analytics read boundary
+
+```mermaid
+flowchart LR
+  B[Browser] --> N[Next.js analytics / session-aware query cache]
+  N --> R[Rails AccessPolicy + reporting API]
+  R --> F[(Business ledger / receipts / accounts)]
+  R -->|Separate analytics bearer token; bounded authorized population| K[Kotlin internal aggregate API]
+  K --> U[(Canonical usage / immutable prices / outbox)]
+  R -->|Authorized combined report| N
+```
+
+Rails derives financial amounts from original expense entries plus actual linked correction entries. Kotlin supplies token/coverage aggregates without reading finance tables. Team activity uses current primary home membership; account-funded and project-attributed expenditure remain distinct. Activity uses occurrence time, audit uses posting time, and budgets use full intersecting UTC accounting months. No schema privileges were widened.
+
+Existing organization_viewer/team_manager/project_lead/self scopes govern usage; separate explicit budget reader grants govern funding visibility. These reader grants never authorize transfers or corrections. Each service query uses repeatable-read snapshots; combined reports are eventually consistent across HTTP calls. SQL aggregation with tenant/time/user/project indexes serves the verified small dataset. Date ranges, scopes, group counts and detail pagination are bounded.
+
+The client uses TanStack Query keys containing tenant, identity, scope fingerprint and the complete filter/granularity path. Previous data is retained only inside the same identity/scope, and existing session switching cancels/clears caches. Responsive SVG charts use the established visual tokens, accessible focus/hover values and a single native chart implementation; no additional chart library is needed. Decimal strings remain authoritative, with BigInt formatting at the presentation boundary. [Contract](analytics-contract.md) and [Slice 6 report](slice6.md) define metrics and observed verification.
+
+## Slice 7 funded accounts and spending controls
+
+The budget workspace exposes the existing Finance::Operations funding/transfer behavior through session-authenticated, explicitly authorized Rails endpoints. No parallel ledger or Kotlin financial writer was introduced. Monthly account summaries use ledger deltas; personal consumption reuses the correction-aware recursive ledger query. A new month has explicit empty periods and receives no automatic rollover/funding.
+
+SpendingLimit is a tenant/employee/month/USD parent with an immutable current revision. Each revision snapshots its ceiling and complete project partitions; an employee/month lock, expected revision and deferred database sum checks make reallocation atomic. Child inserts must share the revision's creation transaction; committed history rejects update/delete/truncate. These controls create no funding or additional charge.
+
+AllowanceDelegation explicitly binds a manager/unit, monthly cap and bounded month range to direct-report ceiling administration. Grantor and revocation audit fields are retained. Existing financial_operator governs money; explicit organization/team/project budget-reader roles govern account visibility; project leadership never reveals unrelated personal ceilings.
+
+Warnings use one configurable threshold definition. Forecasts use current corrected posted costs through an explicit recorded activity day, with sparse/unknown coverage states. The dashboard reuses the analytics chart, existing dialog, identity-aware query cache and session switching. Analytics receives a compact, clearly separate single-month budget context. See [rules/API](budget-allowances.md) and [executed verification](slice7.md).

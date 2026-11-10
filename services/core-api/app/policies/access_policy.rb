@@ -11,11 +11,39 @@ class AccessPolicy
   end
 
   def grants
-    @grants ||= actor.role_assignments.to_a
+    @grants ||= actor.role_assignments.includes(:organizational_unit,:project).to_a
   end
 
   def organization_viewer? = grants.any? { |g| g.role == "organization_viewer" }
   def financial_operator? = grants.any? { |g| g.role == "financial_operator" && g.scope_type == "organization" && g.organization_id == organization_id }
+  def budget_org_reader? = financial_operator? || grants.any? { |g| g.role=='organization_budget_reader' && g.scope_type=='organization' }
+  def allowance_direct_ids
+    @allowance_direct_ids ||= manager? ? ReportingRelationship.where(organization_id:organization_id,manager_id:actor.id,relationship_type:'line_manager').pluck(:report_id) : []
+  end
+  def allowance_read_user_ids
+    return User.where(organization_id:organization_id).pluck(:id) if financial_operator?
+    direct=allowance_direct_ids
+    [actor.id]+direct
+  end
+  def allowance_read?(user) = user.organization_id==organization_id && allowance_read_user_ids.include?(user.id)
+  def allowance_maximum(user,month)
+    return nil unless actor.status=='active' && user.organization_id==organization_id
+    return :unlimited if financial_operator?
+    return nil if actor.id==user.id || !allowance_direct_ids.include?(user.id)
+    home=user.organizational_memberships.find(&:is_primary)
+    return nil unless home
+    (@allowance_month_grants ||= {})[month] ||= AllowanceDelegation.active.where(organization_id:organization_id,manager_id:actor.id).where('effective_from_month<=? AND effective_until_month>=?',month,month).to_a
+    @allowance_month_grants[month].filter_map do |delegation|
+      next unless grants.any? { |g|g.role=='team_manager' && g.organizational_unit_id==delegation.organizational_unit_id }
+      delegation.maximum_amount if ((@allowance_unit_subtrees ||= {})[delegation.organizational_unit_id] ||= Hierarchy.unit_ids(organization_id,[delegation.organizational_unit_id])).include?(home.organizational_unit_id)
+    end.max
+  end
+  def manage_allowance?(user,amount,month)
+    cap=allowance_maximum(user,month)
+    cap==:unlimited || (cap && amount<=cap)
+  end
+  def budget_unit_ids = grants.select { |g| g.role == "team_budget_reader" }.map(&:organizational_unit_id)
+  def budget_project_ids = grants.select { |g| g.role == "project_budget_reader" }.map(&:project_id)
   def manager? = grants.any? { |g| g.role == "team_manager" }
   def project_lead? = grants.any? { |g| g.role == "project_lead" }
   def persona = organization_viewer? ? "leadership" : manager? ? "manager" : project_lead? ? "project_lead" : "employee"
@@ -105,15 +133,19 @@ class AccessPolicy
     permissions += ["projects.read.led", "projects.edit.led"] if project_lead?
     permissions += ["projects.members.manage", "projects.ownership.transfer", "projects.lifecycle.manage"] if project_lead?
     permissions << "projects.create.organization" if create_project?
+    permissions << "allowances.read.self"
+    permissions << "allowances.allocate.self"
+    permissions << "allowances.read.managed" if manager?
+    permissions << "finance.read.accounts.scoped" if budget_org_reader? || budget_unit_ids.any? || budget_project_ids.any?
     permissions << "finance.manage.organization" if financial_operator?
     {
       persona: persona,
-      scope_key: Digest::SHA256.hexdigest([grants.map { |g| [g.id, g.role, g.organizational_unit_id, g.project_id] }.sort_by(&:first), organization_viewer? ? [] : projects.order(:id).pluck(:id), organization_viewer? ? [] : directory_ids.sort].to_json),
+      scope_key: Digest::SHA256.hexdigest([grants.map { |g| [g.id, g.role, g.organizational_unit_id, g.project_id] }.sort_by(&:first), AllowanceDelegation.active.where(organization_id:organization_id,manager_id:actor.id).order(:id).pluck(:id,:maximum_amount,:effective_from_month,:effective_until_month), organization_viewer? ? [] : projects.order(:id).pluck(:id), organization_viewer? ? [] : directory_ids.sort].to_json),
       grants: grants.map { |g| { role: g.role, scope_type: g.scope_type, scope_id: g.organizational_unit_id || g.project_id || (g.scope_type == "self" ? actor.id : organization_id), scope_name: g.organizational_unit&.name || g.project&.name || (g.scope_type == "self" ? actor.name : actor.organization.name) } },
       capabilities: permissions,
-      restricted: ["Organization administration", "Financial approvals (not implemented)", "Financial and usage dashboards (not implemented)"] + (organization_viewer? ? [] : ["Unrelated employees' private profiles"]),
+      restricted: ["Organization administration", "Financial approvals (not implemented)", "Unrelated analytics and unauthorized funding allocations"] + (organization_viewer? ? [] : ["Unrelated employees' private profiles"]),
       navigation: navigation,
-      visibility: { directory: "Names, titles, job functions, and relevant team/project context", management: "Own profile, explicitly managed teams/reports, or organization viewer scope", private: "Access grants are visible only to their owner. Financial and usage records are available only through authorized backend operations; dashboards are not implemented." }
+      visibility: { directory: "Names, titles, job functions, and relevant team/project context", management: "Own profile, explicitly managed teams/reports, or organization viewer scope", private: "Access grants are visible only to their owner. Analytics are scoped to self, managed people and explicitly led projects. Funding and financial mutation require separate financial_operator authority." }
     }
   end
 end

@@ -1,12 +1,12 @@
 # TokenTrack — AI Spend Intelligence
 
-> **Status:** Slices 1–5 implemented: local infrastructure, organizational modeling, scoped access control, authenticated demo experiences, cross-functional project management, Kotlin usage ingestion, effective-dated pricing, durable delivery, and an append-only financial ledger. Product workflows below are planned unless explicitly marked implemented.
+> **Status:** Slices 1–7 implemented: local infrastructure, organizational modeling, scoped access control, authenticated demo experiences, cross-functional project management, Kotlin usage ingestion, effective-dated pricing, durable delivery, an append-only financial ledger, scoped analytics dashboards, and operational budget/allowance controls. Product workflows below are planned unless explicitly marked implemented.
 >
 > A local-first B2B SaaS-style platform for understanding AI usage, attributing costs to projects, measuring workflow efficiency, and managing budgets through delegated approvals.
 
 ## Start here — implemented workspace
 
-TokenTrack runs Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. Enter Northstar Labs (10 fictional people) or Aperture Technologies (64), then switch authenticated demo identities to explore leadership, manager, project lead, and employee workspaces. Profiles, reporting charts, teams, scoped people/project directories, project creation, contributor assignment/history, ownership transfer, archive/restore, persistent themes, and real health checks work. Project administrators can expand contributors by home team; managers and employees see their authorized project assignments. A Kotlin CLI imports versioned synthetic CSV usage with reference validation, deduplication, and persistent rejection reports. Kotlin pricing/outbox and Rails budget accounts, transfers, expense posting, corrections and reconciliation work through backend CLI operations. Frontend analytics and approval workflows remain planned. Demo sign-in is local-only and always disabled in Rails production.
+TokenTrack runs Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. Enter Northstar Labs (10 fictional people) or Aperture Technologies (64), then switch authenticated demo identities to explore leadership, manager, project lead, and employee workspaces. Profiles, reporting charts, teams, scoped people/project directories, project creation, contributor assignment/history, ownership transfer, archive/restore, persistent themes, and real health checks work. Project administrators can expand contributors by home team; managers and employees see their authorized project assignments. A Kotlin CLI imports versioned synthetic CSV usage with reference validation, deduplication, and persistent rejection reports. Kotlin pricing/outbox and Rails budget accounts, transfers, expense posting, corrections and reconciliation work through backend CLI operations. Interactive analytics now combines ledger expenditure, usage trends, model/tool breakdowns, coverage and explicit budget reads. Authorized budget transfers, personal ceilings, project partitions, warnings and run-rate forecasts now work. Funding requests and approval workflows remain planned. Demo sign-in is local-only and always disabled in Rails production.
 
 ```bash
 cp .env.example .env
@@ -35,7 +35,7 @@ docker compose exec core-api bundle exec rspec
 docker compose exec usage-engine gradle test
 ```
 
-See [development and reset instructions](docs/development.md), [current architecture](docs/architecture.md), and [Slice 4 implementation and verification](docs/slice4.md). Olivia and Maya have explicit organization-scoped project creation grants; Priya has delegated creation authority. An explicit project lead grant permits project administration. A collaboration label, team-manager role, or leadership read grant alone does not.
+See [development and reset instructions](docs/development.md), [current architecture](docs/architecture.md), and [current Slice 6 implementation and verification](docs/slice6.md). Olivia and Maya have explicit organization-scoped project creation grants; Priya has delegated creation authority. An explicit project lead grant permits project administration. A collaboration label, team-manager role, or leadership read grant alone does not.
 
 Generate and import usage after startup (choose an explicit date window overlapping the exported project membership periods):
 
@@ -96,7 +96,7 @@ The project is also intended to demonstrate **Kotlin, Ruby on Rails, relational 
 | Local orchestration | Docker Compose | Database, Rails API, Kotlin service, frontend |
 | Tests | RSpec and JUnit 5, plus frontend tests | Business and financial invariants, pricing and ingestion correctness, role access |
 
-**Service boundary:** Browsers call Next.js. Its `/api/core/*` proxy forwards an HTTP-only demo session to Rails for organizational APIs, while `/api/health` checks both backends server-side. Kotlin prices canonical usage and delivers durable outbox events to Rails for authoritative financial posting. The services may share a PostgreSQL instance for the demo, but **each service exclusively writes its own schema**. Rails may read documented usage views for scoped analytics. Kotlin obtains valid identifiers/reference data through a defined contract rather than modifying business records.
+**Service boundary:** Browsers call Next.js. Its `/api/core/*` proxy forwards an HTTP-only demo session to Rails for organizational APIs, while `/api/health` checks both backends server-side. Kotlin prices canonical usage and delivers durable outbox events to Rails for authoritative financial posting. The services may share a PostgreSQL instance for the demo, but **each service exclusively writes its own schema**. Rails requests bounded usage aggregates through the separately authenticated internal Kotlin API. Kotlin obtains valid identifiers/reference data through a defined contract rather than modifying business records.
 
 ## 4. Conceptual future system diagram
 
@@ -308,7 +308,7 @@ sequenceDiagram
     R-->>K: Acknowledge successful posting
     Web->>R: Request dashboard with selected scope and period
     R->>R: Authorize actor and scope
-    R->>UDB: Read filtered usage and agent metrics
+    R->>K: Request authorized bounded usage aggregates through internal API
     R->>BDB: Read ledger totals, limits, and project attribution
     R-->>Web: Combined analytics response
 ```
@@ -421,26 +421,29 @@ The four Compose services communicate by service name. PostgreSQL initializes se
 - Separate input/output/cached token pricing, precise money units, and explicit rounding.
 - Transactional outbox, authenticated idempotent Rails posting, budget accounts/periods, transfers, corrections and reconciliation.
 
-### Slice 6 — Analytics (next)
+### Slice 6 — Analytics (implemented)
 
-- Build analytics on the implemented funding accounts, periods, immutable prices and append-only ledger.
+- Role-scoped dashboards, UTC date/granularity filters, charts and employee/team/project/model/tool drill-down.
+- Internal Kotlin token aggregation and Rails ledger-derived corrected expenditure; explicit funding read scopes.
 - Scoped spend endpoints that reconcile totals across dimensions.
 
-### Slice 7 — Limits and approvals
+### Slice 7 — Budget management and spending controls (implemented)
 
-- Employee and project sublimits, funding requests, delegated routing, approval state transitions, audit history, and funding allocation workflows using the implemented atomic transfers.
+- Existing funded accounts, monthly balances, reviewed idempotent transfers and explicit reserve funding.
+- Versioned personal ceilings and atomic project partitions, capped manager delegation, warnings and transparent forecasts.
+- Financial account funding remains separate from employee spending controls.
 
-### Slice 8 — Agents and intelligence
+### Slice 8 — Funding requests and approvals (next)
 
-- Agent outcomes, trend comparisons, anomaly rules, model breakdowns, and efficiency metrics.
+- Allowance increase and project/team funding requests, delegated routing, approval decisions, escalation and audit history.
 
-### Slice 9 — Demo polish
+### Later slices — Agents and demo polish
 
 - Fictional organization structures, realistic anomalies, resettable scenarios, and a repeatable walkthrough.
 
 ## 13. Acceptance scope
 
-Slice 1 establishes startup, real health, schema ownership, a polished shell, and automated checks. Slice 2 adds server-enforced organizational access and four demo experiences. Slice 3 adds functional project management and cross-functional staffing. Slice 4 adds canonical usage ingestion and operational import reporting. See [current verification results](docs/slice4.md).
+Slice 1 establishes startup, real health, schema ownership, a polished shell, and automated checks. Slice 2 adds server-enforced organizational access and four demo experiences. Slice 3 adds functional project management and cross-functional staffing. Slice 4 adds canonical usage ingestion and operational import reporting. Slice 5 adds pricing and the financial ledger; Slice 6 adds scoped analytics dashboards. See [current verification results](docs/slice6.md).
 
 The following remain acceptance criteria for a **future complete vertical slice**, not Slice 1:
 
@@ -478,4 +481,34 @@ docker compose exec usage-engine bin/usage deliver --limit 10000 --workers 4
 docker compose exec usage-engine bin/usage reconcile
 ```
 
-Pricing/reconciliation exit 2 explicitly reports unsupported or unpriced usage; inspect the JSON before interpreting coverage. No event-level cent rounding occurs. [Slice 5 report](docs/slice5.md) records actual verification, [pricing](docs/model-pricing.md) describes supported profiles and official sources, [ledger](docs/financial-ledger.md) explains financial authority, and [priced-event v1](contracts/priced-usage-event-v1.md) defines delivery. Existing financial history blocks demo reset. Dashboards remain Slice 6.
+Pricing/reconciliation exit 2 explicitly reports unsupported or unpriced usage; inspect the JSON before interpreting coverage. No event-level cent rounding occurs. [Slice 5 report](docs/slice5.md) records actual verification, [pricing](docs/model-pricing.md) describes supported profiles and official sources, [ledger](docs/financial-ledger.md) explains financial authority, and [priced-event v1](contracts/priced-usage-event-v1.md) defines delivery. Existing financial history blocks demo reset. Dashboards are available at `/analytics`; see the [Slice 6 report](docs/slice6.md).
+
+## Analytics dashboards
+
+Open `/analytics` after selecting a demo identity. Reports default to the available simulated data window, with explicit UTC dates, daily/weekly/monthly charts, pricing coverage, complete-period comparisons, sortable breakdowns and a posting-time ledger audit. Expenditure comes from Rails ledger entries including corrections; unpriced usage remains visible with unknown cost. Original source models stay separate from synthetic pricing profiles.
+
+Existing `.env` files need a separate generated `USAGE_ANALYTICS_TOKEN`; configure the same backend-only value for Rails and Kotlin through Compose. Apply additive migrations and explicitly enable read-only demo account examples:
+
+```bash
+docker compose up -d
+docker compose exec core-api bin/rails db:migrate
+docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
+docker compose exec core-api bin/rails analytics:demo_access
+```
+
+Normal seeds do not infer budget read or financial mutation permissions from titles. [Analytics contract](docs/analytics-contract.md) explains scope/metrics, and [Slice 6 verification](docs/slice6.md) records actual reconciliation, tests and measured local latency.
+
+## Budget management
+
+Open `/budgets` to inspect monthly funded accounts and personal spending controls. Financial operators can review/confirm transfers, record explicit reserve funding, initialize empty months and delegate capped direct-report ceiling authority. Employees can repartition unused personal capacity without moving funded money. Corrections affect consumption; unpriced activity remains unknown cost.
+
+```bash
+docker compose up -d
+docker compose exec core-api bin/rails db:migrate
+docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
+docker compose exec core-api bin/rails budgets:demo_setup
+# Optional explicit small-allocation warning scenario; an audited transfer to reserve:
+docker compose exec -e SMALL_BUDGET_SCENARIO=true core-api bin/rails budgets:demo_setup
+```
+
+The standard setup creates allowance revisions/delegation only; it creates no funds. The optional scenario returns unused project funding to reserve and preserves organization funding and expense history. [Budget/allowance contract](docs/budget-allowances.md) explains the rules; [Slice 7 report](docs/slice7.md) records actual balances, tests and remaining limitations. Requests/approvals are Slice 8.

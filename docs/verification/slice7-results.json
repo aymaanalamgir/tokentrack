@@ -1,0 +1,508 @@
+{
+  "verified_at_utc": "2026-11-10",
+  "baseline": {
+    "usage_events": 7753,
+    "canonical_checksum": "6a12d8cba38e9026692218e10a206ba5",
+    "ledger_entries": 7417,
+    "financial_transactions": 7364,
+    "funding": "400000",
+    "net_expenditure": "500.789210275"
+  },
+  "final_database": {
+    "usage_events": 7753,
+    "canonical_checksum": "6a12d8cba38e9026692218e10a206ba5",
+    "ledger_entries": 7429,
+    "financial_transactions": 7370,
+    "funding": "400000.000000000000000",
+    "net_expenditure": "500.789210275000000",
+    "available": "399499.210789725000000",
+    "original_financial_transactions": 7364,
+    "original_ledger_entries": 7417,
+    "new_transfers": 6,
+    "new_transfer_funding_net": "0.000000000000000",
+    "new_transfer_expense": "0.000000000000000",
+    "core_can_read_usage": false,
+    "usage_can_read_controls": false,
+    "periods": [
+      {
+        "name": "Aperture Technologies",
+        "month_start": "2026-11-01",
+        "funding": "100000.000000000000000",
+        "expenditure": "273.706909410000000",
+        "available": "99726.293090590000000"
+      },
+      {
+        "name": "Aperture Technologies",
+        "month_start": "2026-12-01",
+        "funding": "100000.000000000000000",
+        "expenditure": "150.208759870000000",
+        "available": "99849.791240130000000"
+      },
+      {
+        "name": "Northstar Labs",
+        "month_start": "2026-11-01",
+        "funding": "100000.000000000000000",
+        "expenditure": "49.523170720000000",
+        "available": "99950.476829280000000"
+      },
+      {
+        "name": "Northstar Labs",
+        "month_start": "2026-12-01",
+        "funding": "100000.000000000000000",
+        "expenditure": "27.350370275000000",
+        "available": "99972.649629725000000"
+      }
+    ]
+  },
+  "controls": {
+    "roots": 4,
+    "revisions": 14,
+    "allocations": 44,
+    "delegations": 1
+  },
+  "personas": [
+    {
+      "name": "Olivia Chen",
+      "ceiling": null,
+      "consumption": "0.511946875",
+      "remaining": null,
+      "warning": "not_established",
+      "visible_allowance_count": 64,
+      "account_count": 19,
+      "capabilities": {
+        "transfer": true,
+        "fund": true,
+        "initialize_month": true,
+        "delegate": true,
+        "allocate_self": true
+      }
+    },
+    {
+      "name": "Marcus Rivera",
+      "ceiling": null,
+      "consumption": "7.58035698",
+      "remaining": null,
+      "warning": "not_established",
+      "visible_allowance_count": 8,
+      "account_count": 2,
+      "capabilities": {
+        "transfer": false,
+        "fund": false,
+        "initialize_month": false,
+        "delegate": false,
+        "allocate_self": true
+      }
+    },
+    {
+      "name": "Priya Shah",
+      "ceiling": null,
+      "consumption": "0.643914345",
+      "remaining": null,
+      "warning": "not_established",
+      "visible_allowance_count": 1,
+      "account_count": 2,
+      "capabilities": {
+        "transfer": false,
+        "fund": false,
+        "initialize_month": false,
+        "delegate": false,
+        "allocate_self": true
+      }
+    },
+    {
+      "name": "Jordan Lee",
+      "ceiling": "500",
+      "consumption": "8.8430841",
+      "remaining": "491.1569159",
+      "warning": "within_limit",
+      "visible_allowance_count": 1,
+      "account_count": 0,
+      "capabilities": {
+        "transfer": false,
+        "fund": false,
+        "initialize_month": false,
+        "delegate": false,
+        "allocate_self": true
+      }
+    },
+    {
+      "name": "Sofia Patel",
+      "ceiling": "0.05",
+      "consumption": "0.57017892",
+      "remaining": "-0.52017892",
+      "warning": "over_budget",
+      "visible_allowance_count": 1,
+      "account_count": 0,
+      "capabilities": {
+        "transfer": false,
+        "fund": false,
+        "initialize_month": false,
+        "delegate": false,
+        "allocate_self": true
+      }
+    }
+  ],
+  "jordan_november": {
+    "user_id": "bb103120-91a9-1720-41c4-3ee41b76c7d2",
+    "name": "Jordan Lee",
+    "job_function": "Engineering",
+    "id": "ddfc4ca5-1b46-4cee-a5d2-33e24482406f",
+    "revision_id": "380b05ca-f7fb-4cdd-8b8f-4f8cc9593084",
+    "revision_number": 10,
+    "status": "active",
+    "consumption": "8.8430841",
+    "ceiling": "500",
+    "allocated": "400",
+    "can_manage": false,
+    "delegated_maximum": null,
+    "can_allocate": true,
+    "limit": "500",
+    "used": "8.8430841",
+    "remaining": "491.1569159",
+    "utilization_percent": "1.76861682",
+    "overage": "0",
+    "warning": "within_limit",
+    "projects": [
+      {
+        "project_id": "fe6a1991-1e13-0cea-d74a-40eb0e5d3234",
+        "name": "AI Sales Assistant",
+        "eligible": true,
+        "limit": "0",
+        "used": "1.10365716",
+        "remaining": "-1.10365716",
+        "utilization_percent": null,
+        "overage": "1.10365716",
+        "warning": "over_budget"
+      },
+      {
+        "project_id": "88bd1b0f-cd41-97fc-a498-4012f02e0a36",
+        "name": "Customer Analytics",
+        "eligible": true,
+        "limit": "0",
+        "used": "1.47225705",
+        "remaining": "-1.47225705",
+        "utilization_percent": null,
+        "overage": "1.47225705",
+        "warning": "over_budget"
+      },
+      {
+        "project_id": "83393110-3098-335b-56a1-245726adeff6",
+        "name": "Developer Productivity",
+        "eligible": true,
+        "limit": "160",
+        "used": "0.84256064",
+        "remaining": "159.15743936",
+        "utilization_percent": "0.5266004",
+        "overage": "0",
+        "warning": "within_limit"
+      },
+      {
+        "project_id": "85d9c854-6924-05a9-bfc9-5c7f0882bd55",
+        "name": "Fraud Detection Platform",
+        "eligible": true,
+        "limit": "240",
+        "used": "2.190386585",
+        "remaining": "237.809613415",
+        "utilization_percent": "0.91266107708333333333333333333333",
+        "overage": "0",
+        "warning": "within_limit"
+      },
+      {
+        "project_id": "f21888c1-6c7d-586f-3374-fa7d5d585db5",
+        "name": "Internal Knowledge Automation",
+        "eligible": true,
+        "limit": "0",
+        "used": "1.56198642",
+        "remaining": "-1.56198642",
+        "utilization_percent": null,
+        "overage": "1.56198642",
+        "warning": "over_budget"
+      }
+    ],
+    "unallocated": {
+      "limit": "100",
+      "used": "1.672236245",
+      "remaining": "98.327763755",
+      "utilization_percent": "1.672236245",
+      "overage": "0",
+      "warning": "within_limit"
+    },
+    "forecast": {
+      "status": "month_complete",
+      "projected": "8.8430841",
+      "elapsed_days": 30,
+      "days_in_month": 30,
+      "as_of": "2026-11-30",
+      "coverage_incomplete": true,
+      "method": "Net posted expense through as-of day / elapsed calendar days \u00d7 days in month. Sparse or incomplete pricing can understate this estimate."
+    },
+    "revisions": [
+      {
+        "id": "380b05ca-f7fb-4cdd-8b8f-4f8cc9593084",
+        "number": 10,
+        "kind": "ceiling",
+        "ceiling": "500",
+        "actor": "Marcus Rivera",
+        "reason": "Monthly personal ceiling review",
+        "created_at": "2026-11-10 14:39:21 UTC"
+      },
+      {
+        "id": "4172d0f7-fc6d-49a2-9498-b0037de3c8c4",
+        "number": 9,
+        "kind": "reallocation",
+        "ceiling": "500",
+        "actor": "Jordan Lee",
+        "reason": "Redistribute unused personal capacity",
+        "created_at": "2026-11-10 14:39:19 UTC"
+      },
+      {
+        "id": "cd28c0de-f00f-4429-aa66-5639f0b0d92d",
+        "number": 8,
+        "kind": "ceiling",
+        "ceiling": "500",
+        "actor": "Marcus Rivera",
+        "reason": "Monthly personal ceiling review",
+        "created_at": "2026-11-10 14:33:53 UTC"
+      },
+      {
+        "id": "18b4c7f0-ba87-45a1-8fb3-a69a236f79ca",
+        "number": 7,
+        "kind": "reallocation",
+        "ceiling": "500",
+        "actor": "Jordan Lee",
+        "reason": "Redistribute unused personal capacity",
+        "created_at": "2026-11-10 14:33:51 UTC"
+      },
+      {
+        "id": "bb94a580-2a06-47d4-a646-6cd50a908345",
+        "number": 6,
+        "kind": "ceiling",
+        "ceiling": "500",
+        "actor": "Marcus Rivera",
+        "reason": "Monthly personal ceiling review",
+        "created_at": "2026-11-10 14:18:23 UTC"
+      },
+      {
+        "id": "a88098dc-0bf7-4104-95a5-131f58a55018",
+        "number": 5,
+        "kind": "reallocation",
+        "ceiling": "500",
+        "actor": "Jordan Lee",
+        "reason": "Redistribute unused personal capacity",
+        "created_at": "2026-11-10 14:18:21 UTC"
+      },
+      {
+        "id": "e2a8082d-90e0-4f73-9ae3-1f18bfabb34b",
+        "number": 4,
+        "kind": "ceiling",
+        "ceiling": "500",
+        "actor": "Marcus Rivera",
+        "reason": "Monthly personal ceiling review",
+        "created_at": "2026-11-10 14:11:37 UTC"
+      },
+      {
+        "id": "2aa1603e-02d1-4e45-806f-90a4076df712",
+        "number": 3,
+        "kind": "reallocation",
+        "ceiling": "500",
+        "actor": "Jordan Lee",
+        "reason": "Redistribute unused personal capacity",
+        "created_at": "2026-11-10 14:11:36 UTC"
+      },
+      {
+        "id": "a833354d-d7f7-49fa-b478-0db6a1b7eeda",
+        "number": 2,
+        "kind": "reallocation",
+        "ceiling": "500",
+        "actor": "Jordan Lee",
+        "reason": "Personal partitioned controls: 400 allocated, 100 unallocated; not a funding movement",
+        "created_at": "2026-11-10 14:00:12 UTC"
+      },
+      {
+        "id": "de3987ac-8354-4368-9193-c710bf069559",
+        "number": 1,
+        "kind": "ceiling",
+        "ceiling": "500",
+        "actor": "Olivia Chen",
+        "reason": "Explicit demo monthly spending ceiling, not funding",
+        "created_at": "2026-11-10 14:00:12 UTC"
+      }
+    ]
+  },
+  "december_project_scenario": {
+    "id": "2457fc4a-7d28-b5d1-5a6c-6feb98cea25c",
+    "period_id": "d6bd9552-b9b9-8fb0-12af-aadc4d96607d",
+    "project_id": "85d9c854-6924-05a9-bfc9-5c7f0882bd55",
+    "organizational_unit_id": null,
+    "name": "Fraud Detection Platform project AI budget",
+    "purpose": "project",
+    "status": "open",
+    "account_status": "active",
+    "funding": "11.947838742105264",
+    "expenditure": "11.350446805",
+    "control": {
+      "limit": "11.947838742105264",
+      "used": "11.350446805",
+      "remaining": "0.597391937105264",
+      "utilization_percent": "94.9999999999999933042283439872044",
+      "overage": "0",
+      "warning": "high_utilization"
+    },
+    "forecast": {
+      "status": "linear_estimate",
+      "projected": "39.095983439444444",
+      "elapsed_days": 9,
+      "days_in_month": 31,
+      "as_of": "2026-12-09",
+      "coverage_incomplete": true,
+      "method": "Net posted expense through as-of day / elapsed calendar days \u00d7 days in month. Sparse or incomplete pricing can understate this estimate.",
+      "projected_overage": "27.14814469733918"
+    }
+  },
+  "transfers": [
+    {
+      "id": "1b4d4e46-1fc0-43cd-bdad-0b1444fe04f2",
+      "key": "slice7-small-budget-2026-12",
+      "amount": "3988.052161257894736",
+      "month": "2026-12",
+      "reason": "Explicit Slice 7 small project allocation demonstration: retain approximately 95% utilization, return unused funding to reserve; historical expenses unchanged",
+      "legs": [
+        {
+          "account": "Fraud Detection Platform project AI budget",
+          "funding_delta": "-3988.052161257894736",
+          "expense_delta": "0"
+        },
+        {
+          "account": "Aperture Technologies reserve AI budget",
+          "funding_delta": "3988.052161257894736",
+          "expense_delta": "0"
+        }
+      ]
+    },
+    {
+      "id": "3c606301-4fcf-4c5a-9bd8-7c41124ec551",
+      "key": "slice7-engineering-fraud-demo-v1",
+      "amount": "3000",
+      "month": "2026-11",
+      "reason": "Explicit Slice 7 engineering-to-project demonstration; funding conserved; no expense created",
+      "legs": [
+        {
+          "account": "Engineering unit AI budget",
+          "funding_delta": "-3000",
+          "expense_delta": "0"
+        },
+        {
+          "account": "Fraud Detection Platform project AI budget",
+          "funding_delta": "3000",
+          "expense_delta": "0"
+        }
+      ]
+    },
+    {
+      "id": "50723bfc-d9c8-4cc2-b833-5ae3ede5762b",
+      "key": "c523d7c2-a0d8-4a4c-9fd3-121c0eb7df4e",
+      "amount": "3",
+      "month": "2026-11",
+      "reason": "Explicit 3 USD browser workflow verification; organization funding conserved",
+      "legs": [
+        {
+          "account": "Engineering unit AI budget",
+          "funding_delta": "-3",
+          "expense_delta": "0"
+        },
+        {
+          "account": "Fraud Detection Platform project AI budget",
+          "funding_delta": "3",
+          "expense_delta": "0"
+        }
+      ]
+    },
+    {
+      "id": "88789591-15e7-44c6-a79f-5aecbe248d09",
+      "key": "71d67308-be4b-47c6-a8eb-cd66c699bc86",
+      "amount": "3",
+      "month": "2026-11",
+      "reason": "Explicit 3 USD browser workflow verification; organization funding conserved",
+      "legs": [
+        {
+          "account": "Engineering unit AI budget",
+          "funding_delta": "-3",
+          "expense_delta": "0"
+        },
+        {
+          "account": "Fraud Detection Platform project AI budget",
+          "funding_delta": "3",
+          "expense_delta": "0"
+        }
+      ]
+    },
+    {
+      "id": "5935994e-7de5-498b-b41f-5e9c3088f21a",
+      "key": "491722de-abe3-4a4d-b413-30ce24b28ac2",
+      "amount": "3",
+      "month": "2026-11",
+      "reason": "Explicit 3 USD browser workflow verification; organization funding conserved",
+      "legs": [
+        {
+          "account": "Engineering unit AI budget",
+          "funding_delta": "-3",
+          "expense_delta": "0"
+        },
+        {
+          "account": "Fraud Detection Platform project AI budget",
+          "funding_delta": "3",
+          "expense_delta": "0"
+        }
+      ]
+    },
+    {
+      "id": "01abb930-7d0e-41eb-9336-f65452daeb26",
+      "key": "5f119483-f8ca-4aa4-9ee5-6a20c85e191b",
+      "amount": "3",
+      "month": "2026-11",
+      "reason": "Explicit 3 USD browser workflow verification; organization funding conserved",
+      "legs": [
+        {
+          "account": "Engineering unit AI budget",
+          "funding_delta": "-3",
+          "expense_delta": "0"
+        },
+        {
+          "account": "Fraud Detection Platform project AI budget",
+          "funding_delta": "3",
+          "expense_delta": "0"
+        }
+      ]
+    }
+  ],
+  "financial_reconciliation": {
+    "status": "balanced_with_unpriced_usage",
+    "priced_events": 7305,
+    "posted_events": 7305,
+    "pending_delivery": 0,
+    "dead_deliveries": 0,
+    "unresolved_charge_owner": 0,
+    "delivered_missing_postings": 0,
+    "missing_outbox": 0,
+    "amount_discrepancies": 0,
+    "payload_conflicts": 0,
+    "ledger_integrity": {
+      "invalid_operation_entries": 0,
+      "duplicate_expenses": 0,
+      "unbalanced_transfers": 0,
+      "posted_receipts_missing_transactions": 0
+    },
+    "priced_total_usd": "500.795710275",
+    "posted_original_usd": "500.795710275",
+    "authorized_adjustment_delta_usd": "-0.0065",
+    "net_expenditure_usd": "500.789210275",
+    "unpriced_events": 448
+  },
+  "tests": {
+    "rails": 143,
+    "kotlin_unit": 49,
+    "kotlin_postgresql": 37,
+    "frontend_unit": 11,
+    "browser_suites": 5
+  }
+}

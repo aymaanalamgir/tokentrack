@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 const cookieName = "tokentrack_demo_session";
 const uuid = "[0-9a-f-]{36}";
 const getPaths = new RegExp(
-  `^(demo/identities|me(?:/access|/overview)?|organizations/${uuid}|organizational-units(?:/${uuid})?|users(?:/${uuid}(?:/reporting-context)?)?|projects(?:/eligible-users|/${uuid}(?:/eligible-users|/team-groups|/memberships)?)?)$`,
+  `^(budgets|analytics|demo/identities|me(?:/access|/overview)?|organizations/${uuid}|organizational-units(?:/${uuid})?|users(?:/${uuid}(?:/reporting-context)?)?|projects(?:/eligible-users|/${uuid}(?:/eligible-users|/team-groups|/memberships)?)?)$`,
 );
 
 async function proxy(
@@ -19,6 +19,7 @@ async function proxy(
       : method === "POST"
         ? path === "demo/sessions" ||
           path === "projects" ||
+          /^budgets\/(?:transfers|funding|periods|ceilings|allocations|delegations(?:\/revoke)?)$/.test(path) ||
           new RegExp(
             `^projects/${uuid}/(?:memberships|transfer-ownership)$`,
           ).test(path)
@@ -71,6 +72,8 @@ async function proxy(
     for (const [key, value] of request.nextUrl.searchParams) {
       if (
         [
+          "month", "account_id", "as_of", "history_offset",
+          "start", "end", "granularity", "organization_unit_id", "project_id", "user_id", "provider", "model", "tool", "audit_start", "audit_end",
           "q",
           "status",
           "department",

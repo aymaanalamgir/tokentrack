@@ -274,3 +274,73 @@ docker compose exec usage-engine gradle test integrationTest
 ```
 
 Integration tests require the existing isolated test database and real PostgreSQL. Test cleanup is tenant/source scoped; development financial records are never removed. [Slice 5 verification](slice5.md) distinguishes successful financial reconciliation from incomplete pricing coverage.
+
+## Slice 6 analytics
+
+Add a separately generated `USAGE_ANALYTICS_TOKEN` to existing ignored `.env` files (`openssl rand -hex 32`). It must differ from the reference and financial credentials. Compose passes it only to the two backends; Rails uses `USAGE_ANALYTICS_URL=http://usage-engine:8080`. Recreate backend containers after environment changes.
+
+```bash
+docker compose up -d
+docker compose exec core-api bin/rails db:migrate
+docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
+docker compose exec core-api bin/rails analytics:demo_access
+```
+
+Kotlin startup applies additive Flyway V6 reporting indexes; Rails adds reporting indexes and explicit unit/project budget reader roles. Demo access adds read grants only to flagged demo identities in demo organizations, and is disabled outside local demo mode. It changes no funding, expenses, canonical events or historical snapshots. The existing financial setup remains a separate explicit action.
+
+Open `/analytics` as Olivia/Maya, Marcus, Priya and Jordan to compare organization, combined managed/led-project, project-lead and self scopes. The default follows the actual recorded data end rather than today's date. Project/account views explicitly distinguish attribution from funding. Reader grants do not authorize financial mutations. Ordinary growth percentages are suppressed when either comparison period is outside the recorded window.
+
+```bash
+docker compose exec core-api bundle exec rspec
+docker compose exec usage-engine gradle test integrationTest
+docker compose exec frontend npm run lint
+docker compose exec frontend npm run typecheck
+docker compose exec frontend npm test
+# In the existing Playwright container workflow, also run:
+npm run test:analytics
+```
+
+The browser suite needs access to both the frontend and internal usage-engine hostname to verify internal authentication denial; use the existing `tokentrack_default` network and pinned Playwright 1.56.1 image. It exports authorized report JSON only on explicit user action. Tests capture desktop dark/mobile light screenshots and exercise identity switching, date/granularity/drill-down, correction totals, authorization and loading/error/empty states. Browser management tests leave their usual archived review project.
+
+[Analytics contract](analytics-contract.md) specifies exact GET/internal parameters, bounds, response fields and metric semantics. [Slice 6 report](slice6.md) lists actual latency measurements and reconciliation. Do not reset either financial or canonical usage data to install or demonstrate analytics.
+
+## Slice 7 budgets and allowances
+
+Apply the additive business migrations; Kotlin schema/pricing/ingestion needs no Slice 7 changes. Preserve the existing data volume and uncommitted Slice 6 work.
+
+```bash
+docker compose up -d
+docker compose exec core-api bin/rails db:migrate
+docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
+docker compose exec core-api bin/rails budgets:demo_setup
+```
+
+Setup creates Jordan's explicit 500 USD ceiling and initial 250/150 project partitions for existing demo months, Sofia's explicitly small control scenario using existing actual expense, and Marcus's capped direct-report delegation. It creates no financial funding transaction. Repeating setup preserves existing user-edited controls and the original delegation audit record. Normal organizational seeds still grant no financial mutation authority.
+
+For a visibly small project allocation while preserving all expenses and total organization funding:
+
+```bash
+docker compose exec -e SMALL_BUDGET_SCENARIO=true core-api bin/rails budgets:demo_setup
+```
+
+This optional command appends an idempotent transfer of unused December Fraud Detection funding back to reserve, retaining approximately 95% utilization. It changes allocation, not expense, and labels the reason in the financial audit. No usage inflation or ledger reset is performed.
+
+Open `/budgets?month=2026-11` as Jordan, Marcus, Priya and Olivia. Test allocation editing, explicit delegation boundaries, project-scoped contributor views and reviewed transfers. December demonstrates the high-utilization/run-rate scenario; the as-of comes from recorded usage dates. Month and forecast as-of filters are explicit. Full-month totals remain distinct from the forecast-only cutoff.
+
+Optional global warning settings in `.env`: `BUDGET_WARNING_APPROACHING_PERCENT=75` and `BUDGET_WARNING_HIGH_PERCENT=90`. Compose forwards them only to Rails; recreate core-api after changes. Configuration must satisfy 0 < approaching < high < 100. Do not scatter thresholds into client components.
+
+```bash
+docker compose exec core-api bundle exec rspec
+docker compose exec usage-engine gradle test integrationTest --rerun-tasks
+docker compose exec frontend npm run lint
+docker compose exec frontend npm run typecheck
+docker compose exec frontend npm test
+# Existing pinned Playwright container/network workflow:
+npm run test:budgets
+# Existing reconciliation:
+docker compose exec usage-engine bin/usage reconcile
+```
+
+The budget browser suite performs real authorized local transfers, including one stable-key 3,000 USD demonstration and a new 3 USD reviewed UI transfer per run. It also creates immutable control revisions. Rerunning it preserves old history and may append another distinct reviewed 3 USD action; total funding and expenditure remain conserved. Financial request replay with the same key never duplicates its effect. Backend concurrency tests use only isolated test tenants and guarded test-only cleanup.
+
+[Budget/allowance contract](budget-allowances.md) defines precise bodies, permissions, bounds, warnings and forecasts. [Slice 7 report](slice7.md) records actual observed results. Do not reset organizations with financial or spending-control history.
