@@ -1,6 +1,6 @@
 class RoleAssignment < ApplicationRecord
   include TenantRecord
-  SCOPES = { "employee" => "self", "organization_viewer" => "organization", "project_creator" => "organization", "team_manager" => "unit", "project_lead" => "project" }.freeze
+  SCOPES = { "employee" => "self", "organization_viewer" => "organization", "project_creator" => "organization", "financial_operator" => "organization", "team_manager" => "unit", "project_lead" => "project" }.freeze
   belongs_to :user
   belongs_to :organizational_unit, optional: true
   belongs_to :project, optional: true

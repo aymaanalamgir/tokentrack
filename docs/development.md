@@ -6,8 +6,8 @@ Install Docker Desktop with Compose and Git. Host Node, Ruby, Java, Gradle, and 
 
 ```bash
 cp .env.example .env
-# Edit .env: replace the three example passwords and USAGE_REFERENCE_TOKEN.
-# Generate a backend-only token: openssl rand -hex 32
+# Edit .env: replace the three example passwords, USAGE_REFERENCE_TOKEN and USAGE_FINANCIAL_TOKEN.
+# Generate each independent backend-only token: openssl rand -hex 32
 docker compose up --build -d
 # Required on a fresh database; repeat safely when setting up Slice 4:
 docker compose exec core-api bin/rails db:migrate db:seed
@@ -236,3 +236,41 @@ Destructive volume resets and host-native service commands were not executed dur
 - **Frontend shows an error:** `/api/health` reports each service independently. A malformed response is an error; an unreachable service is disconnected. Database status means both backend connections are verified, not a direct browser query.
 - **Gradle cache/build problems:** stop usage-engine, then remove only `tokentrack_usage_gradle` or `tokentrack_usage_build` and rebuild. Do not delete the database volume to repair a build.
 - **Credentials in logs:** do not print `.env`, run interpolated `docker compose config` in shared logs, or share connection URLs containing passwords. `docker compose config --quiet` validates without printing values.
+
+## Slice 5 pricing and finance operations
+
+Existing `.env` files need a newly generated `USAGE_FINANCIAL_TOKEN` (at least 32 characters); keep it independent from `USAGE_REFERENCE_TOKEN`. Recreate backend containers with `docker compose up -d` after editing environment. Neither token belongs in frontend variables. Rails migration commands above apply financial tables; Kotlin startup/CLI applies Flyway V2–V5. Never edit applied migration files or reset the database to install this slice.
+
+```bash
+docker compose exec core-api env MONTHS=2026-11,2026-12 bin/rails finance:demo_setup
+docker compose exec usage-engine bin/usage load-prices
+docker compose exec usage-engine bin/usage price --source demo-synthetic-v1
+demo/generators/generate-pricing-scenarios.sh
+docker compose exec usage-engine bin/usage import /app/demo/fixtures/pricing-scenarios-v1.csv --source demo-pricing-scenarios-v1
+docker compose exec usage-engine bin/usage price --source demo-pricing-scenarios-v1
+docker compose exec usage-engine bin/usage pricing-report
+docker compose exec usage-engine bin/usage deliver --limit 10000 --workers 4
+docker compose exec usage-engine bin/usage delivery-report
+docker compose exec usage-engine bin/usage reconcile
+```
+
+`price` processes only unpriced records. It never rewrites usage or existing price snapshots. `load-prices --file /app/custom.json` loads explicit additional catalogue records, rejecting conflicting existing IDs. See [schedule closure](model-pricing.md). Commands emit JSON; pricing/reconciliation exit 2 can indicate deliberately unsupported/unpriced coverage, while discrepancy exits 3. Delivery exit 2 reports retry/dead work. Due retries need another explicit worker invocation; no daemon is scheduled. After repairing permanent failures, `deliver --retry-dead true` explicitly starts another bounded cycle while preserving history.
+
+Demo setup prints actor/account UUIDs. Copy the desired own-tenant values into these local trusted operations; the actor must have explicit financial_operator authority:
+
+```bash
+docker compose exec core-api env ACTOR_ID=ACTOR_UUID MONTH=2026-11 bin/rails finance:report
+docker compose exec core-api env ACTOR_ID=ACTOR_UUID ACCOUNT_ID=RESERVE_UUID MONTH=2026-11 AMOUNT=1000 REQUEST_KEY=unique-funding-key REASON='Explicit demo funding' bin/rails finance:fund
+docker compose exec core-api env ACTOR_ID=ACTOR_UUID FROM_ACCOUNT_ID=UNIT_ACCOUNT_UUID TO_ACCOUNT_ID=PROJECT_ACCOUNT_UUID MONTH=2026-11 AMOUNT=3000 REQUEST_KEY=unique-transfer-key REASON='Project allocation' bin/rails finance:transfer
+docker compose exec core-api env ACTOR_ID=ACTOR_UUID TRANSACTION_ID=CHARGE_UUID AMOUNT=0.1 REQUEST_KEY=unique-correction-key REASON='Explicit synthetic correction' bin/rails finance:correct
+```
+
+Omit AMOUNT for reversal without replacement. Money inputs are decimal strings, never float arithmetic. Reuse a request key only for the identical operation. Normal seeds do not create finance grants/accounts. Demo reset now refuses financial history; preserve the volume and audit trail. There is no public correction endpoint.
+
+```bash
+docker compose exec core-api bin/rails zeitwerk:check
+docker compose exec core-api bundle exec rspec
+docker compose exec usage-engine gradle test integrationTest
+```
+
+Integration tests require the existing isolated test database and real PostgreSQL. Test cleanup is tenant/source scoped; development financial records are never removed. [Slice 5 verification](slice5.md) distinguishes successful financial reconciliation from incomplete pricing coverage.

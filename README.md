@@ -1,17 +1,17 @@
 # TokenTrack — AI Spend Intelligence
 
-> **Status:** Slices 1–4 implemented: local infrastructure, organizational modeling, scoped access control, authenticated demo experiences, cross-functional project management, and Kotlin usage ingestion. Product workflows below are planned unless explicitly marked implemented.
+> **Status:** Slices 1–5 implemented: local infrastructure, organizational modeling, scoped access control, authenticated demo experiences, cross-functional project management, Kotlin usage ingestion, effective-dated pricing, durable delivery, and an append-only financial ledger. Product workflows below are planned unless explicitly marked implemented.
 >
 > A local-first B2B SaaS-style platform for understanding AI usage, attributing costs to projects, measuring workflow efficiency, and managing budgets through delegated approvals.
 
 ## Start here — implemented workspace
 
-TokenTrack runs Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. Enter Northstar Labs (10 fictional people) or Aperture Technologies (64), then switch authenticated demo identities to explore leadership, manager, project lead, and employee workspaces. Profiles, reporting charts, teams, scoped people/project directories, project creation, contributor assignment/history, ownership transfer, archive/restore, persistent themes, and real health checks work. Project administrators can expand contributors by home team; managers and employees see their authorized project assignments. A Kotlin CLI imports versioned synthetic CSV usage with reference validation, deduplication, and persistent rejection reports. Frontend usage analytics, pricing, budgets, and approvals remain planned. Demo sign-in is local-only and always disabled in Rails production.
+TokenTrack runs Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. Enter Northstar Labs (10 fictional people) or Aperture Technologies (64), then switch authenticated demo identities to explore leadership, manager, project lead, and employee workspaces. Profiles, reporting charts, teams, scoped people/project directories, project creation, contributor assignment/history, ownership transfer, archive/restore, persistent themes, and real health checks work. Project administrators can expand contributors by home team; managers and employees see their authorized project assignments. A Kotlin CLI imports versioned synthetic CSV usage with reference validation, deduplication, and persistent rejection reports. Kotlin pricing/outbox and Rails budget accounts, transfers, expense posting, corrections and reconciliation work through backend CLI operations. Frontend analytics and approval workflows remain planned. Demo sign-in is local-only and always disabled in Rails production.
 
 ```bash
 cp .env.example .env
-# Replace the three example passwords and USAGE_REFERENCE_TOKEN in .env.
-# Generate the service token with: openssl rand -hex 32
+# Replace the three example passwords, USAGE_REFERENCE_TOKEN and USAGE_FINANCIAL_TOKEN in .env.
+# Generate each separate service token with: openssl rand -hex 32
 docker compose up --build -d
 # First setup, or after adding migrations:
 docker compose exec core-api bin/rails db:migrate db:seed
@@ -67,11 +67,11 @@ The project is also intended to demonstrate **Kotlin, Ruby on Rails, relational 
 
 ## 2. Scope and deliberate non-goals
 
-### Product scope (implemented organizational features, planned financial features)
+### Product scope (organizational and backend financial features implemented)
 
 - Two example organization structures: a small startup and a larger, multi-team company.
 - Selectable demo identities with real, backend-enforced role and resource scopes.
-- Local CSV/synthetic usage ingestion (implemented); effective-dated LLM pricing (planned).
+- Local CSV/synthetic usage ingestion (implemented); effective-dated LLM pricing (implemented).
 - Metered AI usage and fixed monthly AI subscription costs, accounted for separately.
 - Team, project, employee, tool/model, and agent analytics.
 - Monthly funded pools, spending limits, transfers, requests, delegated approvals, and audit history.
@@ -96,7 +96,7 @@ The project is also intended to demonstrate **Kotlin, Ruby on Rails, relational 
 | Local orchestration | Docker Compose | Database, Rails API, Kotlin service, frontend |
 | Tests | RSpec and JUnit 5, plus frontend tests | Business and financial invariants, pricing and ingestion correctness, role access |
 
-**Planned business boundary:** Browsers call Next.js. Its `/api/core/*` proxy forwards an HTTP-only demo session to Rails for organizational APIs, while `/api/health` checks both backends server-side. In future slices Kotlin will process usage asynchronously and supplies priced events to Rails for authoritative financial posting. The services may share a PostgreSQL instance for the demo, but **each service exclusively writes its own schema**. Rails may read documented usage views for scoped analytics. Kotlin obtains valid identifiers/reference data through a defined contract rather than modifying business records.
+**Service boundary:** Browsers call Next.js. Its `/api/core/*` proxy forwards an HTTP-only demo session to Rails for organizational APIs, while `/api/health` checks both backends server-side. Kotlin prices canonical usage and delivers durable outbox events to Rails for authoritative financial posting. The services may share a PostgreSQL instance for the demo, but **each service exclusively writes its own schema**. Rails may read documented usage views for scoped analytics. Kotlin obtains valid identifiers/reference data through a defined contract rather than modifying business records.
 
 ## 4. Conceptual future system diagram
 
@@ -399,7 +399,7 @@ The four Compose services communicate by service name. PostgreSQL initializes se
 - Organizations, users, organizational units, memberships, and scoped role assignments in Rails.
 - Server-side demo sessions, backend-enforced scoped authorization, and permission-driven navigation.
 - Tenant/scope isolation tests, deterministic seeds, identity-specific overviews, and organizational/project/profile explorers.
-- No budgets, ledger, or usage pricing until their later slices.
+- Historical Slice 1 scope; backend pricing, budget accounts and ledger now exist in Slice 5.
 
 ### Slice 3 — Project management (implemented)
 
@@ -415,21 +415,20 @@ The four Compose services communicate by service name. PostgreSQL initializes se
 - Deterministic synthetic workloads and CLI commands through Docker Compose.
 - Parser/validator/generator tests and real PostgreSQL concurrency/partial-retry integration tests.
 
-### Slice 5 — Pricing and financial event delivery (next)
+### Slice 5 — Pricing and financial ledger (implemented)
 
 - Versioned provider/model pricing and effective price snapshots.
 - Separate input/output/cached token pricing, precise money units, and explicit rounding.
-- Idempotent priced-event delivery interfaces; no price or financial posting is implemented yet.
+- Transactional outbox, authenticated idempotent Rails posting, budget accounts/periods, transfers, corrections and reconciliation.
 
-### Slice 6 — Ledger and analytics
+### Slice 6 — Analytics (next)
 
-- Funding accounts, budget periods, and append-only charge postings.
-- Idempotent Rails ingestion of priced events.
+- Build analytics on the implemented funding accounts, periods, immutable prices and append-only ledger.
 - Scoped spend endpoints that reconcile totals across dimensions.
 
 ### Slice 7 — Limits and approvals
 
-- Employee and project sublimits, funding requests, delegated routing, approval state transitions, audit history, and atomic funding transfers.
+- Employee and project sublimits, funding requests, delegated routing, approval state transitions, audit history, and funding allocation workflows using the implemented atomic transfers.
 
 ### Slice 8 — Agents and intelligence
 
@@ -466,3 +465,17 @@ These are intentionally left explicit rather than silently assumed:
 ---
 
 **Architecture principle:** Organizations define their reporting structures and approval authority; the system consistently measures usage, attributes one authoritative cost, enforces permissions, and connects financial insight to decisions.
+
+## Slice 5 backend financial workflow
+
+Set separate backend-only reference and financial tokens in `.env`, migrate Rails, then use the existing simulated usage fixture:
+
+```bash
+docker compose exec core-api env MONTHS=2026-11,2026-12 bin/rails finance:demo_setup
+docker compose exec usage-engine bin/usage load-prices
+docker compose exec usage-engine bin/usage price --source demo-synthetic-v1
+docker compose exec usage-engine bin/usage deliver --limit 10000 --workers 4
+docker compose exec usage-engine bin/usage reconcile
+```
+
+Pricing/reconciliation exit 2 explicitly reports unsupported or unpriced usage; inspect the JSON before interpreting coverage. No event-level cent rounding occurs. [Slice 5 report](docs/slice5.md) records actual verification, [pricing](docs/model-pricing.md) describes supported profiles and official sources, [ledger](docs/financial-ledger.md) explains financial authority, and [priced-event v1](contracts/priced-usage-event-v1.md) defines delivery. Existing financial history blocks demo reset. Dashboards remain Slice 6.

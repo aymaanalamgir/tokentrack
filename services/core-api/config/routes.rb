@@ -2,6 +2,8 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       namespace :internal do
+        post "priced-usage-events", to: "priced_usage_events#create"
+        post "financial-reconciliation", to: "priced_usage_events#reconcile"
         post "usage-references/validate", to: "usage_references#validate"
         get "usage-references/demo-snapshot", to: "usage_references#demo_snapshot"
       end

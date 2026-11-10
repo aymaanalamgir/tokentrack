@@ -22,9 +22,9 @@ flowchart TB
 
 **Next.js** owns presentation, responsive navigation, persistent themes, in-memory client caching, a narrow backend-for-frontend proxy, and server-side health aggregation. Organizational data comes from Rails. Neither Docker URLs nor database credentials reach the browser. Health remains independent and public; visible cards are in Settings and the Overview's expandable System connectivity section. Both backends are checked concurrently with four-second timeouts; database connectivity requires confirmation from both.
 
-**Rails** owns organizations, units, people, memberships, reporting relationships, projects, permission grants, and their constraints. Every organizational API resolves a backend session and applies a request-scoped `AccessPolicy`. Presenters choose an allowed projection instead of serializing complete models. ProjectManagement handles creation, metadata/lifecycle changes, contributor periods, and atomic ownership transfer. Controllers validate input and presenters expose explicit per-project action flags. Future financial posting, budgets, attribution, and approvals belong here.
+**Rails** owns organizations, units, people, memberships, reporting relationships, projects, permission grants, and their constraints. Every organizational API resolves a backend session and applies a request-scoped `AccessPolicy`. Presenters choose an allowed projection instead of serializing complete models. ProjectManagement handles creation, metadata/lifecycle changes, contributor periods, and atomic ownership transfer. Controllers validate input and presenters expose explicit per-project action flags. Rails also owns budget accounts/periods, project-first attribution, idempotent expenses, transfers, corrections and reconciliation. Approval workflows remain future work.
 
-**Kotlin/Spring Boot** owns CSV parsing/validation, reference orchestration, canonical usage persistence, deduplication, deterministic generation, and CLI import reports. Standard database-aware Actuator health remains the only public web endpoint. Flyway migrates usage with the restricted usage role; Spring JDBC writes events, import batches, and rejections. Pricing and reliable financial delivery remain future work.
+**Kotlin/Spring Boot** owns CSV parsing/validation, reference orchestration, canonical usage persistence, deduplication, deterministic generation, and CLI import reports. Standard database-aware Actuator health remains the only public web endpoint. Flyway migrates usage with the restricted usage role; Spring JDBC writes events, import batches, and rejections. Kotlin also owns effective-dated pricing, exact BigDecimal calculation, immutable price snapshots, a transactional outbox and bounded delivery/reconciliation commands.
 
 ## Implemented data model
 
@@ -115,7 +115,7 @@ Rails supports transactional workflows and authorization; Kotlin provides a sepa
 
 Kotlin events now reference organization/user/project UUIDs through the versioned CSV and tenant-aware Rails reference contract. Kotlin must not write business records. Priced-event delivery will require idempotency, reconciliation, and service authentication; the shared instance does not make cross-service work one transaction. A broker is not required for the planned local flow. Read-only usage views may be granted to Rails later; no cross-schema grants exist now.
 
-Budget read/manage/approve permissions will be explicit scoped additions to the mapping and policy tests. Project participation, a manager title, or the current read grant must never silently become financial authority. No financial permission is active in Slice 4.
+Financial operations use an explicit organization-scoped financial_operator grant. Future budget approval permissions need their own scoped additions and policy tests. Project participation, a manager title, or the current read grant must never silently become financial authority. Slice 4 introduced no finance authority. Slice 5 adds a separate explicit organization financial_operator grant; normal organization seeds do not assign it.
 
 
 ## Slice 4 ingestion boundary
@@ -145,4 +145,25 @@ Imports use at most 250 rows per normal transaction, with batched reference chec
 
 Malformed-column rows are rejected without dropping neighboring valid rows. Unsafe quoting stops scanning after preceding complete rows are committed. Infrastructure failures preserve earlier chunks and report unknown/unprocessed work instead of inventing invalid employees. Durable fifteen-minute heartbeat leases identify abandoned runs; recovered workers cannot resume committing. Restart/retry uses immutable identity keys rather than overwriting old data. The CSV contract defines exact counts, limits, error categories, and CLI exit codes.
 
-See [usage-event-v1.md](../contracts/usage-event-v1.md) and [Slice 4 report](slice4.md). No pricing, financial delivery, or analytics endpoints were added.
+See [usage-event-v1.md](../contracts/usage-event-v1.md) and [Slice 4 report](slice4.md). That Slice 4 change added no pricing, financial delivery, or analytics endpoints; Slice 5 additions follow below.
+
+## Slice 5 financial processing
+
+```mermaid
+flowchart TD
+  U[Canonical usage] --> R[Kotlin effective-date resolver]
+  C[Versioned catalogue and explicit source mapping] --> R
+  R --> B[BigDecimal calculator]
+  B --> P[Immutable priced snapshot]
+  P --> O[Transactional outbox]
+  O --> H[Authenticated Rails consumer]
+  H --> A[Project / home team / explicit unassigned account]
+  A --> L[Append-only financial ledger]
+  L --> Q[Reconciliation]
+  P --> Q
+  O --> Q
+```
+
+Snapshot/outbox insertion shares a usage transaction. Claims use SKIP LOCKED, leases and durable attempts. Rails commits receipt resolution, original expense and ledger entry atomically; unique canonical usage identity makes repeated delivery safe. Unsupported metadata remains unpriced; unresolved charge ownership remains held. Financial corrections append linked reversal/replacement entries, preserving original price/acknowledgement. Funding transfers have two equal/opposite funding legs and no expense.
+
+Rails migrations own business tables; additive Flyway V2–V5 own pricing/delivery tables. Existing V1 canonical migration and original fingerprints are unchanged. No direct cross-schema writes, broker, dashboard, or browser financial endpoint is added. The financial bearer token is separate from read-only reference validation. See [financial ledger](financial-ledger.md), [pricing policy](model-pricing.md), [contract](../contracts/priced-usage-event-v1.md), and [executed verification](slice5.md).

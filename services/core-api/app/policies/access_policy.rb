@@ -15,6 +15,7 @@ class AccessPolicy
   end
 
   def organization_viewer? = grants.any? { |g| g.role == "organization_viewer" }
+  def financial_operator? = grants.any? { |g| g.role == "financial_operator" && g.scope_type == "organization" && g.organization_id == organization_id }
   def manager? = grants.any? { |g| g.role == "team_manager" }
   def project_lead? = grants.any? { |g| g.role == "project_lead" }
   def persona = organization_viewer? ? "leadership" : manager? ? "manager" : project_lead? ? "project_lead" : "employee"
@@ -104,14 +105,15 @@ class AccessPolicy
     permissions += ["projects.read.led", "projects.edit.led"] if project_lead?
     permissions += ["projects.members.manage", "projects.ownership.transfer", "projects.lifecycle.manage"] if project_lead?
     permissions << "projects.create.organization" if create_project?
+    permissions << "finance.manage.organization" if financial_operator?
     {
       persona: persona,
       scope_key: Digest::SHA256.hexdigest([grants.map { |g| [g.id, g.role, g.organizational_unit_id, g.project_id] }.sort_by(&:first), organization_viewer? ? [] : projects.order(:id).pluck(:id), organization_viewer? ? [] : directory_ids.sort].to_json),
       grants: grants.map { |g| { role: g.role, scope_type: g.scope_type, scope_id: g.organizational_unit_id || g.project_id || (g.scope_type == "self" ? actor.id : organization_id), scope_name: g.organizational_unit&.name || g.project&.name || (g.scope_type == "self" ? actor.name : actor.organization.name) } },
       capabilities: permissions,
-      restricted: ["Organization administration", "Financial approvals (not implemented)", "Budget and usage data (not implemented)"] + (organization_viewer? ? [] : ["Unrelated employees' private profiles"]),
+      restricted: ["Organization administration", "Financial approvals (not implemented)", "Financial and usage dashboards (not implemented)"] + (organization_viewer? ? [] : ["Unrelated employees' private profiles"]),
       navigation: navigation,
-      visibility: { directory: "Names, titles, job functions, and relevant team/project context", management: "Own profile, explicitly managed teams/reports, or organization viewer scope", private: "Access grants are visible only to their owner. No financial or usage data exists yet." }
+      visibility: { directory: "Names, titles, job functions, and relevant team/project context", management: "Own profile, explicitly managed teams/reports, or organization viewer scope", private: "Access grants are visible only to their owner. Financial and usage records are available only through authorized backend operations; dashboards are not implemented." }
     }
   end
 end

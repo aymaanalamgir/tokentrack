@@ -43,3 +43,6 @@ tokentrack:
   references:
     url: ${RAILS_REFERENCE_URL:http://localhost:3001}
     token: ${USAGE_REFERENCE_TOKEN:}
+
+  financial:
+    token: ${USAGE_FINANCIAL_TOKEN:}

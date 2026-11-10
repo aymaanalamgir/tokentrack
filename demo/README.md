@@ -25,7 +25,7 @@ To intentionally delete and recreate **only flagged demo organizations and their
 docker compose exec core-api bin/rails demo:reset
 ```
 
-This destroys edits inside demo tenants. Non-demo tenants are preserved. Seeding/reset require demo mode in development/test; production always rejects demo entry.
+This destroys edits inside demo tenants only when no append-only financial history exists. Slice 5 refuses reset for a financially initialized tenant; preserve that audit trail. Non-demo tenants are preserved. Seeding/reset require demo mode in development/test; production always rejects demo entry.
 
 The picker is local impersonation, not real identity proofing. Each selection still gets a genuine backend session and server-enforced access scope. Organizational data and displayed counts come from PostgreSQL.
 
@@ -51,3 +51,11 @@ Use the saved snapshot to reproduce exact events, or re-export current Rails dem
 The small invalid fixture includes valid events, identical/conflicting duplicates, unsupported versions, invalid fields, unknown references, and a foreign-tenant user. The malformed fixture retains complete valid rows before an unterminated quote. Expect exit 2 for completed validation rejections and 3 for malformed/partial imports; inspect stored reports rather than relying on process exit alone. Reimporting the same source/events never changes the original events. Rails demo:reset does not delete Kotlin usage history.
 
 See [generator inputs](generators/README.md), [CSV contract](../contracts/usage-event-v1.md), and [Slice 4 verification](../docs/slice4.md).
+
+## Pricing and financial scenarios (Slice 5)
+
+Original CSV/snapshot/manifest remain unchanged. `demo/generators/generate-pricing-scenarios.sh` reads the saved organization snapshot and writes a separate `pricing-scenarios-v1.csv`, imported with stable source `demo-pricing-scenarios-v1`. It selects Jordan Lee through recorded cross-project membership rather than a Kotlin hardcoded employee ID. Ten explicit simulated events cover five baseline models, cached versus uncached mini, a clearly hypothetical effective-date change, unknown pricing, and unsupported cache writes. Eight supported events total 0.78366 USD; two intentionally remain unpriced. Dates November 15/25 are simulated, not evidence of completed real usage.
+
+The original illustrative model identifiers map explicitly to pricing profiles; the local/demo-small-v1 → Gemini mapping is a synthetic proxy, not a claim of Google usage. Conservative profile limits leave 440 original main events unpriced. Do not change fingerprints or inflate workloads to hide this limitation.
+
+Run [development commands](../docs/development.md#slice-5-pricing-and-finance-operations) to initialize synthetic funding, price, deliver and reconcile. `finance:demo_setup` is an explicit local action granting financial_operator to Maya/Olivia separately from normal seeds; funding is 100,000 USD per organization/month, not actual spend. [Slice 5 report](../docs/slice5.md) traces Jordan's Fraud Detection expense, a 3,000 USD Platform-to-project transfer, duplicate HTTP replay, and an append-only correction. Finance exists in backend operations; no new dashboard is implied.

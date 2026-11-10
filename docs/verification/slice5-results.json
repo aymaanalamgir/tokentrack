@@ -1,0 +1,55 @@
+{
+  "status": "balanced_with_unpriced_usage",
+  "priced_events": 7305,
+  "posted_events": 7305,
+  "pending_delivery": 0,
+  "dead_deliveries": 0,
+  "unresolved_charge_owner": 0,
+  "delivered_missing_postings": 0,
+  "missing_outbox": 0,
+  "amount_discrepancies": 0,
+  "payload_conflicts": 0,
+  "ledger_integrity": {
+    "invalid_operation_entries": 0,
+    "duplicate_expenses": 0,
+    "unbalanced_transfers": 0,
+    "posted_receipts_missing_transactions": 0
+  },
+  "priced_total_usd": "500.795710275",
+  "posted_original_usd": "500.795710275",
+  "authorized_adjustment_delta_usd": "-0.0065",
+  "net_expenditure_usd": "500.789210275",
+  "unpriced_events": 448,
+  "unpriced_reasons": [
+    {
+      "code": "MISSING_RATE",
+      "count": 7
+    },
+    {
+      "code": "UNSUPPORTED_PROFILE",
+      "count": 441
+    }
+  ],
+  "verification_date_utc": "2026-11-10",
+  "tests": {
+    "rails": 106,
+    "kotlin_unit": 47,
+    "kotlin_postgresql": 29,
+    "frontend_unit": 5,
+    "browser_suites": 3
+  },
+  "original_canonical_events": 7743,
+  "original_fingerprint_checksum": "9a78ff0e3d0032ffe1c66fcc8a0688eb",
+  "worked_example": {
+    "usage_event_id": "d5c7c82a-2092-4a82-b48e-c92ffe1d27f6",
+    "priced_event_id": "7a7c938a-2336-4714-bf24-1f7066396a9a",
+    "financial_transaction_id": "547a814f-82a5-44d7-a7a0-7c3a45dbebd3",
+    "original_amount": "0.1065",
+    "net_after_explicit_correction": "0.1",
+    "duplicate_http_statuses": [
+      "200",
+      "200"
+    ],
+    "original_expense_count": 1
+  }
+}

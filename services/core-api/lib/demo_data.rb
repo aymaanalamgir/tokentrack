@@ -32,6 +32,9 @@ module DemoData
     raise "Demo reset is disabled" unless DemoSession.enabled?
     ApplicationRecord.transaction do
       ids = Organization.where(demo: true).pluck(:id)
+      if FinancialTransaction.table_exists? && FinancialTransaction.where(organization_id: ids).exists?
+        raise "Demo reset is disabled for organizations with append-only financial history"
+      end
       [DemoSession, RoleAssignment, ProjectMembership, ReportingRelationship, OrganizationalMembership, Project, User, OrganizationalUnit].each { |model| model.where(organization_id: ids).delete_all }
       Organization.where(id: ids).delete_all
       seed!

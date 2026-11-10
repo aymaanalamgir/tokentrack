@@ -7,6 +7,7 @@ module Api
       # Service credential only. Deliberately independent of demo sessions and
       # browser-origin authentication; never exposed by the frontend BFF.
       class UsageReferencesController < ApplicationController
+        include InternalServiceAuthentication
         before_action :authenticate_service!
         rescue_from ActiveRecord::ActiveRecordError do
           render json: { error: { code: "reference_data_unavailable", message: "Organizational references are temporarily unavailable" } }, status: :service_unavailable
@@ -54,14 +55,7 @@ module Api
 
         private
 
-        def authenticate_service!
-          response.headers["Cache-Control"] = "no-store, private"
-          expected = ENV["USAGE_REFERENCE_TOKEN"].to_s
-          supplied = request.headers["Authorization"].to_s.delete_prefix("Bearer ")
-          unless expected.bytesize >= 32 && request.headers["Authorization"].to_s.start_with?("Bearer ") && ActiveSupport::SecurityUtils.secure_compare(Digest::SHA256.hexdigest(expected), Digest::SHA256.hexdigest(supplied))
-            render json: { error: { code: "service_unauthorized", message: "Service authentication required" } }, status: :unauthorized
-          end
-        end
+        def authenticate_service! = authenticate_internal_service!("USAGE_REFERENCE_TOKEN")
 
         def invalid_request
           render json: { error: { code: "invalid_reference_request", message: "Provide 1–100 unique keyed references with UUIDs and ISO 8601 event times (2000–2099)" } }, status: :bad_request

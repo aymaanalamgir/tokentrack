@@ -120,3 +120,7 @@ Valid entries contain only key and valid=true. Organization/user/project tenancy
 `GET /api/v1/internal/usage-references/demo-snapshot` additionally requires demo mode in development/test and returns 404 otherwise. Its data contains snapshot_version=1, policy_version, organization IDs/slugs, active flagged fictional user IDs/job functions/primary unit IDs, project IDs/organization/slugs/current status, and recorded membership periods. The synthetic generator saves this input and its canonical SHA-256 hash; UUID lists are not recreated or maintained separately inside Kotlin. This export is for fictional local fixtures, not an employee export API.
 
 The only Kotlin web exposure remains Actuator health. Operational import/list/report/generate commands use the local CLI; CSV structure, fingerprint identity, stable error codes, counts, limits, and exit statuses are defined in [usage-event-v1.md](usage-event-v1.md).
+
+## Slice 5 financial service contract
+
+[Priced usage event v1](priced-usage-event-v1.md) defines the separate financial bearer credential, exact monetary-string payload, idempotent expense acknowledgement, unresolved-owner retries, and read-only reconciliation. These internal routes are excluded from the browser proxy. Existing usage-event v1 fields/fingerprints are unchanged; resolved price identity is additional immutable provenance.
