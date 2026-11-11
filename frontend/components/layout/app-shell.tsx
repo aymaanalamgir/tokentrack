@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import {
   Activity,
   AudioLines,
+  Bot,
   Building2,
   ChartNoAxesCombined,
   ChevronDown,
@@ -38,6 +39,7 @@ const icons: Record<string, LucideIcon> = {
   organization: Building2,
   profile: UserRound,
   analytics: ChartNoAxesCombined,
+  agents: Bot,
   budgets: Wallet,
   requests: GitPullRequestArrow,
   settings: Settings2,

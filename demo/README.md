@@ -97,3 +97,14 @@ Run `docker compose exec core-api bin/rails requests:demo_setup`, then open `/re
 5. The retained Platform-backed Fraud request demonstrates insufficient source capacity: approval fails safely and stays pending. The reserve-backed example demonstrates a successful conserved transfer.
 
 Identical decision retries return the existing result. Revoking Marcus's delegation before decision removes his approval authority. Request events and submitted terms are append-only, and approved execution references link to the existing allowance or financial audit record. [Slice 8](../docs/slice8.md) records the verified workflow.
+
+## Agent executions (Slice 9A)
+
+After usage import, generate and import the separate sidecar:
+
+```bash
+generators/generate-agent-executions.sh 42 demo-synthetic-v1
+docker compose exec usage-engine bin/usage agent-import /app/demo/fixtures/agent-executions-v1.jsonl --source demo-synthetic-v1
+```
+
+The generator selects actual existing usage run IDs and is byte-for-byte deterministic for the same database, source, and seed. It writes no usage or ledger rows. Open `/agents` and switch identities to verify organization, team/project, and self scopes. See [Slice 9A](../docs/slice9a.md).

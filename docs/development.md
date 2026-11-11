@@ -368,3 +368,16 @@ docker compose exec usage-engine bin/usage reconcile
 ```
 
 Reconciliation exits with its documented incomplete-pricing status while the ledger is balanced if intentionally unsupported/unrated events remain. Inspect the JSON integrity counters rather than treating those unpriced events as a request failure. The [Slice 8 report](slice8.md) defines routing, API, atomic execution, current results, and limitations. Demo reset refuses append-only request history.
+
+## Slice 9A agent execution tracking
+
+Restart Kotlin to apply Flyway v7/v8, then generate the execution JSONL from the canonical usage rows already carrying run IDs:
+
+```bash
+docker compose restart usage-engine
+demo/generators/generate-agent-executions.sh 42 demo-synthetic-v1
+docker compose exec usage-engine bin/usage agent-import /app/demo/fixtures/agent-executions-v1.jsonl --source demo-synthetic-v1
+docker compose exec usage-engine bin/usage agent-import /app/demo/fixtures/agent-executions-invalid-v1.jsonl --source demo-synthetic-v1
+```
+
+The invalid import exits 2 with a stored rejection. Exact valid replay reports duplicates. Run `docker compose exec usage-engine ./gradlew integrationTest --tests com.tokentrack.usage.agents.AgentExecutionPostgresTest`, `docker compose exec core-api bundle exec rspec spec/requests/agents_spec.rb`, and `docker compose exec frontend npm run test:agents`. The browser never receives the internal analytics token and cannot proxy Kotlin's internal route.

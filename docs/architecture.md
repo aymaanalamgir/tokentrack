@@ -1,6 +1,6 @@
 # TokenTrack architecture
 
-Slices 1–8 implement the local four-service system, scoped identity/project workflows, canonical ingestion, pricing/outbox, an append-only financial ledger, role-aware analytics, operational budget/spending controls, and auditable funding requests with delegated approvals.
+Slices 1–9A implement the local four-service system, scoped identity/project workflows, canonical ingestion, pricing/outbox, an append-only financial ledger, role-aware analytics, operational budget/spending controls, auditable funding requests, and agent execution telemetry.
 
 ```mermaid
 flowchart TB
@@ -10,7 +10,7 @@ flowchart TB
   Next -->|Actuator health only| Kotlin["Kotlin + Spring Boot :8080"]
   Kotlin -->|Service credential: bounded reference validation| Rails
   Rails -->|Separate analytics credential: scoped aggregate queries| Kotlin
-  CSV["Synthetic CSV / local CLI"] --> Kotlin
+  CSV["Usage CSV + execution JSONL / local CLI"] --> Kotlin
   Rails -->|Core database role| Business[("PostgreSQL / business")]
   Kotlin -->|Usage database role| Usage[("PostgreSQL / usage")]
   subgraph Database["One persistent PostgreSQL 17 instance"]
@@ -23,9 +23,9 @@ flowchart TB
 
 **Next.js** owns presentation, responsive navigation, persistent themes, in-memory client caching, a narrow backend-for-frontend proxy, and server-side health aggregation. Organizational data comes from Rails. Neither Docker URLs nor database credentials reach the browser. Health remains independent and public; visible cards are in Settings and the Overview's expandable System connectivity section. Both backends are checked concurrently with four-second timeouts; database connectivity requires confirmation from both.
 
-**Rails** owns organizations, units, people, memberships, reporting relationships, projects, permission grants, and their constraints. Every organizational API resolves a backend session and applies a request-scoped `AccessPolicy`. Presenters choose an allowed projection instead of serializing complete models. ProjectManagement handles creation, metadata/lifecycle changes, contributor periods, and atomic ownership transfer. Controllers validate input and presenters expose explicit per-project action flags. Rails also owns budget accounts/periods, project-first attribution, idempotent expenses, transfers, corrections and reconciliation. Approval workflows remain future work.
+**Rails** owns organizations, units, people, memberships, reporting relationships, projects, permission grants, and their constraints. Every organizational API resolves a backend session and applies a request-scoped `AccessPolicy`. Presenters choose an allowed projection instead of serializing complete models. ProjectManagement handles creation, metadata/lifecycle changes, contributor periods, and atomic ownership transfer. Controllers validate input and presenters expose explicit per-project action flags. Rails also owns budget accounts/periods, project-first attribution, idempotent expenses, transfers, corrections, reconciliation, and delegated funding-request decisions. For agent reports Rails supplies the authorized population and corrected ledger money; it does not rewrite Kotlin execution telemetry.
 
-**Kotlin/Spring Boot** owns CSV parsing/validation, reference orchestration, canonical usage persistence, deduplication, deterministic generation, and CLI import reports. Actuator health is public; the new bounded usage analytics endpoint requires its own backend service credential. Flyway migrates usage with the restricted usage role; Spring JDBC writes events, import batches, and rejections. Kotlin also owns effective-dated pricing, exact BigDecimal calculation, immutable price snapshots, a transactional outbox and bounded delivery/reconciliation commands.
+**Kotlin/Spring Boot** owns CSV parsing/validation, reference orchestration, canonical usage persistence, deduplication, deterministic generation, and CLI import reports. It separately persists immutable agent definitions, runs, and attempts from execution JSONL and links usage only by tenant/source/run identity. Actuator health is public; bounded usage and agent analytics endpoints require the backend analytics credential. Flyway migrates usage with the restricted usage role. Kotlin also owns effective-dated pricing, exact BigDecimal calculation, immutable price snapshots, a transactional outbox and bounded delivery/reconciliation commands.
 
 ## Implemented data model
 

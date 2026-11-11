@@ -525,3 +525,14 @@ docker compose exec core-api bin/rails requests:demo_setup
 ```
 
 Jordan's 750 USD request routes to Marcus's capped delegation; his 1,500 USD request routes to financial authority. Priya's project and Marcus's team requests require a financial operator. Approvals reuse existing allowance and transfer services, never create expenditure, and retain immutable decisions and execution references. See the [Slice 8 report](docs/slice8.md).
+
+## Agent execution tracking
+
+Open `/agents` for scoped outcomes, retries, duration, linked token usage, and corrected posted costs. Generate a sidecar from actual usage run IDs and import it independently:
+
+```bash
+demo/generators/generate-agent-executions.sh 42 demo-synthetic-v1
+docker compose exec usage-engine bin/usage agent-import /app/demo/fixtures/agent-executions-v1.jsonl --source demo-synthetic-v1
+```
+
+Usage CSV v1 and ledger history remain unchanged. See the [Slice 9A report](docs/slice9a.md), [execution contract](contracts/agent-execution-v1.md), and [metric definitions](docs/agent-efficiency-metrics.md).

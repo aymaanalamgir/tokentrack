@@ -120,6 +120,7 @@ class AccessPolicy
       { label: organization_viewer? ? "Organization" : "My organization", href: "/organization", icon: "organization" },
       { label: "Profile & access", href: "/profile", icon: "profile" },
       { label: "Analytics", href: "/analytics", icon: "analytics" },
+      { label: "Agents", href: "/agents", icon: "agents" },
       { label: "Budgets", href: "/budgets", icon: "budgets" },
       { label: "Requests", href: "/requests", icon: "requests" },
       { label: "Settings", href: "/settings", icon: "settings" }
@@ -143,6 +144,7 @@ class AccessPolicy
     permissions << "requests.create.project_funding" if project_lead?
     permissions << "requests.review.financial" if financial_operator?
     permissions << "requests.review.delegated_allowance" if manager?
+    permissions << "agents.read.scoped"
     {
       persona: persona,
       scope_key: Digest::SHA256.hexdigest([grants.map { |g| [g.id, g.role, g.organizational_unit_id, g.project_id] }.sort_by(&:first), AllowanceDelegation.active.where(organization_id:organization_id,manager_id:actor.id).order(:id).pluck(:id,:maximum_amount,:effective_from_month,:effective_until_month), organization_viewer? ? [] : projects.order(:id).pluck(:id), organization_viewer? ? [] : directory_ids.sort].to_json),

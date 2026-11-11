@@ -129,6 +129,10 @@ Kotlin exposes public Actuator health and the separately authenticated internal 
 
 [Analytics contract v1](../docs/analytics-contract.md) defines the authorized Rails `GET /api/v1/analytics` report and bounded Kotlin `POST /internal/v1/analytics` aggregate request. Only the Rails GET route is allowed through Next.js. A separate analytics service token never reaches browsers. Money comes from Rails ledger entries, tokens from Kotlin; reader scopes, current-home-team semantics, UTC comparisons, coverage and accounting/posting/activity dates are explicit.
 
+## Slice 9A agent execution contract
+
+[Agent execution JSONL v1](agent-execution-v1.md) defines immutable definitions, runs, outcomes, attempts, errors, and exact usage linkage. Rails exposes scoped `GET /api/v1/agents`; Kotlin's agent aggregate endpoint stays backend-only and Rails supplies corrected ledger money.
+
 ## Slice 7 budget and allowance API
 
 [Budget/allowance API v1](../docs/budget-allowances.md) specifies the coherent session-authenticated `GET /api/v1/budgets` report and exact scoped POST operations for transfers, reserve funding, empty periods, ceiling revisions, own project partitions and capped delegation/revocation. Monetary values are decimal strings; expected revision IDs and stable operation keys protect writes. BFF allowlists only these exact paths. No internal financial bearer token or unrestricted ledger correction route reaches browsers.

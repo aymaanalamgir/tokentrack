@@ -19,6 +19,7 @@ Rails.application.routes.draw do
         %i[approve reject cancel escalate].each { |decision| post decision, on: :member }
       end
       get "analytics", to: "analytics#show"
+      get "agents", to: "agents#index"
       get "health", to: "health#show"
       get "demo/identities", to: "demo#identities"
       post "demo/sessions", to: "demo#create"
