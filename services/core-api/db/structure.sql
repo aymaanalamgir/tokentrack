@@ -163,6 +163,34 @@ END $$;
 
 
 --
+-- Name: guard_financial_request(); Type: FUNCTION; Schema: business; Owner: -
+--
+
+CREATE FUNCTION business.guard_financial_request() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF TG_OP IN ('DELETE','TRUNCATE') THEN RAISE EXCEPTION 'Request history is append-only' USING ERRCODE='23514'; END IF;
+  IF OLD.organization_id<>NEW.organization_id OR OLD.requester_id<>NEW.requester_id OR OLD.request_type<>NEW.request_type OR OLD.request_key<>NEW.request_key OR OLD.created_at<>NEW.created_at THEN
+    RAISE EXCEPTION 'Request identity is immutable' USING ERRCODE='23514'; END IF;
+  IF OLD.status<>'pending' THEN RAISE EXCEPTION 'A finalized request is immutable' USING ERRCODE='23514'; END IF;
+  IF OLD.target_user_id IS DISTINCT FROM NEW.target_user_id OR OLD.target_project_id IS DISTINCT FROM NEW.target_project_id OR OLD.target_unit_id IS DISTINCT FROM NEW.target_unit_id OR OLD.target_budget_account_id IS DISTINCT FROM NEW.target_budget_account_id OR OLD.source_budget_account_id IS DISTINCT FROM NEW.source_budget_account_id OR OLD.month_start<>NEW.month_start OR OLD.currency<>NEW.currency OR OLD.current_amount_snapshot<>NEW.current_amount_snapshot OR OLD.source_available_snapshot IS DISTINCT FROM NEW.source_available_snapshot OR OLD.requested_amount<>NEW.requested_amount OR OLD.allowance_revision_snapshot_id IS DISTINCT FROM NEW.allowance_revision_snapshot_id OR OLD.reason<>NEW.reason OR OLD.submitted_at<>NEW.submitted_at OR OLD.request_fingerprint<>NEW.request_fingerprint THEN
+    RAISE EXCEPTION 'Submitted request terms are immutable' USING ERRCODE='23514'; END IF;
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: guard_request_event(); Type: FUNCTION; Schema: business; Owner: -
+--
+
+CREATE FUNCTION business.guard_request_event() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN RAISE EXCEPTION 'Request events are append-only' USING ERRCODE='23514'; END $$;
+
+
+--
 -- Name: guard_spending_allocation_insert(); Type: FUNCTION; Schema: business; Owner: -
 --
 
@@ -396,6 +424,45 @@ CREATE TABLE business.demo_sessions (
 
 
 --
+-- Name: financial_requests; Type: TABLE; Schema: business; Owner: -
+--
+
+CREATE TABLE business.financial_requests (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    organization_id uuid NOT NULL,
+    requester_id uuid NOT NULL,
+    request_type character varying NOT NULL,
+    target_user_id uuid,
+    target_project_id uuid,
+    target_unit_id uuid,
+    target_budget_account_id uuid,
+    source_budget_account_id uuid,
+    month_start date NOT NULL,
+    currency character varying DEFAULT 'USD'::character varying NOT NULL,
+    current_amount_snapshot numeric(38,15) NOT NULL,
+    source_available_snapshot numeric(38,15),
+    requested_amount numeric(38,15) NOT NULL,
+    allowance_revision_snapshot_id uuid,
+    reason character varying(500) NOT NULL,
+    status character varying DEFAULT 'pending'::character varying NOT NULL,
+    assigned_approver_id uuid,
+    routing_reason character varying(500) NOT NULL,
+    request_key character varying(128) NOT NULL,
+    request_fingerprint character varying(64) NOT NULL,
+    execution_transaction_id uuid,
+    execution_revision_id uuid,
+    submitted_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    resolved_at timestamp(6) without time zone,
+    escalated_at timestamp(6) without time zone,
+    lock_version integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT approved_request_has_execution CHECK (((((status)::text = 'approved'::text) AND ((((request_type)::text = 'personal_allowance'::text) AND (execution_revision_id IS NOT NULL) AND (execution_transaction_id IS NULL)) OR (((request_type)::text = ANY ((ARRAY['project_funding'::character varying, 'team_funding'::character varying])::text[])) AND (execution_transaction_id IS NOT NULL) AND (execution_revision_id IS NULL)))) OR (((status)::text <> 'approved'::text) AND (execution_revision_id IS NULL) AND (execution_transaction_id IS NULL)))),
+    CONSTRAINT valid_financial_request CHECK ((((currency)::text = 'USD'::text) AND ((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'cancelled'::character varying])::text[])) AND ((request_type)::text = ANY ((ARRAY['personal_allowance'::character varying, 'project_funding'::character varying, 'team_funding'::character varying])::text[])) AND (requested_amount > (0)::numeric) AND (requested_amount < 'Infinity'::numeric) AND (current_amount_snapshot >= (0)::numeric) AND (current_amount_snapshot < 'Infinity'::numeric) AND ((source_available_snapshot IS NULL) OR ((source_available_snapshot >= (0)::numeric) AND (source_available_snapshot < 'Infinity'::numeric))) AND (EXTRACT(day FROM month_start) = (1)::numeric) AND ((month_start >= '2000-01-01'::date) AND (month_start <= '2099-12-01'::date)) AND (length((reason)::text) > 0) AND (length((routing_reason)::text) > 0) AND ((((status)::text = 'pending'::text) AND (resolved_at IS NULL)) OR (((status)::text <> 'pending'::text) AND (resolved_at IS NOT NULL))) AND ((((request_type)::text = 'personal_allowance'::text) AND (target_user_id IS NOT NULL) AND (target_project_id IS NULL) AND (target_unit_id IS NULL) AND (target_budget_account_id IS NULL) AND (source_budget_account_id IS NULL) AND (source_available_snapshot IS NULL) AND (allowance_revision_snapshot_id IS NOT NULL) AND (requested_amount > current_amount_snapshot)) OR (((request_type)::text = 'project_funding'::text) AND (target_user_id IS NULL) AND (target_project_id IS NOT NULL) AND (target_unit_id IS NULL) AND (target_budget_account_id IS NOT NULL) AND (source_budget_account_id IS NOT NULL) AND (source_available_snapshot IS NOT NULL) AND (allowance_revision_snapshot_id IS NULL)) OR (((request_type)::text = 'team_funding'::text) AND (target_user_id IS NULL) AND (target_project_id IS NULL) AND (target_unit_id IS NOT NULL) AND (target_budget_account_id IS NOT NULL) AND (source_budget_account_id IS NOT NULL) AND (source_available_snapshot IS NOT NULL) AND (allowance_revision_snapshot_id IS NULL)))))
+);
+
+
+--
 -- Name: financial_transactions; Type: TABLE; Schema: business; Owner: -
 --
 
@@ -573,6 +640,27 @@ CREATE TABLE business.reporting_relationships (
 
 
 --
+-- Name: request_events; Type: TABLE; Schema: business; Owner: -
+--
+
+CREATE TABLE business.request_events (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    organization_id uuid NOT NULL,
+    financial_request_id uuid NOT NULL,
+    actor_id uuid NOT NULL,
+    event_type character varying NOT NULL,
+    previous_status character varying,
+    new_status character varying,
+    reason character varying(500) NOT NULL,
+    operation_key character varying(128) NOT NULL,
+    operation_fingerprint character varying(64) NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT valid_request_event CHECK ((((event_type)::text = ANY ((ARRAY['created'::character varying, 'submitted'::character varying, 'escalated'::character varying, 'approved'::character varying, 'rejected'::character varying, 'cancelled'::character varying, 'executed'::character varying])::text[])) AND ((previous_status IS NULL) OR ((previous_status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'cancelled'::character varying])::text[]))) AND ((new_status IS NULL) OR ((new_status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'cancelled'::character varying])::text[]))) AND (length((reason)::text) > 0)))
+);
+
+
+--
 -- Name: role_assignments; Type: TABLE; Schema: business; Owner: -
 --
 
@@ -713,6 +801,14 @@ ALTER TABLE ONLY business.demo_sessions
 
 
 --
+-- Name: financial_requests financial_requests_pkey; Type: CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT financial_requests_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: financial_transactions financial_transactions_pkey; Type: CONSTRAINT; Schema: business; Owner: -
 --
 
@@ -785,6 +881,14 @@ ALTER TABLE ONLY business.reporting_relationships
 
 
 --
+-- Name: request_events request_events_pkey; Type: CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.request_events
+    ADD CONSTRAINT request_events_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: role_assignments role_assignments_pkey; Type: CONSTRAINT; Schema: business; Owner: -
 --
 
@@ -854,6 +958,20 @@ CREATE INDEX financial_posting_time ON business.financial_transactions USING btr
 
 
 --
+-- Name: financial_request_inbox; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX financial_request_inbox ON business.financial_requests USING btree (organization_id, status, assigned_approver_id, submitted_at);
+
+
+--
+-- Name: financial_request_requester_history; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX financial_request_requester_history ON business.financial_requests USING btree (organization_id, requester_id, submitted_at);
+
+
+--
 -- Name: idempotent_allowance_delegation; Type: INDEX; Schema: business; Owner: -
 --
 
@@ -868,10 +986,38 @@ CREATE UNIQUE INDEX idempotent_allowance_revision ON business.spending_limit_rev
 
 
 --
+-- Name: idempotent_financial_request; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX idempotent_financial_request ON business.financial_requests USING btree (organization_id, requester_id, request_key);
+
+
+--
+-- Name: idempotent_request_event; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX idempotent_request_event ON business.request_events USING btree (financial_request_id, operation_key);
+
+
+--
+-- Name: idx_on_organization_id_actor_id_created_at_2463edc109; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX idx_on_organization_id_actor_id_created_at_2463edc109 ON business.request_events USING btree (organization_id, actor_id, created_at);
+
+
+--
 -- Name: idx_on_organization_id_manager_id_b1a56d25f0; Type: INDEX; Schema: business; Owner: -
 --
 
 CREATE INDEX idx_on_organization_id_manager_id_b1a56d25f0 ON business.reporting_relationships USING btree (organization_id, manager_id);
+
+
+--
+-- Name: idx_on_organization_id_month_start_request_type_3be2cf2320; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX idx_on_organization_id_month_start_request_type_3be2cf2320 ON business.financial_requests USING btree (organization_id, month_start, request_type);
 
 
 --
@@ -949,6 +1095,13 @@ CREATE INDEX index_demo_sessions_on_organization_id ON business.demo_sessions US
 --
 
 CREATE UNIQUE INDEX index_demo_sessions_on_token_digest ON business.demo_sessions USING btree (token_digest);
+
+
+--
+-- Name: index_financial_requests_on_organization_id_and_id; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX index_financial_requests_on_organization_id_and_id ON business.financial_requests USING btree (organization_id, id);
 
 
 --
@@ -1089,6 +1242,20 @@ CREATE INDEX index_projects_on_organization_id_and_status ON business.projects U
 --
 
 CREATE INDEX index_reporting_relationships_on_organization_id ON business.reporting_relationships USING btree (organization_id);
+
+
+--
+-- Name: index_request_events_on_financial_request_id_and_created_at; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX index_request_events_on_financial_request_id_and_created_at ON business.request_events USING btree (financial_request_id, created_at);
+
+
+--
+-- Name: index_request_events_on_organization_id_and_id; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE UNIQUE INDEX index_request_events_on_organization_id_and_id ON business.request_events USING btree (organization_id, id);
 
 
 --
@@ -1316,6 +1483,20 @@ CREATE TRIGGER financial_entry_creation BEFORE INSERT ON business.ledger_entries
 
 
 --
+-- Name: financial_requests financial_requests_guard; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER financial_requests_guard BEFORE DELETE OR UPDATE ON business.financial_requests FOR EACH ROW EXECUTE FUNCTION business.guard_financial_request();
+
+
+--
+-- Name: financial_requests financial_requests_no_truncate; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER financial_requests_no_truncate BEFORE TRUNCATE ON business.financial_requests FOR EACH STATEMENT EXECUTE FUNCTION business.guard_financial_request();
+
+
+--
 -- Name: financial_transactions financial_source_integrity; Type: TRIGGER; Schema: business; Owner: -
 --
 
@@ -1397,6 +1578,20 @@ CREATE CONSTRAINT TRIGGER projects_administration_guard AFTER INSERT OR DELETE O
 --
 
 CREATE TRIGGER receipt_source_immutable BEFORE DELETE OR UPDATE ON business.priced_usage_receipts FOR EACH ROW EXECUTE FUNCTION business.protect_priced_receipt();
+
+
+--
+-- Name: request_events request_events_immutable; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER request_events_immutable BEFORE DELETE OR UPDATE ON business.request_events FOR EACH ROW EXECUTE FUNCTION business.guard_request_event();
+
+
+--
+-- Name: request_events request_events_no_truncate; Type: TRIGGER; Schema: business; Owner: -
+--
+
+CREATE TRIGGER request_events_no_truncate BEFORE TRUNCATE ON business.request_events FOR EACH STATEMENT EXECUTE FUNCTION business.guard_request_event();
 
 
 --
@@ -1517,6 +1712,86 @@ ALTER TABLE ONLY business.spending_limits
 
 
 --
+-- Name: financial_requests financial_requests_organization_id_allowance_revision_snap_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT financial_requests_organization_id_allowance_revision_snap_fkey FOREIGN KEY (organization_id, allowance_revision_snapshot_id) REFERENCES business.spending_limit_revisions(organization_id, id);
+
+
+--
+-- Name: financial_requests financial_requests_organization_id_assigned_approver_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT financial_requests_organization_id_assigned_approver_id_fkey FOREIGN KEY (organization_id, assigned_approver_id) REFERENCES business.users(organization_id, id);
+
+
+--
+-- Name: financial_requests financial_requests_organization_id_execution_revision_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT financial_requests_organization_id_execution_revision_id_fkey FOREIGN KEY (organization_id, execution_revision_id) REFERENCES business.spending_limit_revisions(organization_id, id);
+
+
+--
+-- Name: financial_requests financial_requests_organization_id_execution_transaction_i_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT financial_requests_organization_id_execution_transaction_i_fkey FOREIGN KEY (organization_id, execution_transaction_id) REFERENCES business.financial_transactions(organization_id, id);
+
+
+--
+-- Name: financial_requests financial_requests_organization_id_requester_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT financial_requests_organization_id_requester_id_fkey FOREIGN KEY (organization_id, requester_id) REFERENCES business.users(organization_id, id);
+
+
+--
+-- Name: financial_requests financial_requests_organization_id_source_budget_account_i_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT financial_requests_organization_id_source_budget_account_i_fkey FOREIGN KEY (organization_id, source_budget_account_id) REFERENCES business.budget_accounts(organization_id, id);
+
+
+--
+-- Name: financial_requests financial_requests_organization_id_target_budget_account_i_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT financial_requests_organization_id_target_budget_account_i_fkey FOREIGN KEY (organization_id, target_budget_account_id) REFERENCES business.budget_accounts(organization_id, id);
+
+
+--
+-- Name: financial_requests financial_requests_organization_id_target_project_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT financial_requests_organization_id_target_project_id_fkey FOREIGN KEY (organization_id, target_project_id) REFERENCES business.projects(organization_id, id);
+
+
+--
+-- Name: financial_requests financial_requests_organization_id_target_unit_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT financial_requests_organization_id_target_unit_id_fkey FOREIGN KEY (organization_id, target_unit_id) REFERENCES business.organizational_units(organization_id, id);
+
+
+--
+-- Name: financial_requests financial_requests_organization_id_target_user_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT financial_requests_organization_id_target_user_id_fkey FOREIGN KEY (organization_id, target_user_id) REFERENCES business.users(organization_id, id);
+
+
+--
 -- Name: budget_periods fk_rails_013a1cf3ac; Type: FK CONSTRAINT; Schema: business; Owner: -
 --
 
@@ -1546,6 +1821,14 @@ ALTER TABLE ONLY business.ledger_entries
 
 ALTER TABLE ONLY business.role_assignments
     ADD CONSTRAINT fk_rails_0f09f7eaf9 FOREIGN KEY (organization_id, user_id) REFERENCES business.users(organization_id, id);
+
+
+--
+-- Name: financial_requests fk_rails_12315cfc6b; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.financial_requests
+    ADD CONSTRAINT fk_rails_12315cfc6b FOREIGN KEY (organization_id) REFERENCES business.organizations(id);
 
 
 --
@@ -1674,6 +1957,14 @@ ALTER TABLE ONLY business.financial_transactions
 
 ALTER TABLE ONLY business.organizational_memberships
     ADD CONSTRAINT fk_rails_68eac7feb9 FOREIGN KEY (organization_id) REFERENCES business.organizations(id);
+
+
+--
+-- Name: request_events fk_rails_78afa0a8ef; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.request_events
+    ADD CONSTRAINT fk_rails_78afa0a8ef FOREIGN KEY (organization_id) REFERENCES business.organizations(id);
 
 
 --
@@ -1861,6 +2152,22 @@ ALTER TABLE ONLY business.budget_periods
 
 
 --
+-- Name: request_events request_events_organization_id_actor_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.request_events
+    ADD CONSTRAINT request_events_organization_id_actor_id_fkey FOREIGN KEY (organization_id, actor_id) REFERENCES business.users(organization_id, id);
+
+
+--
+-- Name: request_events request_events_organization_id_financial_request_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
+--
+
+ALTER TABLE ONLY business.request_events
+    ADD CONSTRAINT request_events_organization_id_financial_request_id_fkey FOREIGN KEY (organization_id, financial_request_id) REFERENCES business.financial_requests(organization_id, id);
+
+
+--
 -- Name: spending_limit_allocations spending_limit_allocations_organization_id_project_id_fkey; Type: FK CONSTRAINT; Schema: business; Owner: -
 --
 
@@ -1907,6 +2214,8 @@ ALTER TABLE ONLY business.spending_limits
 SET search_path TO business;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261110000500'),
+('20261110000400'),
 ('20261110000300'),
 ('20261110000200'),
 ('20261110000100'),

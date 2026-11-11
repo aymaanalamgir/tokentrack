@@ -344,3 +344,27 @@ docker compose exec usage-engine bin/usage reconcile
 The budget browser suite performs real authorized local transfers, including one stable-key 3,000 USD demonstration and a new 3 USD reviewed UI transfer per run. It also creates immutable control revisions. Rerunning it preserves old history and may append another distinct reviewed 3 USD action; total funding and expenditure remain conserved. Financial request replay with the same key never duplicates its effect. Backend concurrency tests use only isolated test tenants and guarded test-only cleanup.
 
 [Budget/allowance contract](budget-allowances.md) defines precise bodies, permissions, bounds, warnings and forecasts. [Slice 7 report](slice7.md) records actual observed results. Do not reset organizations with financial or spending-control history.
+
+## Slice 8 requests and approvals
+
+Apply the additive request migrations after Slice 7, preserving all ledger and allowance history:
+
+```bash
+docker compose exec core-api bin/rails db:migrate
+docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
+docker compose exec core-api bin/rails requests:demo_setup
+```
+
+The setup is local-demo-only and idempotent. It creates submitted request/audit records and one rejected scenario; it does not reset usage, create reserve funding, or approve the pending financial examples. Open `/requests?month=2026-11`, switch among Jordan, Marcus, Priya, Olivia, and Sofia, and exercise the role-specific workflow. A failed approval remains pending with no partial execution.
+
+```bash
+docker compose exec core-api bundle exec rspec
+docker compose exec usage-engine ./gradlew test integrationTest --rerun-tasks
+docker compose exec frontend npm run lint
+docker compose exec frontend npm run typecheck
+docker compose exec frontend npm test
+docker compose exec frontend npm run test:requests
+docker compose exec usage-engine bin/usage reconcile
+```
+
+Reconciliation exits with its documented incomplete-pricing status while the ledger is balanced if intentionally unsupported/unrated events remain. Inspect the JSON integrity counters rather than treating those unpriced events as a request failure. The [Slice 8 report](slice8.md) defines routing, API, atomic execution, current results, and limitations. Demo reset refuses append-only request history.

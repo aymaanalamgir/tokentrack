@@ -15,6 +15,9 @@ Rails.application.routes.draw do
       post "budgets/allocations", to: "budgets#allocations"
       post "budgets/delegations", to: "budgets#delegate"
       post "budgets/delegations/revoke", to: "budgets#revoke"
+      resources :requests, only: [:index, :show, :create] do
+        %i[approve reject cancel escalate].each { |decision| post decision, on: :member }
+      end
       get "analytics", to: "analytics#show"
       get "health", to: "health#show"
       get "demo/identities", to: "demo#identities"

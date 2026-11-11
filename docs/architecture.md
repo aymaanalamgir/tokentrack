@@ -1,6 +1,6 @@
 # TokenTrack architecture
 
-Slices 1–7 implement the local four-service system, scoped identity/project workflows, canonical ingestion, pricing/outbox, an append-only financial ledger role-aware analytics, and operational budget/spending controls. Funding request and approval workflows remain planned.
+Slices 1–8 implement the local four-service system, scoped identity/project workflows, canonical ingestion, pricing/outbox, an append-only financial ledger, role-aware analytics, operational budget/spending controls, and auditable funding requests with delegated approvals.
 
 ```mermaid
 flowchart TB
@@ -196,3 +196,9 @@ SpendingLimit is a tenant/employee/month/USD parent with an immutable current re
 AllowanceDelegation explicitly binds a manager/unit, monthly cap and bounded month range to direct-report ceiling administration. Grantor and revocation audit fields are retained. Existing financial_operator governs money; explicit organization/team/project budget-reader roles govern account visibility; project leadership never reveals unrelated personal ceilings.
 
 Warnings use one configurable threshold definition. Forecasts use current corrected posted costs through an explicit recorded activity day, with sparse/unknown coverage states. The dashboard reuses the analytics chart, existing dialog, identity-aware query cache and session switching. Analytics receives a compact, clearly separate single-month budget context. See [rules/API](budget-allowances.md) and [executed verification](slice7.md).
+
+## Slice 8 request workflow
+
+Rails owns `FinancialRequest` and append-only `RequestEvent`. Submitted request terms are immutable. Personal requests snapshot the current allowance revision; funding requests snapshot the selected accounts and current amounts. `Requests::ApprovalRouter` derives deterministic non-self reviewers from active explicit authority, while `Requests::DecisionService` locks and revalidates the request at decision time.
+
+Approval nests the existing `Budgets::AllowanceOperations#revise` or `Finance::Operations#transfer` inside the request transaction. The decision is not committed until its business effect and type-correct execution reference exist. Stable request/decision keys, the existing allowance and period locks, and optimistic request locking prevent duplicate effects. Project/team requests remain financial-operator-only; allowance delegation never becomes transfer authority. Requests are intent and audit data, never expense or a second ledger. See [Slice 8](slice8.md).

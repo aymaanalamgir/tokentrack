@@ -84,4 +84,16 @@ Sofia's explicitly small 0.05 USD ceiling demonstrates actual posted overage wit
 
 Use the accounting-month selector and forecast-only as-of date, inspect warning/coverage labels, adjust multiple personal partitions atomically and review a transfer before confirming. Employee allocations never create financial transactions. Transfers retain actor, reason, date, accounting month and source/destination legs. Full-month totals and recorded-date estimates are distinct. [Slice 7 report](../docs/slice7.md) records the actual current values after browser demonstrations; [control rules](../docs/budget-allowances.md) explain unused-capacity floors and eligible projects.
 
-The browser budget workflow intentionally appends immutable personal revisions and distinct authorized 3 USD UI transfers. Its stable-key 3,000 USD transfer replays without duplication. Do not reset history to repeat the walkthrough. Funding requests and approval inboxes remain Slice 8.
+The browser budget workflow intentionally appends immutable personal revisions and distinct authorized 3 USD UI transfers. Its stable-key 3,000 USD transfer replays without duplication. Do not reset history to repeat the walkthrough.
+
+## Funding requests and approvals (Slice 8)
+
+Run `docker compose exec core-api bin/rails requests:demo_setup`, then open `/requests?month=2026-11`.
+
+1. Jordan's 750 USD desired ceiling routes to Marcus because his active cap is 1,000 USD. Approval adds one allowance revision and no ledger transaction.
+2. Jordan's 1,500 USD request routes directly to Olivia because authority applies to the final ceiling, not incremental increases.
+3. Priya's 2,000 USD Fraud Detection request and Marcus's 3,000 USD Platform request require financial-operator review; neither requester can self-approve.
+4. Sofia's rejected example appears in History with no allowance or ledger effect.
+5. The retained Platform-backed Fraud request demonstrates insufficient source capacity: approval fails safely and stays pending. The reserve-backed example demonstrates a successful conserved transfer.
+
+Identical decision retries return the existing result. Revoking Marcus's delegation before decision removes his approval authority. Request events and submitted terms are append-only, and approved execution references link to the existing allowance or financial audit record. [Slice 8](../docs/slice8.md) records the verified workflow.

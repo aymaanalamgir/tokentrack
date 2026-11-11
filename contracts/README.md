@@ -10,7 +10,7 @@ The Slice 1 health contracts remain unchanged:
 
 Next.js accepts database connectivity only from a recognized backend health response. Missing fields, invalid JSON, non-success status codes, timeouts, and network errors cannot produce a green service indicator. Database status requires confirmation from both services. If a backend is unreachable, this means its database connection **cannot be confirmed**, not that the PostgreSQL process is necessarily stopped.
 
-Slice 4 adds the [CSV usage-event v1 contract](usage-event-v1.md) and the narrow Rails reference contract below. Slice 5 added priced-event delivery and financial posting; Slice 6 adds the analytics contract linked below.
+Slice 4 adds the [CSV usage-event v1 contract](usage-event-v1.md) and the narrow Rails reference contract below. Slice 5 added priced-event delivery and financial posting; Slice 6 adds analytics; Slice 7 adds budget controls; Slice 8 adds the session-authenticated request endpoints documented in [the implementation report](../docs/slice8.md).
 
 ## Slice 2 organizational API
 

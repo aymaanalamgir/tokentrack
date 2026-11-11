@@ -154,7 +154,7 @@ try {
     .getByRole("link", { name: "Marcus Rivera", exact: true })
     .waitFor();
   await main
-    .getByText("Financial approvals (not implemented)", { exact: true })
+    .getByText("Unrelated requests, analytics, and unauthorized funding allocations", { exact: true })
     .waitFor();
   assert.equal(
     (await get(`users/${jordan.id}/reporting-context`)).data.ancestors.some(

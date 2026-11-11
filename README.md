@@ -1,12 +1,12 @@
 # TokenTrack — AI Spend Intelligence
 
-> **Status:** Slices 1–7 implemented: local infrastructure, organizational modeling, scoped access control, authenticated demo experiences, cross-functional project management, Kotlin usage ingestion, effective-dated pricing, durable delivery, an append-only financial ledger, scoped analytics dashboards, and operational budget/allowance controls. Product workflows below are planned unless explicitly marked implemented.
+> **Status:** Slices 1–8 implemented: local infrastructure, organizational modeling, scoped access control, authenticated demo experiences, cross-functional project management, Kotlin usage ingestion, effective-dated pricing, durable delivery, an append-only financial ledger, scoped analytics dashboards, operational budget/allowance controls, and auditable funding requests with delegated approvals. Product workflows below are planned unless explicitly marked implemented.
 >
 > A local-first B2B SaaS-style platform for understanding AI usage, attributing costs to projects, measuring workflow efficiency, and managing budgets through delegated approvals.
 
 ## Start here — implemented workspace
 
-TokenTrack runs Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. Enter Northstar Labs (10 fictional people) or Aperture Technologies (64), then switch authenticated demo identities to explore leadership, manager, project lead, and employee workspaces. Profiles, reporting charts, teams, scoped people/project directories, project creation, contributor assignment/history, ownership transfer, archive/restore, persistent themes, and real health checks work. Project administrators can expand contributors by home team; managers and employees see their authorized project assignments. A Kotlin CLI imports versioned synthetic CSV usage with reference validation, deduplication, and persistent rejection reports. Kotlin pricing/outbox and Rails budget accounts, transfers, expense posting, corrections and reconciliation work through backend CLI operations. Interactive analytics now combines ledger expenditure, usage trends, model/tool breakdowns, coverage and explicit budget reads. Authorized budget transfers, personal ceilings, project partitions, warnings and run-rate forecasts now work. Funding requests and approval workflows remain planned. Demo sign-in is local-only and always disabled in Rails production.
+TokenTrack runs Next.js, Rails API-only, Kotlin/Spring Boot, and PostgreSQL. Enter Northstar Labs (10 fictional people) or Aperture Technologies (64), then switch authenticated demo identities to explore leadership, manager, project lead, and employee workspaces. Profiles, projects, usage ingestion/pricing, ledger-backed analytics, funded budgets, personal controls, and request workflows are operational. Employees can request allowance increases, project leads and managers can request scoped funding, delegated managers can decide within capped authority, and financial operators can execute balanced transfers. Approved effects appear in Budgets and Analytics without counting requests as expenditure. Demo sign-in is local-only and always disabled in Rails production.
 
 ```bash
 cp .env.example .env
@@ -433,9 +433,11 @@ The four Compose services communicate by service name. PostgreSQL initializes se
 - Versioned personal ceilings and atomic project partitions, capped manager delegation, warnings and transparent forecasts.
 - Financial account funding remains separate from employee spending controls.
 
-### Slice 8 — Funding requests and approvals (next)
+### Slice 8 — Funding requests and approvals (implemented)
 
-- Allowance increase and project/team funding requests, delegated routing, approval decisions, escalation and audit history.
+- Allowance increase and project/team funding requests with deterministic delegated routing.
+- Atomic approval through existing allowance revisions or balanced ledger transfers, plus rejection, cancellation, escalation, idempotency and append-only audit history.
+- Role-aware Requests workspace with identity-safe caching and immediate Budget/Analytics refresh.
 
 ### Later slices — Agents and demo polish
 
@@ -443,7 +445,7 @@ The four Compose services communicate by service name. PostgreSQL initializes se
 
 ## 13. Acceptance scope
 
-Slice 1 establishes startup, real health, schema ownership, a polished shell, and automated checks. Slice 2 adds server-enforced organizational access and four demo experiences. Slice 3 adds functional project management and cross-functional staffing. Slice 4 adds canonical usage ingestion and operational import reporting. Slice 5 adds pricing and the financial ledger; Slice 6 adds scoped analytics dashboards. See [current verification results](docs/slice6.md).
+Slice 1 establishes startup, real health, schema ownership, a polished shell, and automated checks. Slice 2 adds server-enforced organizational access and four demo experiences. Slice 3 adds functional project management and cross-functional staffing. Slice 4 adds canonical usage ingestion and operational import reporting. Slice 5 adds pricing and the financial ledger; Slice 6 adds scoped analytics; Slice 7 adds budget controls; Slice 8 adds funding requests and approvals. See [current verification results](docs/slice8.md).
 
 The following remain acceptance criteria for a **future complete vertical slice**, not Slice 1:
 
@@ -511,4 +513,15 @@ docker compose exec core-api bin/rails budgets:demo_setup
 docker compose exec -e SMALL_BUDGET_SCENARIO=true core-api bin/rails budgets:demo_setup
 ```
 
-The standard setup creates allowance revisions/delegation only; it creates no funds. The optional scenario returns unused project funding to reserve and preserves organization funding and expense history. [Budget/allowance contract](docs/budget-allowances.md) explains the rules; [Slice 7 report](docs/slice7.md) records actual balances, tests and remaining limitations. Requests/approvals are Slice 8.
+The standard setup creates allowance revisions/delegation only; it creates no funds. The optional scenario returns unused project funding to reserve and preserves organization funding and expense history. [Budget/allowance contract](docs/budget-allowances.md) explains the rules; [Slice 7 report](docs/slice7.md) records actual balances, tests and remaining limitations.
+
+## Funding requests and approvals
+
+Open `/requests?month=2026-11` for My Requests, Pending Review, and History. Create the preserved demo scenarios after finance and budget setup:
+
+```bash
+docker compose exec core-api bin/rails db:migrate
+docker compose exec core-api bin/rails requests:demo_setup
+```
+
+Jordan's 750 USD request routes to Marcus's capped delegation; his 1,500 USD request routes to financial authority. Priya's project and Marcus's team requests require a financial operator. Approvals reuse existing allowance and transfer services, never create expenditure, and retain immutable decisions and execution references. See the [Slice 8 report](docs/slice8.md).

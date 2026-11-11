@@ -138,12 +138,17 @@ class AccessPolicy
     permissions << "allowances.read.managed" if manager?
     permissions << "finance.read.accounts.scoped" if budget_org_reader? || budget_unit_ids.any? || budget_project_ids.any?
     permissions << "finance.manage.organization" if financial_operator?
+    permissions << "requests.create.allowance"
+    permissions << "requests.create.team_funding" if manager?
+    permissions << "requests.create.project_funding" if project_lead?
+    permissions << "requests.review.financial" if financial_operator?
+    permissions << "requests.review.delegated_allowance" if manager?
     {
       persona: persona,
       scope_key: Digest::SHA256.hexdigest([grants.map { |g| [g.id, g.role, g.organizational_unit_id, g.project_id] }.sort_by(&:first), AllowanceDelegation.active.where(organization_id:organization_id,manager_id:actor.id).order(:id).pluck(:id,:maximum_amount,:effective_from_month,:effective_until_month), organization_viewer? ? [] : projects.order(:id).pluck(:id), organization_viewer? ? [] : directory_ids.sort].to_json),
       grants: grants.map { |g| { role: g.role, scope_type: g.scope_type, scope_id: g.organizational_unit_id || g.project_id || (g.scope_type == "self" ? actor.id : organization_id), scope_name: g.organizational_unit&.name || g.project&.name || (g.scope_type == "self" ? actor.name : actor.organization.name) } },
       capabilities: permissions,
-      restricted: ["Organization administration", "Financial approvals (not implemented)", "Unrelated analytics and unauthorized funding allocations"] + (organization_viewer? ? [] : ["Unrelated employees' private profiles"]),
+      restricted: ["Organization administration", "Unrelated requests, analytics, and unauthorized funding allocations"] + (organization_viewer? ? [] : ["Unrelated employees' private profiles"]),
       navigation: navigation,
       visibility: { directory: "Names, titles, job functions, and relevant team/project context", management: "Own profile, explicitly managed teams/reports, or organization viewer scope", private: "Access grants are visible only to their owner. Analytics are scoped to self, managed people and explicitly led projects. Funding and financial mutation require separate financial_operator authority." }
     }

@@ -1,0 +1,43 @@
+{
+  "verified_at_utc": "2026-11-10",
+  "requests": {
+    "total": 6,
+    "by_type": { "personal_allowance": 3, "project_funding": 2, "team_funding": 1 },
+    "by_status": { "approved": 2, "pending": 3, "rejected": 1 },
+    "events": { "created": 6, "submitted": 6, "approved": 2, "executed": 2, "rejected": 1 },
+    "approved_execution_references_valid": true,
+    "request_funding_transfers": 1
+  },
+  "observed_effects": {
+    "jordan_november_ceiling": "750",
+    "aperture_funding": "200000",
+    "aperture_net_expenditure": "423.91566928",
+    "organization_funding_conserved": true,
+    "request_amounts_counted_as_expenditure": false
+  },
+  "reconciliation": {
+    "status": "balanced_with_unpriced_usage",
+    "priced_events": 7305,
+    "posted_events": 7305,
+    "unpriced_events": 448,
+    "pending_delivery": 0,
+    "dead_deliveries": 0,
+    "amount_discrepancies": 0,
+    "payload_conflicts": 0,
+    "ledger_integrity": {
+      "invalid_operation_entries": 0,
+      "duplicate_expenses": 0,
+      "unbalanced_transfers": 0,
+      "posted_receipts_missing_transactions": 0
+    },
+    "net_expenditure_usd": "500.789210275"
+  },
+  "tests": {
+    "rails_examples": 156,
+    "rails_failures": 0,
+    "kotlin_tests": 86,
+    "frontend_unit_tests": 11,
+    "browser_suites": ["smoke", "access", "projects", "analytics", "budgets", "requests"],
+    "production_builds": ["core-api", "frontend"]
+  }
+}

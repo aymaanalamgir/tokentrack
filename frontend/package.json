@@ -16,7 +16,8 @@
     "test:access": "node e2e/access-control.mjs",
     "test:projects": "node e2e/project-management.mjs",
     "test:analytics": "node e2e/analytics.mjs",
-    "test:budgets": "node e2e/budgets.mjs"
+    "test:budgets": "node e2e/budgets.mjs",
+    "test:requests": "node e2e/requests.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
