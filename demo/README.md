@@ -98,6 +98,12 @@ Run `docker compose exec core-api bin/rails requests:demo_setup`, then open `/re
 
 Identical decision retries return the existing result. Revoking Marcus's delegation before decision removes his approval authority. Request events and submitted terms are append-only, and approved execution references link to the existing allowance or financial audit record. [Slice 8](../docs/slice8.md) records the verified workflow.
 
+## Agent insight scenarios (Slice 9B)
+
+`generators/generate-agent-insight-scenarios.sh 42` writes `agent-insights-usage-v1.csv` and `agent-insights-executions-v1.jsonl` for the separate source `demo-agent-insights-v1`; `agent-insights-pricing-v1.json` maps its models to published rates. Seven fictional Aperture agents cover a retry spike, a success-rate decline, output-token growth, a model-mix change, volume growth without inefficiency, incomplete pricing, sparse data and one corrected charge. Outcomes are simulated (`synthetic_fixture`), and the UI labels them. Load order and observed results are in [Slice 9B](../docs/slice9b.md).
+
+Walkthrough: enter as Olivia, open Agents → Efficiency, expand Support Summarizer's cost drivers, open Insights, filter to "Retry increase", show the evidence and follow "View supporting runs". Switch to Marcus, then Jordan, to see the same agents recomputed from their narrower populations.
+
 ## Agent executions (Slice 9A)
 
 After usage import, generate and import the separate sidecar:

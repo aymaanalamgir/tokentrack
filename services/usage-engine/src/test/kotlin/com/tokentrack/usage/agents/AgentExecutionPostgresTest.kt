@@ -50,7 +50,7 @@ class AgentExecutionPostgresTest {
     }
     @Test fun `metrics keep retries separate and aggregate linked tokens once`() {
         service().importFile(file(record(),"metrics.jsonl"),source)
-        val body=mapper.valueToTree<com.fasterxml.jackson.databind.node.ObjectNode>(mapOf("organization_id" to org.toString(),"all_users" to true,"scope_users" to emptyList<String>(),"scope_projects" to emptyList<String>(),"filter_users" to null,"start" to "2026-11-01T00:00:00Z","end" to "2026-12-01T00:00:00Z","agent_id" to null,"run_id" to null,"project_id" to null,"user_id" to null,"workflow_type" to null,"status" to null,"outcome" to null,"limit" to 25,"offset" to 0))
+        val body=mapper.valueToTree<com.fasterxml.jackson.databind.node.ObjectNode>(mapOf("organization_id" to org.toString(),"all_users" to true,"scope_users" to emptyList<String>(),"scope_projects" to emptyList<String>(),"filter_users" to null,"start" to "2026-11-01T00:00:00Z","end" to "2026-12-01T00:00:00Z","agent_id" to null,"run_id" to null,"project_id" to null,"user_id" to null,"workflow_type" to null,"status" to null,"outcome" to null,"retried" to null,"limit" to 25,"offset" to 0))
         val totals=AgentAnalytics(jdbc).report(body)["totals"] as Map<*,*>
         assertEquals(1L,totals["runs"]);assertEquals(1L,totals["successful_runs"]);assertEquals(0,(totals["average_retries"] as String).toBigDecimal().compareTo(java.math.BigDecimal.ZERO))
     }

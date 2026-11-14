@@ -11,4 +11,14 @@ The `/agents` report has one authorized run population supplied by Rails. Kotlin
 
 Times are UTC and ranges are half-open. Runs are included by `started_at`. Group totals are alternate views of the same population and should not be added together.
 
-This slice is descriptive telemetry only: no recommendations, anomaly detection, productivity score, forecast, or prediction.
+Slice 9B adds these derived metrics, computed once in Kotlin (`InsightRules.derive`) and never recomputed elsewhere:
+
+- Success rate is successes divided by concluded runs (success + failure + cancelled). Running/unknown runs are excluded, not counted as failures. No concluded runs gives null.
+- Tokens per run (input, output, cached input, total) divide by runs that have at least one linked usage event, so unlinked runs are not treated as zero-token runs.
+- Median duration uses completed runs; it is the basis for duration findings.
+- Pricing coverage is priced events divided by linked usage events.
+- Cost per run, failed-run cost and its share, and adjustments (net minus original expenditure) are computed in Rails from the ledger.
+
+Run-linked cost is attributed to the run by its start time, whatever the timestamps of its usage events. The cohort is no longer capped at 5,000 runs; see [agent optimization](agent-optimization.md) for comparisons, thresholds and findings.
+
+Still out of scope: productivity scores, forecasts, predictions, and any statement of cause.

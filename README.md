@@ -26,7 +26,7 @@ After choosing a fictional demo identity, explore:
 | --- | --- |
 | Overview, organization, teams, people, and projects | Organizational hierarchy, project collaboration, and backend-enforced visibility boundaries. |
 | Analytics | Token use, pricing coverage, corrected ledger expenditure, trends, model/tool breakdowns, project attribution, and ledger audit history. |
-| Agents | Explicit run outcomes, attempts, retries, duration, linked usage, and corrected known cost. |
+| Agents | Explicit run outcomes, attempts, retries, duration, linked usage, and corrected known cost; period comparisons, deterministic anomaly findings with evidence quality, and a cost-driver breakdown. |
 | Budgets | Funded accounts, monthly allocations, personal allowances, run-rate controls, and financial history. |
 | Requests | Allowance and funding requests routed to the appropriate delegated or financial authority. |
 
@@ -184,6 +184,7 @@ docker compose exec frontend npm run test:analytics
 docker compose exec frontend npm run test:budgets
 docker compose exec frontend npm run test:requests
 docker compose exec frontend npm run test:agents
+docker compose exec frontend npm run test:agent-insights
 
 docker compose exec core-api bundle exec rspec
 
@@ -219,4 +220,6 @@ Productionizing it would require a real identity provider, secret management and
 - [Model pricing](docs/model-pricing.md)
 - [Analytics contract and definitions](docs/analytics-contract.md)
 - [Agent efficiency metrics](docs/agent-efficiency-metrics.md)
+- [Agent optimization: comparisons, thresholds and insights](docs/agent-optimization.md)
+- [Slice 9B report](docs/slice9b.md)
 - [Demo guide](demo/README.md)

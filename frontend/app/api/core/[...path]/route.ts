@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 const cookieName = "tokentrack_demo_session";
 const uuid = "[0-9a-f-]{36}";
 const getPaths = new RegExp(
-  `^(budgets|analytics|agents|requests(?:/${uuid})?|demo/identities|me(?:/access|/overview)?|organizations/${uuid}|organizational-units(?:/${uuid})?|users(?:/${uuid}(?:/reporting-context)?)?|projects(?:/eligible-users|/${uuid}(?:/eligible-users|/team-groups|/memberships)?)?)$`,
+  `^(budgets|analytics|agents(?:/insights)?|requests(?:/${uuid})?|demo/identities|me(?:/access|/overview)?|organizations/${uuid}|organizational-units(?:/${uuid})?|users(?:/${uuid}(?:/reporting-context)?)?|projects(?:/eligible-users|/${uuid}(?:/eligible-users|/team-groups|/memberships)?)?)$`,
 );
 
 async function proxy(
@@ -77,6 +77,7 @@ async function proxy(
           "month", "account_id", "as_of", "history_offset",
           "request_type", "requester_id", "unit_id", "assigned_approver_id",
           "start", "end", "granularity", "organization_unit_id", "project_id", "user_id", "provider", "model", "tool", "audit_start", "audit_end", "agent_id", "run_id", "workflow_type", "outcome",
+          "retried", "compare", "insight_type", "severity", "evidence_quality",
           "q",
           "status",
           "department",

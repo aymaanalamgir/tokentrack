@@ -1,0 +1,81 @@
+{
+  "catalogue_version": 1,
+  "rates": [],
+  "mappings": [
+    {
+      "id": "b41467f1-9346-56a2-a72e-20067754cdd4",
+      "source": "demo-agent-insights-v1",
+      "source_provider": "openai",
+      "source_model": "gpt-5.4-mini",
+      "target_provider": "openai",
+      "target_model": "gpt-5.4-mini",
+      "pricing_tier": "standard_text_cache_read",
+      "currency": "USD",
+      "billing_basis": "synthetic_standard_cache_read",
+      "description": "Slice 9B agent insight scenarios: openai/gpt-5.4-mini at its own published standard rates",
+      "max_input_tokens": 200000,
+      "max_output_tokens": 64000,
+      "max_context_tokens": 200000
+    },
+    {
+      "id": "d1839920-3030-5a66-92bb-f5a37519f40b",
+      "source": "demo-agent-insights-v1",
+      "source_provider": "openai",
+      "source_model": "gpt-5.4",
+      "target_provider": "openai",
+      "target_model": "gpt-5.4",
+      "pricing_tier": "standard_text_cache_read",
+      "currency": "USD",
+      "billing_basis": "synthetic_standard_cache_read",
+      "description": "Slice 9B agent insight scenarios: openai/gpt-5.4 at its own published standard rates",
+      "max_input_tokens": 200000,
+      "max_output_tokens": 64000,
+      "max_context_tokens": 200000
+    },
+    {
+      "id": "3425798e-19a5-5c22-b9df-7d33eb6ce051",
+      "source": "demo-agent-insights-v1",
+      "source_provider": "anthropic",
+      "source_model": "claude-haiku-4-5",
+      "target_provider": "anthropic",
+      "target_model": "claude-haiku-4-5",
+      "pricing_tier": "standard_text_cache_read",
+      "currency": "USD",
+      "billing_basis": "synthetic_standard_cache_read",
+      "description": "Slice 9B agent insight scenarios: anthropic/claude-haiku-4-5 at its own published standard rates",
+      "max_input_tokens": 200000,
+      "max_output_tokens": 64000,
+      "max_context_tokens": 200000
+    },
+    {
+      "id": "bf2bf4f8-2187-53b0-8c9c-2ebca039407e",
+      "source": "demo-agent-insights-v1",
+      "source_provider": "anthropic",
+      "source_model": "claude-sonnet-4-6",
+      "target_provider": "anthropic",
+      "target_model": "claude-sonnet-4-6",
+      "pricing_tier": "standard_text_cache_read",
+      "currency": "USD",
+      "billing_basis": "synthetic_standard_cache_read",
+      "description": "Slice 9B agent insight scenarios: anthropic/claude-sonnet-4-6 at its own published standard rates",
+      "max_input_tokens": 200000,
+      "max_output_tokens": 64000,
+      "max_context_tokens": 200000
+    },
+    {
+      "id": "93e1236e-c6f7-50e9-b6ff-e3a378c59600",
+      "source": "demo-agent-insights-v1",
+      "source_provider": "google",
+      "source_model": "gemini-2.5-flash",
+      "target_provider": "google",
+      "target_model": "gemini-2.5-flash",
+      "pricing_tier": "standard_text_cache_read",
+      "currency": "USD",
+      "billing_basis": "synthetic_standard_cache_read",
+      "description": "Slice 9B agent insight scenarios: google/gemini-2.5-flash at its own published standard rates",
+      "max_input_tokens": 200000,
+      "max_output_tokens": 64000,
+      "max_context_tokens": 200000
+    }
+  ]
+}

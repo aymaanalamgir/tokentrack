@@ -369,6 +369,15 @@ docker compose exec usage-engine bin/usage reconcile
 
 Reconciliation exits with its documented incomplete-pricing status while the ledger is balanced if intentionally unsupported/unrated events remain. Inspect the JSON integrity counters rather than treating those unpriced events as a request failure. The [Slice 8 report](slice8.md) defines routing, API, atomic execution, current results, and limitations. Demo reset refuses append-only request history.
 
+## Slice 9B agent insights
+
+Apply the additive receipts index (`docker compose exec core-api bin/rails db:migrate`, and again with `-e RAILS_ENV=test`), restart the usage engine, then load the scenario source with the commands in [slice9b.md](slice9b.md#demo-scenarios). Thresholds are under `tokentrack.agent-insights` in the usage engine's `application.yml`; `AGENT_INSIGHTS_MIN_RUNS` and `AGENT_INSIGHTS_MIN_RUNS_LIMITED` override the sample sizes. Browser check:
+
+```bash
+docker run --rm --network tokentrack_default -e BASE_URL=http://frontend:3000 \
+  -v "$PWD/frontend:/app" -w /app mcr.microsoft.com/playwright:v1.56.1-noble npm run test:agent-insights
+```
+
 ## Slice 9A agent execution tracking
 
 Restart Kotlin to apply Flyway v7/v8, then generate the execution JSONL from the canonical usage rows already carrying run IDs:

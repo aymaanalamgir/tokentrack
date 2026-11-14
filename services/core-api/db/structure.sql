@@ -1364,6 +1364,13 @@ CREATE UNIQUE INDEX one_reversal_per_operation ON business.financial_transaction
 
 
 --
+-- Name: receipts_agent_run_link; Type: INDEX; Schema: business; Owner: -
+--
+
+CREATE INDEX receipts_agent_run_link ON business.priced_usage_receipts USING btree (organization_id, ((payload ->> 'source'::text)), ((payload ->> 'agent_run_id'::text))) WHERE ((payload ->> 'agent_run_id'::text) IS NOT NULL);
+
+
+--
 -- Name: receipts_analytics_project; Type: INDEX; Schema: business; Owner: -
 --
 
@@ -2214,6 +2221,7 @@ ALTER TABLE ONLY business.spending_limits
 SET search_path TO business;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261112000100'),
 ('20261110000500'),
 ('20261110000400'),
 ('20261110000300'),

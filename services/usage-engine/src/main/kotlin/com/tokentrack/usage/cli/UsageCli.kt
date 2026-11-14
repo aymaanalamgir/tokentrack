@@ -14,6 +14,7 @@ import com.tokentrack.usage.ingestion.IngestionService
 import com.tokentrack.usage.persistence.UsageRepository
 import com.tokentrack.usage.references.RailsReferenceResolver
 import com.tokentrack.usage.agents.AgentExecutionGenerator
+import com.tokentrack.usage.agents.AgentInsightScenarioGenerator
 import com.tokentrack.usage.agents.AgentExecutionService
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.builder.SpringApplicationBuilder
@@ -42,6 +43,7 @@ TokenTrack usage CLI
   bin/usage agent-import FILE --source STABLE_SOURCE
   bin/usage agent-report BATCH_UUID
   bin/usage generate-agent-executions --output FILE.jsonl --seed 42 [--source STABLE_SOURCE] [--invalid-output FILE.jsonl]
+  bin/usage generate-agent-insight-scenarios --snapshot FILE.json --usage-output FILE.csv --executions-output FILE.jsonl --seed 42
 Exit codes: 0 completed/duplicates/report; 2 completed with rejected rows; 3 failed/partial/infrastructure; 64 invalid arguments.
 """.trimIndent()
 
@@ -66,6 +68,7 @@ fun main(args: Array<String>) {
         "agent-import" -> setOf("--source")
         "agent-report" -> emptySet()
         "generate-agent-executions" -> setOf("--output", "--seed", "--source", "--invalid-output")
+        "generate-agent-insight-scenarios" -> setOf("--snapshot","--usage-output","--executions-output","--seed")
         "list", "delivery-report" -> emptySet()
         "load-prices" -> setOf("--file")
         "close-rate" -> setOf("--id","--until")
@@ -91,6 +94,7 @@ fun main(args: Array<String>) {
                     }
                     "agent-report" -> print(context.getBean(AgentExecutionService::class.java).report(UUID.fromString(positional.single())))
                     "generate-agent-executions" -> print(context.getBean(AgentExecutionGenerator::class.java).generate(Path.of(option("--output")),option("--seed").toLong(),options["--invalid-output"]?.let(Path::of),options["--source"]?:"demo-synthetic-v1"))
+                    "generate-agent-insight-scenarios" -> print(context.getBean(AgentInsightScenarioGenerator::class.java).generate(mapper.readTree(Path.of(option("--snapshot")).toFile()),Path.of(option("--usage-output")),Path.of(option("--executions-output")),option("--seed").toLong()))
                     "generate-pricing-scenarios" -> print(context.getBean(PricingScenarioGenerator::class.java).generate(mapper.readTree(Path.of(option("--snapshot")).toFile()),Path.of(option("--output"))))
                     "close-rate" -> print(context.getBean(PricingRepository::class.java).closeRate(UUID.fromString(option("--id")),java.time.Instant.parse(option("--until"))))
                     "load-prices" -> print(context.getBean(PricingRepository::class.java).loadCatalogue(options["--file"]?.let(Path::of)))

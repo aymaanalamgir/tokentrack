@@ -49,3 +49,16 @@ tokentrack:
 
   analytics:
     token: ${USAGE_ANALYTICS_TOKEN:}
+
+  # Slice 9B anomaly thresholds: the only place they are defined. Demonstration defaults, not statistical truths.
+  agent-insights:
+    min-runs: ${AGENT_INSIGHTS_MIN_RUNS:20}
+    min-runs-limited: ${AGENT_INSIGHTS_MIN_RUNS_LIMITED:8}
+    retry-rate-increase-points: 10
+    success-rate-decrease-points: 10
+    tokens-per-run-increase-percent: 30
+    duration-increase-percent: 30
+    cost-per-success-increase-percent: 25
+    model-cost-share-percent: 70
+    failed-run-cost-share-percent: 20
+    critical-multiplier: 2

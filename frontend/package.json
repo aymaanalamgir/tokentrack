@@ -11,14 +11,15 @@
     "start": "next start --hostname 0.0.0.0",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "tsx --test lib/health-check.test.ts lib/analytics.test.ts lib/budget-money.test.ts",
+    "test": "tsx --test lib/health-check.test.ts lib/analytics.test.ts lib/budget-money.test.ts lib/agents.test.ts",
     "test:browser": "node e2e/smoke.mjs",
     "test:access": "node e2e/access-control.mjs",
     "test:projects": "node e2e/project-management.mjs",
     "test:analytics": "node e2e/analytics.mjs",
     "test:budgets": "node e2e/budgets.mjs",
     "test:requests": "node e2e/requests.mjs",
-    "test:agents": "node e2e/agents.mjs"
+    "test:agents": "node e2e/agents.mjs",
+    "test:agent-insights": "node e2e/agent-insights.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",

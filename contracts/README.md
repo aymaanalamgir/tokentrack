@@ -129,6 +129,10 @@ Kotlin exposes public Actuator health and the separately authenticated internal 
 
 [Analytics contract v1](../docs/analytics-contract.md) defines the authorized Rails `GET /api/v1/analytics` report and bounded Kotlin `POST /internal/v1/analytics` aggregate request. Only the Rails GET route is allowed through Next.js. A separate analytics service token never reaches browsers. Money comes from Rails ledger entries, tokens from Kotlin; reader scopes, current-home-team semantics, UTC comparisons, coverage and accounting/posting/activity dates are explicit.
 
+## Slice 9B agent insight contracts
+
+No ingestion contract changed. `GET /api/v1/agents/insights` and the internal `agent-insights` / `agent-cohort` endpoints are specified in [agent optimization](../docs/agent-optimization.md#api). The internal `agent-analytics` response is now `schema_version` 2: `cohort_runs` was removed, and bodies carry a `retried` key.
+
 ## Slice 9A agent execution contract
 
 [Agent execution JSONL v1](agent-execution-v1.md) defines immutable definitions, runs, outcomes, attempts, errors, and exact usage linkage. Rails exposes scoped `GET /api/v1/agents`; Kotlin's agent aggregate endpoint stays backend-only and Rails supplies corrected ledger money.

@@ -1,6 +1,6 @@
 # TokenTrack architecture
 
-Slices 1–9A implement the local four-service system, scoped identity/project workflows, canonical ingestion, pricing/outbox, an append-only financial ledger, role-aware analytics, operational budget/spending controls, auditable funding requests, and agent execution telemetry.
+Slices 1–9B implement the local four-service system, scoped identity/project workflows, canonical ingestion, pricing/outbox, an append-only financial ledger, role-aware analytics, operational budget/spending controls, auditable funding requests, and agent execution telemetry.
 
 ```mermaid
 flowchart TB
@@ -202,3 +202,7 @@ Warnings use one configurable threshold definition. Forecasts use current correc
 Rails owns `FinancialRequest` and append-only `RequestEvent`. Submitted request terms are immutable. Personal requests snapshot the current allowance revision; funding requests snapshot the selected accounts and current amounts. `Requests::ApprovalRouter` derives deterministic non-self reviewers from active explicit authority, while `Requests::DecisionService` locks and revalidates the request at decision time.
 
 Approval nests the existing `Budgets::AllowanceOperations#revise` or `Finance::Operations#transfer` inside the request transaction. The decision is not committed until its business effect and type-correct execution reference exist. Stable request/decision keys, the existing allowance and period locks, and optimistic request locking prevent duplicate effects. Project/team requests remain financial-operator-only; allowance delegation never becomes transfer authority. Requests are intent and audit data, never expense or a second ledger. See [Slice 8](slice8.md).
+
+## Slice 9B agent insights
+
+`GET /api/v1/agents/insights` follows the Slice 9A path: Rails derives the population from `AccessPolicy`, Kotlin returns comparison windows, per-period operational metrics, thresholds and operational findings, and Rails adds corrected ledger cost, cost findings and the cost-driver breakdown. Whole-cohort cost is no longer passed as a run list: Rails pages `POST /internal/v1/agent-cohort` (at most 1,000 runs per page, keyset on `(started_at, id)`), prices each page against the `receipts_agent_run_link` index and keeps only sums, so cohort size is unbounded and memory is not. Thresholds live only in the usage engine's configuration. Insights are computed per request and never stored; no analytics request writes financial data. Details: [agent optimization](agent-optimization.md).

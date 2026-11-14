@@ -8,7 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 
 class AgentAnalyticsControllerTest {
     private val token="a".repeat(64)
-    private val controller=AgentAnalyticsController(AgentAnalytics(mock(JdbcTemplate::class.java)),token)
+    private val controller=AgentAnalyticsController(AgentAnalytics(mock(JdbcTemplate::class.java)),AgentInsights(mock(JdbcTemplate::class.java),InsightThresholds()),token)
     private val body=ObjectMapper().createObjectNode()
     @Test fun `internal endpoint rejects browser and unrelated credentials`() {
         assertEquals(401,controller.report(null,body).statusCode.value())

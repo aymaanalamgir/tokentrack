@@ -20,6 +20,7 @@ Rails.application.routes.draw do
       end
       get "analytics", to: "analytics#show"
       get "agents", to: "agents#index"
+      get "agents/insights", to: "agents#insights"
       get "health", to: "health#show"
       get "demo/identities", to: "demo#identities"
       post "demo/sessions", to: "demo#create"
