@@ -206,3 +206,7 @@ Approval nests the existing `Budgets::AllowanceOperations#revise` or `Finance::O
 ## Slice 9B agent insights
 
 `GET /api/v1/agents/insights` follows the Slice 9A path: Rails derives the population from `AccessPolicy`, Kotlin returns comparison windows, per-period operational metrics, thresholds and operational findings, and Rails adds corrected ledger cost, cost findings and the cost-driver breakdown. Whole-cohort cost is no longer passed as a run list: Rails pages `POST /internal/v1/agent-cohort` (at most 1,000 runs per page, keyset on `(started_at, id)`), prices each page against the `receipts_agent_run_link` index and keeps only sums, so cohort size is unbounded and memory is not. Thresholds live only in the usage engine's configuration. Insights are computed per request and never stored; no analytics request writes financial data. Details: [agent optimization](agent-optimization.md).
+
+## Slice 10 demo reproducibility
+
+The demo is date-anchored: fixtures, funding months and scenarios simulate 2026-11-10 to 2026-12-10. Because usage validation and charge attribution depend on membership periods, `DemoData` gives newly seeded fixture memberships a fixed fictional start (2026-11-07 UTC) instead of the wall clock, and never alters an existing row. `scripts/setup-demo.sh` composes the existing idempotent commands; it introduces no new data path and no reset. See [slice10.md](slice10.md).

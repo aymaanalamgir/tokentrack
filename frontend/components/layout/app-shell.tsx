@@ -112,11 +112,6 @@ function Sidebar({ close }: { close?: () => void }) {
                 >
                   <Icon size={15} />
                   <span>{item.label}</span>
-                  {["/requests"].includes(
-                    item.href,
-                  ) && (
-                    <span className="ml-auto text-[9px] opacity-60">soon</span>
-                  )}
                 </Link>
               );
             })}

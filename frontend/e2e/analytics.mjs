@@ -11,7 +11,9 @@ try{
  await page.goto(base);await enter('Olivia Chen');
  const identities=await get('demo/identities');const jordan=identities.find(p=>p.name==='Jordan Lee');const maya=identities.find(p=>p.name==='Maya Chen');const olivia=identities.find(p=>p.name==='Olivia Chen');
  const full=await get('analytics?start=2026-11-01T00%3A00%3A00Z&end=2026-12-11T00%3A00%3A00Z');
- assert(full.summary.events>0);assert(full.summary.unpriced_events>0);assert.equal(full.summary.adjustments,'-0.0065');
+ assert(full.summary.events>0);assert(full.summary.unpriced_events>0);// Corrections exist and are negative in the demo; the exact total changes whenever a documented correction is added, so assert the ledger identity instead of a dataset constant.
+ const signed=v=>{const neg=v.startsWith('-');const [a,b='']=v.replace('-','').split('.');const n=BigInt(a)*10n**15n+BigInt((b+'0'.repeat(15)).slice(0,15));return neg?-n:n};
+ assert(signed(full.summary.adjustments)<0n);assert.equal(signed(full.summary.original_expenditure)+signed(full.summary.adjustments),signed(full.summary.net_expenditure));
  const scaled=v=>{const [a,b='']=v.split('.');return BigInt(a)*10n**15n+BigInt((b+'0'.repeat(15)).slice(0,15))};
  assert.equal(full.timeseries.reduce((n,r)=>n+scaled(r.net_expenditure),0n),scaled(full.summary.net_expenditure));
  assert.equal(full.models.reduce((n,r)=>n+scaled(r.net_expenditure),0n),scaled(full.summary.net_expenditure));

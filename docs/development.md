@@ -369,6 +369,22 @@ docker compose exec usage-engine bin/usage reconcile
 
 Reconciliation exits with its documented incomplete-pricing status while the ledger is balanced if intentionally unsupported/unrated events remain. Inspect the JSON integrity counters rather than treating those unpriced events as a request failure. The [Slice 8 report](slice8.md) defines routing, API, atomic execution, current results, and limitations. Demo reset refuses append-only request history.
 
+## One-command demo and verification (Slice 10)
+
+```bash
+docker compose up --build -d
+./scripts/setup-demo.sh     # idempotent; exit 0 ready, 1 a step failed, 69 a service is unavailable
+./scripts/verify.sh         # or: frontend | backend | browser
+```
+
+`setup-demo.sh` runs the commands documented in the sections below, in this order: Rails migrations (development and test), seeds, `finance:demo_setup`, `analytics:demo_access`, `load-prices` (catalogue and agent-scenario mappings), the three usage imports, `price` per source, `deliver`, both `agent-import`s, `budgets:demo_setup` with `SMALL_BUDGET_SCENARIO=true`, `requests:demo_setup`, `agents:demo_correction`, then `reconcile`. It imports the checked-in fixtures and never regenerates them. Each step's output is kept in a temporary log directory printed on the first line. Set `DOCKER_COMPOSE` to target another Compose project, and `DOCKER` / `PLAYWRIGHT_IMAGE` for `verify.sh`.
+
+`price` and `reconcile` exit 2 because the demo deliberately contains unpriced usage; the script accepts that and fails on anything else, including any non-zero discrepancy counter.
+
+Seeded fixture memberships start at the fixed fictional time 2026-11-07 UTC so the simulated events validate whenever the database is created. Memberships created through the application still record the real time.
+
+Browser suites must run with `requests` before `budgets` on a fresh demo (the budgets workflow revises an allowance that a pending request depends on); `verify.sh` does this. The frontend development container has no browser, so use `verify.sh browser` or the Playwright image command below rather than `docker compose exec frontend npm run test:…`.
+
 ## Slice 9B agent insights
 
 Apply the additive receipts index (`docker compose exec core-api bin/rails db:migrate`, and again with `-e RAILS_ENV=test`), restart the usage engine, then load the scenario source with the commands in [slice9b.md](slice9b.md#demo-scenarios). Thresholds are under `tokentrack.agent-insights` in the usage engine's `application.yml`; `AGENT_INSIGHTS_MIN_RUNS` and `AGENT_INSIGHTS_MIN_RUNS_LIMITED` override the sample sizes. Browser check:

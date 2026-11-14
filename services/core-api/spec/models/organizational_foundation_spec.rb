@@ -11,6 +11,26 @@ RSpec.describe "Organizational foundation", type: :model do
     expect(org("northstar-labs").users.count).to eq(10)
   end
 
+  it "starts newly seeded fixture memberships at the fixed fictional epoch so the checked-in demo events validate on any install date" do
+    epoch = DemoData::FIXTURE_EPOCH
+    id = DemoData.uuid("aperture-technologies/project-member/fraud-detection/jordan")
+    home = OrganizationalMembership.find_by!(user: person("jordan"), is_primary: true)
+    ProjectMembership.where(id: id).delete_all
+    OrganizationalMembership.where(id: home.id).delete_all
+    DemoData.seed!
+    fixture = ProjectMembership.find(id)
+    expect(fixture.joined_at).to eq(epoch)
+    restored = OrganizationalMembership.find(home.id)
+    expect([restored.created_at, restored.updated_at]).to eq([epoch, epoch])
+    event = { key: "k", organization_id: org.id, user_id: person("jordan").id, project_id: project.id, time: Time.utc(2026, 11, 10, 13) }
+    expect(UsageReferenceValidation.new.validate([event]).first).to include(valid: true)
+    expect(UsageReferenceValidation.new.validate([event.merge(time: epoch - 1)]).first).to include(code: "PROJECT_MEMBERSHIP_NOT_ESTABLISHED")
+    # Reseeding restores declared attributes but never rewrites an existing membership's recorded start.
+    fixture.update_columns(joined_at: Time.utc(2026, 11, 9, 12))
+    DemoData.seed!
+    expect(fixture.reload.joined_at).to eq(Time.utc(2026, 11, 9, 12))
+  end
+
   it "can intentionally reset demo fixtures while preserving non-demo organizations" do
     real = Organization.create!(name: "Non-demo tenant", slug: "non-demo", demo: false)
     DemoData.reset!

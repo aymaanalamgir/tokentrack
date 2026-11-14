@@ -30,7 +30,7 @@ After choosing a fictional demo identity, explore:
 | Budgets | Funded accounts, monthly allocations, personal allowances, run-rate controls, and financial history. |
 | Requests | Allowance and funding requests routed to the appropriate delegated or financial authority. |
 
-The app intentionally does **not** infer employee productivity from token consumption, estimate missing costs as facts, or make recommendations/predictions from the demo data.
+The app intentionally does **not** infer employee productivity from token consumption, estimate missing costs as facts, or predict anything. Agent findings are deterministic comparisons with evidence and suggested investigations, never statements of cause.
 
 ## Architecture
 
@@ -83,13 +83,14 @@ openssl rand -hex 32
 
 Use one generated value each for `USAGE_REFERENCE_TOKEN`, `USAGE_FINANCIAL_TOKEN`, and `USAGE_ANALYTICS_TOKEN`.
 
-Start the stack and initialize the demo database:
+Start the stack and load the complete demo:
 
 ```bash
 docker compose up --build -d
-docker compose exec core-api bin/rails db:migrate db:seed
-docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
+./scripts/setup-demo.sh
 ```
+
+`setup-demo.sh` applies migrations, seeds the two fictional organizations, creates synthetic funding, imports and prices usage, delivers it to the ledger, imports agent executions, creates budget and request examples, and finishes with a reconciliation summary. It is idempotent: run it again at any time and nothing is duplicated or reset. The individual commands it runs are documented in [development](docs/development.md).
 
 | Service | Address |
 | --- | --- |
@@ -98,36 +99,13 @@ docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
 | Kotlin health | <http://localhost:8080/actuator/health> |
 | PostgreSQL | `localhost:5432` |
 
-Open the app and select a fictional organization and identity. The local demo session is HTTP-only and Rails disables demo authentication in production mode.
+Open the app and select a fictional organization and identity. The local demo session is HTTP-only and Rails disables demo authentication in production mode. All demo data is simulated for 2026-11-10 to 2026-12-10, so choose months and date ranges in that window.
 
 Stop the stack with `docker compose down`. The PostgreSQL volume persists unless explicitly removed.
 
-## Load the complete demo
+## Demo walkthrough
 
-The organization fixtures are seeded above. Usage and execution telemetry are separate, reproducible imports so their provenance remains clear.
-
-```bash
-# Generate and import canonical synthetic usage.
-demo/generators/generate-usage.sh 2026-11-10 2026-12-10 42
-docker compose exec usage-engine bin/usage import /app/demo/fixtures/usage-events-v1.csv --source demo-synthetic-v1
-
-# Load pricing, post priced usage through the durable outbox, then reconcile.
-docker compose exec core-api env MONTHS=2026-11,2026-12 bin/rails finance:demo_setup
-docker compose exec usage-engine bin/usage load-prices
-docker compose exec usage-engine bin/usage price --source demo-synthetic-v1
-docker compose exec usage-engine bin/usage deliver --limit 10000 --workers 4
-docker compose exec usage-engine bin/usage reconcile --source demo-synthetic-v1
-
-# Generate execution records from actual imported run IDs and import them.
-demo/generators/generate-agent-executions.sh 42 demo-synthetic-v1
-docker compose exec usage-engine bin/usage agent-import /app/demo/fixtures/agent-executions-v1.jsonl --source demo-synthetic-v1
-
-# Optional: seed budget and approval examples.
-docker compose exec core-api bin/rails budgets:demo_setup
-docker compose exec core-api bin/rails requests:demo_setup
-```
-
-All import commands return structured JSON reports. Replaying the same input is safe: canonical usage and agent execution imports report duplicates rather than inserting new records. The execution generator references existing usage run IDs and does not mutate usage or finance.
+[docs/demo-walkthrough.md](docs/demo-walkthrough.md) is a six-part tour: leadership analytics, a manager's bounded view, an employee's allowance and request, delegated and financial approval, agent efficiency insights with supporting runs, and ledger reconciliation.
 
 ## Demo identities and access model
 
@@ -171,32 +149,31 @@ Try Olivia Chen (organization viewer), Marcus Rivera (team manager), Priya Shah 
 
 ## Verification
 
-The project includes unit, integration, request, concurrency, contract, and browser coverage.
-
 ```bash
-docker compose exec frontend npm run lint
-docker compose exec frontend npm run typecheck
-docker compose exec frontend npm test
-docker compose exec frontend npm run test:browser
-docker compose exec frontend npm run test:access
-docker compose exec frontend npm run test:projects
-docker compose exec frontend npm run test:analytics
-docker compose exec frontend npm run test:budgets
-docker compose exec frontend npm run test:requests
-docker compose exec frontend npm run test:agents
-docker compose exec frontend npm run test:agent-insights
-
-docker compose exec core-api bundle exec rspec
-
-docker compose exec usage-engine ./gradlew test
-docker compose exec usage-engine ./gradlew integrationTest
+./scripts/verify.sh            # everything below
+./scripts/verify.sh frontend   # lint, typecheck, unit tests
+./scripts/verify.sh backend    # Rails RSpec, Kotlin unit and PostgreSQL integration tests
+./scripts/verify.sh browser    # eight Playwright workflows in the pinned Playwright image
 ```
 
-The PostgreSQL integration suite uses the isolated test database and the restricted usage role. Rails specs cover authorization, business constraints, financial integrity, and concurrency behavior. Browser tests exercise persona switching, scope boundaries, failures, responsive layouts, and direct-internal-route denial.
+Rails specs cover authorization, business constraints, financial integrity, and concurrency. Kotlin integration tests use the isolated test database and the restricted usage role. Browser workflows exercise persona switching, scope boundaries, failures, responsive layouts, and direct-internal-route denial. The projects, budgets and requests workflows write append-only history to the database they run against.
+
+The last recorded run is in [docs/verification/final-results.md](docs/verification/final-results.md).
+
+## Design tradeoffs
+
+- **Two services, one database server.** Kotlin owns usage and pricing, Rails owns people, permissions and money. They share a PostgreSQL instance for local convenience but each writes only its own schema, and they talk over authenticated HTTP rather than reading each other's tables.
+- **Authorize first, aggregate second.** Rails resolves who and what the requester may see and passes that population to Kotlin, so analytics cannot be broadened by a filter.
+- **At-least-once delivery, exactly-once effect.** Priced events leave Kotlin through a transactional outbox; Rails deduplicates on stable identities, so retries never double-charge.
+- **Append-only money.** Corrections are new reversal and adjustment transactions; reconciliation proves the ledger against priced usage instead of trusting it.
+- **Limits are not funding.** Personal ceilings and project sublimits are controls that warn; only transfers move funding, and spend is recorded even past a limit.
+- **Deterministic insights.** Agent findings are threshold rules with evidence and sample-size states. They report measured change, never a cause or a prediction.
+- **Demo over generality.** Identity is a local persona picker, data is synthetic and date-anchored, and aggregates are direct SQL sized for a small dataset.
 
 ## Repository guide
 
 ```text
+scripts/                One-command demo setup and verification
 frontend/               Next.js application and browser checks
 services/core-api/      Rails API, policies, finance, requests, RSpec
 services/usage-engine/  Kotlin ingestion, pricing, analytics, Flyway, JUnit
@@ -222,4 +199,7 @@ Productionizing it would require a real identity provider, secret management and
 - [Agent efficiency metrics](docs/agent-efficiency-metrics.md)
 - [Agent optimization: comparisons, thresholds and insights](docs/agent-optimization.md)
 - [Slice 9B report](docs/slice9b.md)
+- [Slice 10 report: integration and reliability](docs/slice10.md)
+- [Demo walkthrough](docs/demo-walkthrough.md)
+- [Final verification results](docs/verification/final-results.md)
 - [Demo guide](demo/README.md)

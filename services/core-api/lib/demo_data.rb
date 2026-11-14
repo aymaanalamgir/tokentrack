@@ -8,8 +8,18 @@ module DemoData
     [hex[0, 8], hex[8, 4], hex[12, 4], hex[16, 4], hex[20, 12]].join("-")
   end
 
+  # The demo's usage, finance and agent fixtures simulate 2026-11-10..2026-12-10. Usage validation and charge
+  # attribution require memberships that already existed at each event's time, so fixture memberships declare a
+  # fixed fictional start instead of the wall clock; otherwise a database seeded later would reject or re-attribute
+  # the checked-in events. Applied only when a fixture row is first created: existing history is never backdated.
+  FIXTURE_EPOCH = Time.utc(2026, 11, 7).freeze
+
   def save(model, key, attributes)
     record = model.find_or_initialize_by(id: uuid(key))
+    if record.new_record?
+      attributes = attributes.merge(joined_at: FIXTURE_EPOCH) if model == ProjectMembership
+      attributes = attributes.merge(created_at: FIXTURE_EPOCH, updated_at: FIXTURE_EPOCH) if model == OrganizationalMembership
+    end
     if model == ProjectMembership
       # Restore the stable fixture row without colliding with a later rejoin period.
       ProjectMembership.active.where(project_id: attributes[:project].id, user_id: attributes[:user].id).where.not(id: record.id).update_all(left_at: Time.current)

@@ -1,5 +1,7 @@
 # Fictional organizational demo
 
+**Quick path:** with the stack running, `./scripts/setup-demo.sh` loads everything described below and is safe to repeat. Then follow the [demo walkthrough](../docs/demo-walkthrough.md). The sections below document each data set and the individual commands.
+
 Run `docker compose exec core-api bin/rails db:migrate db:seed`, then open <http://localhost:3000>. Choose an organization and person; the header menu switches identity again.
 
 | Organization | Structure | People | Projects |
