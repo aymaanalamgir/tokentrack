@@ -54,10 +54,12 @@ class UsageAnalytics(private val jdbc:JdbcTemplate) {
         val metrics="COUNT(*) AS events,COUNT(p.id) AS priced_events,COUNT(*)-COUNT(p.id) AS unpriced_events,COALESCE(SUM(e.input_tokens),0) AS input_tokens,COALESCE(SUM(e.output_tokens),0) AS output_tokens,COALESCE(SUM(e.cached_input_tokens),0) AS cached_input_tokens,COUNT(DISTINCT e.user_id) AS active_users,COUNT(DISTINCT e.project_id) AS attributed_projects,COUNT(*) FILTER(WHERE f.code='UNSUPPORTED_PROFILE' AND p.id IS NULL) AS unsupported_profiles,COUNT(*) FILTER(WHERE f.code='MISSING_RATE' AND p.id IS NULL) AS missing_rates,COUNT(*) FILTER(WHERE p.id IS NOT NULL AND o.status IS DISTINCT FROM 'delivered') AS pending_delivery"
         fun rows(sql:String)=jdbc.queryForList(sql,*args.toTypedArray()).map { row -> row.mapValues { (key,v)->if(key=="bucket")v.toString().take(10)+"T00:00:00Z" else if(v is java.math.BigDecimal)v.toPlainString() else v } }
         val totals=rows("SELECT $metrics $base").single()
-        fun groups(expression:String,columns:String=expression)=rows("SELECT $columns,$metrics $base GROUP BY $expression ORDER BY events DESC LIMIT 201").also { require(it.size<=200) { "Scope has too many groups; narrow filters" } }
+        // Bounded, never truncated: a larger population fails. Employees allow 2,000 (the snapshot/organization bound)
+        // because Rails derives team totals from complete employee rows; other dimensions stay at 200.
+        fun groups(expression:String,columns:String=expression,max:Int=200)=rows("SELECT $columns,$metrics $base GROUP BY $expression ORDER BY events DESC LIMIT ${max+1}").also { require(it.size<=max) { "Scope has too many groups; narrow filters" } }
         return mapOf("schema_version" to 1,"available_range" to range.mapValues { (_,value)->if(value is Timestamp)value.toInstant().toString() else value?.toString() },"totals" to totals,
             "timeseries" to rows("SELECT date_trunc('$grain',e.occurred_at AT TIME ZONE 'UTC')::text AS bucket,$metrics $base GROUP BY bucket ORDER BY bucket"),
-            "employees" to groups("e.user_id","e.user_id::text AS id"),"projects" to groups("e.project_id","e.project_id::text AS id"),
+            "employees" to groups("e.user_id","e.user_id::text AS id",2000),"projects" to groups("e.project_id","e.project_id::text AS id"),
             "models" to groups("e.provider,e.model,p.pricing_provider,p.pricing_model,p.billing_basis","e.provider,e.model,p.pricing_provider,p.pricing_model,p.billing_basis"),
             "tools" to groups("e.tool","e.tool AS id"))
     }

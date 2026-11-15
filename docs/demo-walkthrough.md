@@ -64,6 +64,10 @@ docker compose exec usage-engine bin/usage reconcile
 - `authorized_adjustment_delta_usd` is the sum of explicit corrections. Originals are never edited: the ledger audit table at the bottom of **Analytics** lists a corrected charge as its original, a reversal and an adjustment.
 - Run `./scripts/setup-demo.sh` again: every import reports duplicates and the totals do not move.
 
+## 7. Enterprise scale (optional)
+
+After `./scripts/setup-enterprise-demo.sh`, choose **Alset → Nole Perfume** in the identity picker and open Analytics with 2025-11-01 → 2026-11-01 and monthly granularity: twelve months, about $177k of corrected spend, 695 active users across five offices. Explore expenditure by team (AI Research and Data Science lead), then switch to **Northline Financial → Gabriel Moreau** (financial operator) for budgets with real over- and under-used accounts, and **Memento AI → Noor Haddad** for the highest spend per employee. In Agents → Insights, compare month over month with an end date of 2026-08-01 to see Alset's Fleet Diagnostics Agent degrade.
+
 ## Tips
 
 - If a page looks empty, check the month or date range is inside the simulated window.

@@ -386,8 +386,8 @@ CREATE TABLE business.budget_accounts (
     effective_until timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT explicit_budget_owner CHECK (((((purpose)::text = ANY ((ARRAY['reserve'::character varying, 'unassigned'::character varying])::text[])) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((purpose)::text = 'unit'::text) AND (organizational_unit_id IS NOT NULL) AND (project_id IS NULL)) OR (((purpose)::text = 'project'::text) AND (project_id IS NOT NULL) AND (organizational_unit_id IS NULL)))),
-    CONSTRAINT valid_budget_account_state CHECK ((((currency)::text = 'USD'::text) AND ((status)::text = ANY ((ARRAY['active'::character varying, 'inactive'::character varying])::text[])) AND ((effective_until IS NULL) OR (effective_until > effective_from))))
+    CONSTRAINT explicit_budget_owner CHECK (((((purpose)::text = ANY (ARRAY[('reserve'::character varying)::text, ('unassigned'::character varying)::text])) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((purpose)::text = 'unit'::text) AND (organizational_unit_id IS NOT NULL) AND (project_id IS NULL)) OR (((purpose)::text = 'project'::text) AND (project_id IS NOT NULL) AND (organizational_unit_id IS NULL)))),
+    CONSTRAINT valid_budget_account_state CHECK ((((currency)::text = 'USD'::text) AND ((status)::text = ANY (ARRAY[('active'::character varying)::text, ('inactive'::character varying)::text])) AND ((effective_until IS NULL) OR (effective_until > effective_from))))
 );
 
 
@@ -404,7 +404,7 @@ CREATE TABLE business.budget_periods (
     status character varying DEFAULT 'open'::character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT valid_utc_budget_month CHECK ((((currency)::text = 'USD'::text) AND ((status)::text = ANY ((ARRAY['open'::character varying, 'closed'::character varying])::text[])) AND (EXTRACT(day FROM month_start) = (1)::numeric)))
+    CONSTRAINT valid_utc_budget_month CHECK ((((currency)::text = 'USD'::text) AND ((status)::text = ANY (ARRAY[('open'::character varying)::text, ('closed'::character varying)::text])) AND (EXTRACT(day FROM month_start) = (1)::numeric)))
 );
 
 
@@ -457,8 +457,8 @@ CREATE TABLE business.financial_requests (
     lock_version integer DEFAULT 0 NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT approved_request_has_execution CHECK (((((status)::text = 'approved'::text) AND ((((request_type)::text = 'personal_allowance'::text) AND (execution_revision_id IS NOT NULL) AND (execution_transaction_id IS NULL)) OR (((request_type)::text = ANY ((ARRAY['project_funding'::character varying, 'team_funding'::character varying])::text[])) AND (execution_transaction_id IS NOT NULL) AND (execution_revision_id IS NULL)))) OR (((status)::text <> 'approved'::text) AND (execution_revision_id IS NULL) AND (execution_transaction_id IS NULL)))),
-    CONSTRAINT valid_financial_request CHECK ((((currency)::text = 'USD'::text) AND ((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'cancelled'::character varying])::text[])) AND ((request_type)::text = ANY ((ARRAY['personal_allowance'::character varying, 'project_funding'::character varying, 'team_funding'::character varying])::text[])) AND (requested_amount > (0)::numeric) AND (requested_amount < 'Infinity'::numeric) AND (current_amount_snapshot >= (0)::numeric) AND (current_amount_snapshot < 'Infinity'::numeric) AND ((source_available_snapshot IS NULL) OR ((source_available_snapshot >= (0)::numeric) AND (source_available_snapshot < 'Infinity'::numeric))) AND (EXTRACT(day FROM month_start) = (1)::numeric) AND ((month_start >= '2000-01-01'::date) AND (month_start <= '2099-12-01'::date)) AND (length((reason)::text) > 0) AND (length((routing_reason)::text) > 0) AND ((((status)::text = 'pending'::text) AND (resolved_at IS NULL)) OR (((status)::text <> 'pending'::text) AND (resolved_at IS NOT NULL))) AND ((((request_type)::text = 'personal_allowance'::text) AND (target_user_id IS NOT NULL) AND (target_project_id IS NULL) AND (target_unit_id IS NULL) AND (target_budget_account_id IS NULL) AND (source_budget_account_id IS NULL) AND (source_available_snapshot IS NULL) AND (allowance_revision_snapshot_id IS NOT NULL) AND (requested_amount > current_amount_snapshot)) OR (((request_type)::text = 'project_funding'::text) AND (target_user_id IS NULL) AND (target_project_id IS NOT NULL) AND (target_unit_id IS NULL) AND (target_budget_account_id IS NOT NULL) AND (source_budget_account_id IS NOT NULL) AND (source_available_snapshot IS NOT NULL) AND (allowance_revision_snapshot_id IS NULL)) OR (((request_type)::text = 'team_funding'::text) AND (target_user_id IS NULL) AND (target_project_id IS NULL) AND (target_unit_id IS NOT NULL) AND (target_budget_account_id IS NOT NULL) AND (source_budget_account_id IS NOT NULL) AND (source_available_snapshot IS NOT NULL) AND (allowance_revision_snapshot_id IS NULL)))))
+    CONSTRAINT approved_request_has_execution CHECK (((((status)::text = 'approved'::text) AND ((((request_type)::text = 'personal_allowance'::text) AND (execution_revision_id IS NOT NULL) AND (execution_transaction_id IS NULL)) OR (((request_type)::text = ANY (ARRAY[('project_funding'::character varying)::text, ('team_funding'::character varying)::text])) AND (execution_transaction_id IS NOT NULL) AND (execution_revision_id IS NULL)))) OR (((status)::text <> 'approved'::text) AND (execution_revision_id IS NULL) AND (execution_transaction_id IS NULL)))),
+    CONSTRAINT valid_financial_request CHECK ((((currency)::text = 'USD'::text) AND ((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('approved'::character varying)::text, ('rejected'::character varying)::text, ('cancelled'::character varying)::text])) AND ((request_type)::text = ANY (ARRAY[('personal_allowance'::character varying)::text, ('project_funding'::character varying)::text, ('team_funding'::character varying)::text])) AND (requested_amount > (0)::numeric) AND (requested_amount < 'Infinity'::numeric) AND (current_amount_snapshot >= (0)::numeric) AND (current_amount_snapshot < 'Infinity'::numeric) AND ((source_available_snapshot IS NULL) OR ((source_available_snapshot >= (0)::numeric) AND (source_available_snapshot < 'Infinity'::numeric))) AND (EXTRACT(day FROM month_start) = (1)::numeric) AND ((month_start >= '2000-01-01'::date) AND (month_start <= '2099-12-01'::date)) AND (length((reason)::text) > 0) AND (length((routing_reason)::text) > 0) AND ((((status)::text = 'pending'::text) AND (resolved_at IS NULL)) OR (((status)::text <> 'pending'::text) AND (resolved_at IS NOT NULL))) AND ((((request_type)::text = 'personal_allowance'::text) AND (target_user_id IS NOT NULL) AND (target_project_id IS NULL) AND (target_unit_id IS NULL) AND (target_budget_account_id IS NULL) AND (source_budget_account_id IS NULL) AND (source_available_snapshot IS NULL) AND (allowance_revision_snapshot_id IS NOT NULL) AND (requested_amount > current_amount_snapshot)) OR (((request_type)::text = 'project_funding'::text) AND (target_user_id IS NULL) AND (target_project_id IS NOT NULL) AND (target_unit_id IS NULL) AND (target_budget_account_id IS NOT NULL) AND (source_budget_account_id IS NOT NULL) AND (source_available_snapshot IS NOT NULL) AND (allowance_revision_snapshot_id IS NULL)) OR (((request_type)::text = 'team_funding'::text) AND (target_user_id IS NULL) AND (target_project_id IS NULL) AND (target_unit_id IS NOT NULL) AND (target_budget_account_id IS NOT NULL) AND (source_budget_account_id IS NOT NULL) AND (source_available_snapshot IS NOT NULL) AND (allowance_revision_snapshot_id IS NULL)))))
 );
 
 
@@ -488,9 +488,9 @@ CREATE TABLE business.financial_transactions (
     audit_metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
     write_transaction_id bigint DEFAULT txid_current() NOT NULL,
     created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT explicit_correction_origin CHECK (((((kind)::text = ANY ((ARRAY['reversal'::character varying, 'adjustment'::character varying])::text[])) = (original_transaction_id IS NOT NULL)) AND ((correction_group_id IS NULL) OR ((kind)::text = ANY ((ARRAY['reversal'::character varying, 'adjustment'::character varying])::text[]))))),
+    CONSTRAINT explicit_correction_origin CHECK (((((kind)::text = ANY (ARRAY[('reversal'::character varying)::text, ('adjustment'::character varying)::text])) = (original_transaction_id IS NOT NULL)) AND ((correction_group_id IS NULL) OR ((kind)::text = ANY (ARRAY[('reversal'::character varying)::text, ('adjustment'::character varying)::text]))))),
     CONSTRAINT finite_financial_amount CHECK ((amount < 'Infinity'::numeric)),
-    CONSTRAINT valid_financial_operation CHECK ((((currency)::text = 'USD'::text) AND (amount >= (0)::numeric) AND (((kind)::text <> ALL ((ARRAY['funding'::character varying, 'transfer'::character varying])::text[])) OR (amount > (0)::numeric)) AND ((kind)::text = ANY ((ARRAY['funding'::character varying, 'transfer'::character varying, 'usage_charge'::character varying, 'reversal'::character varying, 'adjustment'::character varying])::text[])) AND (EXTRACT(day FROM month_start) = (1)::numeric) AND ((length((reason)::text) >= 1) AND (length((reason)::text) <= 500)) AND ((original_transaction_id IS NULL) OR (original_transaction_id <> id))))
+    CONSTRAINT valid_financial_operation CHECK ((((currency)::text = 'USD'::text) AND (amount >= (0)::numeric) AND (((kind)::text <> ALL (ARRAY[('funding'::character varying)::text, ('transfer'::character varying)::text])) OR (amount > (0)::numeric)) AND ((kind)::text = ANY (ARRAY[('funding'::character varying)::text, ('transfer'::character varying)::text, ('usage_charge'::character varying)::text, ('reversal'::character varying)::text, ('adjustment'::character varying)::text])) AND (EXTRACT(day FROM month_start) = (1)::numeric) AND ((length((reason)::text) >= 1) AND (length((reason)::text) <= 500)) AND ((original_transaction_id IS NULL) OR (original_transaction_id <> id))))
 );
 
 
@@ -579,7 +579,7 @@ CREATE TABLE business.priced_usage_receipts (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     CONSTRAINT finite_receipt_amount CHECK ((amount < 'Infinity'::numeric)),
-    CONSTRAINT valid_priced_receipt CHECK (((amount >= (0)::numeric) AND ((currency)::text = 'USD'::text) AND ((status)::text = ANY ((ARRAY['posted'::character varying, 'unresolved'::character varying])::text[])) AND (((status)::text = 'posted'::text) = (financial_transaction_id IS NOT NULL)) AND (jsonb_typeof((payload -> 'amount'::text)) = 'string'::text) AND (((payload ->> 'amount'::text))::numeric = amount)))
+    CONSTRAINT valid_priced_receipt CHECK (((amount >= (0)::numeric) AND ((currency)::text = 'USD'::text) AND ((status)::text = ANY (ARRAY[('posted'::character varying)::text, ('unresolved'::character varying)::text])) AND (((status)::text = 'posted'::text) = (financial_transaction_id IS NOT NULL)) AND (jsonb_typeof((payload -> 'amount'::text)) = 'string'::text) AND (((payload ->> 'amount'::text))::numeric = amount)))
 );
 
 
@@ -617,7 +617,7 @@ CREATE TABLE business.projects (
     updated_at timestamp(6) without time zone NOT NULL,
     created_by_id uuid,
     archived_from_status character varying,
-    CONSTRAINT valid_project_restore_status CHECK (((archived_from_status IS NULL) OR ((archived_from_status)::text = ANY ((ARRAY['planned'::character varying, 'active'::character varying])::text[])))),
+    CONSTRAINT valid_project_restore_status CHECK (((archived_from_status IS NULL) OR ((archived_from_status)::text = ANY (ARRAY[('planned'::character varying)::text, ('active'::character varying)::text])))),
     CONSTRAINT valid_project_status CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('planned'::character varying)::text, ('archived'::character varying)::text])))
 );
 
@@ -656,7 +656,7 @@ CREATE TABLE business.request_events (
     operation_fingerprint character varying(64) NOT NULL,
     metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
     created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT valid_request_event CHECK ((((event_type)::text = ANY ((ARRAY['created'::character varying, 'submitted'::character varying, 'escalated'::character varying, 'approved'::character varying, 'rejected'::character varying, 'cancelled'::character varying, 'executed'::character varying])::text[])) AND ((previous_status IS NULL) OR ((previous_status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'cancelled'::character varying])::text[]))) AND ((new_status IS NULL) OR ((new_status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'cancelled'::character varying])::text[]))) AND (length((reason)::text) > 0)))
+    CONSTRAINT valid_request_event CHECK ((((event_type)::text = ANY (ARRAY[('created'::character varying)::text, ('submitted'::character varying)::text, ('escalated'::character varying)::text, ('approved'::character varying)::text, ('rejected'::character varying)::text, ('cancelled'::character varying)::text, ('executed'::character varying)::text])) AND ((previous_status IS NULL) OR ((previous_status)::text = ANY (ARRAY[('pending'::character varying)::text, ('approved'::character varying)::text, ('rejected'::character varying)::text, ('cancelled'::character varying)::text]))) AND ((new_status IS NULL) OR ((new_status)::text = ANY (ARRAY[('pending'::character varying)::text, ('approved'::character varying)::text, ('rejected'::character varying)::text, ('cancelled'::character varying)::text]))) AND (length((reason)::text) > 0)))
 );
 
 
@@ -674,7 +674,7 @@ CREATE TABLE business.role_assignments (
     project_id uuid,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT valid_role_and_explicit_scope CHECK (((((role)::text = 'employee'::text) AND ((scope_type)::text = 'self'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = ANY ((ARRAY['organization_viewer'::character varying, 'organization_budget_reader'::character varying, 'project_creator'::character varying, 'financial_operator'::character varying])::text[])) AND ((scope_type)::text = 'organization'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = ANY ((ARRAY['team_manager'::character varying, 'team_budget_reader'::character varying])::text[])) AND ((scope_type)::text = 'unit'::text) AND (organizational_unit_id IS NOT NULL) AND (project_id IS NULL)) OR (((role)::text = ANY ((ARRAY['project_lead'::character varying, 'project_budget_reader'::character varying])::text[])) AND ((scope_type)::text = 'project'::text) AND (project_id IS NOT NULL) AND (organizational_unit_id IS NULL))))
+    CONSTRAINT valid_role_and_explicit_scope CHECK (((((role)::text = 'employee'::text) AND ((scope_type)::text = 'self'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = ANY (ARRAY[('organization_viewer'::character varying)::text, ('organization_budget_reader'::character varying)::text, ('project_creator'::character varying)::text, ('financial_operator'::character varying)::text])) AND ((scope_type)::text = 'organization'::text) AND (organizational_unit_id IS NULL) AND (project_id IS NULL)) OR (((role)::text = ANY (ARRAY[('team_manager'::character varying)::text, ('team_budget_reader'::character varying)::text])) AND ((scope_type)::text = 'unit'::text) AND (organizational_unit_id IS NOT NULL) AND (project_id IS NULL)) OR (((role)::text = ANY (ARRAY[('project_lead'::character varying)::text, ('project_budget_reader'::character varying)::text])) AND ((scope_type)::text = 'project'::text) AND (project_id IS NOT NULL) AND (organizational_unit_id IS NULL))))
 );
 
 
@@ -719,7 +719,7 @@ CREATE TABLE business.spending_limit_revisions (
     reason character varying(500) NOT NULL,
     write_transaction_id bigint DEFAULT txid_current() NOT NULL,
     created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT spending_limit_revisions_check CHECK (((limit_amount >= (0)::numeric) AND (limit_amount < 'Infinity'::numeric) AND (revision_number > 0) AND ((kind)::text = ANY ((ARRAY['ceiling'::character varying, 'reallocation'::character varying])::text[])) AND (length((reason)::text) > 0)))
+    CONSTRAINT spending_limit_revisions_check CHECK (((limit_amount >= (0)::numeric) AND (limit_amount < 'Infinity'::numeric) AND (revision_number > 0) AND ((kind)::text = ANY (ARRAY[('ceiling'::character varying)::text, ('reallocation'::character varying)::text])) AND (length((reason)::text) > 0)))
 );
 
 
@@ -737,7 +737,7 @@ CREATE TABLE business.spending_limits (
     current_revision_id uuid,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT spending_limits_check CHECK ((((currency)::text = 'USD'::text) AND ((status)::text = ANY ((ARRAY['active'::character varying, 'closed'::character varying])::text[])) AND (EXTRACT(day FROM month_start) = (1)::numeric) AND ((month_start >= '2000-01-01'::date) AND (month_start <= '2099-12-01'::date))))
+    CONSTRAINT spending_limits_check CHECK ((((currency)::text = 'USD'::text) AND ((status)::text = ANY (ARRAY[('active'::character varying)::text, ('closed'::character varying)::text])) AND (EXTRACT(day FROM month_start) = (1)::numeric) AND ((month_start >= '2000-01-01'::date) AND (month_start <= '2099-12-01'::date))))
 );
 
 
@@ -756,6 +756,7 @@ CREATE TABLE business.users (
     demo_identity boolean DEFAULT false NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    office character varying(80),
     CONSTRAINT valid_user_status CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('inactive'::character varying)::text])))
 );
 
@@ -1416,7 +1417,7 @@ CREATE UNIQUE INDEX unique_financial_source ON business.financial_transactions U
 -- Name: unique_organization_budget_purpose; Type: INDEX; Schema: business; Owner: -
 --
 
-CREATE UNIQUE INDEX unique_organization_budget_purpose ON business.budget_accounts USING btree (organization_id, currency, purpose) WHERE ((purpose)::text = ANY ((ARRAY['reserve'::character varying, 'unassigned'::character varying])::text[]));
+CREATE UNIQUE INDEX unique_organization_budget_purpose ON business.budget_accounts USING btree (organization_id, currency, purpose) WHERE ((purpose)::text = ANY (ARRAY[('reserve'::character varying)::text, ('unassigned'::character varying)::text]));
 
 
 --
@@ -2221,6 +2222,7 @@ ALTER TABLE ONLY business.spending_limits
 SET search_path TO business;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261114000100'),
 ('20261112000100'),
 ('20261110000500'),
 ('20261110000400'),

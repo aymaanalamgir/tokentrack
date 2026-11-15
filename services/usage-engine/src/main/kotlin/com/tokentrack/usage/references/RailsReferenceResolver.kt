@@ -21,12 +21,12 @@ class RailsReferenceResolver(
     @param:Value("\${tokentrack.references.token}") private val token: String,
 ) : ReferenceResolver {
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).followRedirects(HttpClient.Redirect.NEVER).build()
-    private fun request(path: String, payload: Any? = null): JsonNode {
+    private fun request(path: String, payload: Any? = null, timeout: Duration = Duration.ofSeconds(5)): JsonNode {
         if (token.length < 32) throw ImportFailure("REFERENCE_SERVICE_AUTHORIZATION", true)
         try {
             val uri = URI.create(baseUrl.trimEnd('/') + path)
             if (uri.scheme !in listOf("http", "https") || uri.userInfo != null) throw ImportFailure("REFERENCE_SERVICE_CONFIGURATION", true)
-            val request = HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(5)).header("Authorization", "Bearer $token").header("Accept", "application/json")
+            val request = HttpRequest.newBuilder(uri).timeout(timeout).header("Authorization", "Bearer $token").header("Accept", "application/json")
             if (payload == null) request.GET() else request.header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(payload)))
             val response = client.send(request.build(), HttpResponse.BodyHandlers.ofByteArray())
             val bytes = response.body()
@@ -61,7 +61,8 @@ class RailsReferenceResolver(
         }
         return results
     }
-    fun demoSnapshot(): JsonNode = request("/api/v1/internal/usage-references/demo-snapshot").path("data").also {
+    fun demoSnapshot(organizations: List<String>? = null): JsonNode = request("/api/v1/internal/usage-references/demo-snapshot" + (organizations?.takeIf { it.isNotEmpty() }?.let { list ->
+        require(list.size <= 20 && list.all { it.matches(Regex("[a-z0-9-]{1,64}")) }); "?organizations=" + list.joinToString(",") } ?: ""), timeout = Duration.ofSeconds(30)).path("data").also {
         if (it.path("snapshot_version").asInt() != 1 || it.path("policy_version").asText() != "membership-period-v1") throw ImportFailure("REFERENCE_PROTOCOL_ERROR", true)
     }
 }

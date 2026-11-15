@@ -138,6 +138,10 @@ function InsightCard({insight}:{insight:Insight}){
 
 export function InsightsView({report,search,filter}:{report:InsightReport;search:URLSearchParams;filter:Filter}){
   const sparse=report.agents.filter(a=>!['sufficient','limited_sample'].includes(a.evidence_state));const s=report.summary;const filtered=s.total_findings!==s.findings;
+  // Informational findings (limited samples, descriptive concentration, qualified cost) stay one click away so the
+  // findings that need attention lead. An explicit severity filter, or a list with nothing else, shows them directly.
+  const [showInfo,setShowInfo]=useState(false);const attention=report.insights.filter(i=>i.severity!=='info');const info=report.insights.filter(i=>i.severity==='info');
+  const collapse=info.length>0&&attention.length>0&&!search.get('severity')&&!showInfo;
   return <div className="space-y-5" data-testid="insights-view">
     <Panel title="Efficiency insights" action={<span className="font-mono text-[10px] text-muted-foreground">{periodText(report.current_period)}</span>}>
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
@@ -146,7 +150,10 @@ export function InsightsView({report,search,filter}:{report:InsightReport;search
         <select aria-label="Severity filter" className={selectCls} value={search.get('severity')??''} onChange={e=>filter({severity:e.target.value})}><option value="">All severities</option><option value="critical">Critical</option><option value="warning">Warning</option><option value="info">Info</option></select>
         <select aria-label="Evidence quality filter" className={selectCls} value={search.get('evidence_quality')??''} onChange={e=>filter({evidence_quality:e.target.value})}><option value="">All evidence quality</option><option value="sufficient">Sufficient evidence</option><option value="limited_sample">Limited sample</option><option value="incomplete_cost_data">Incomplete cost data</option></select>
       </div>
-      {report.insights.length===0?<EmptyState title={filtered?'No findings match these filters':'No findings for this scope and period'} description={filtered?'Clear a filter to see the other findings.':'Nothing crossed a documented threshold with enough evidence. TokenTrack does not generate findings to fill this list.'}/>:report.insights.map(i=><InsightCard key={i.id} insight={i}/>)}
+      {report.insights.length===0?<EmptyState title={filtered?'No findings match these filters':'No findings for this scope and period'} description={filtered?'Clear a filter to see the other findings.':'Nothing crossed a documented threshold with enough evidence. TokenTrack does not generate findings to fill this list.'}/>:<>
+        {(collapse?attention:report.insights).map(i=><InsightCard key={i.id} insight={i}/>)}
+        {info.length>0&&attention.length>0&&!search.get('severity')&&<button className="w-full border-t border-border px-4 py-3 text-left text-[11px] text-muted-foreground hover:bg-muted/40" aria-expanded={!collapse} onClick={()=>setShowInfo(!showInfo)}>{collapse?`Show ${info.length} informational finding${info.length===1?'':'s'} (limited samples and descriptive observations)`:'Hide informational findings'}</button>}
+      </>}
     </Panel>
     {sparse.length>0&&<Panel title="Not compared"><ul className="divide-y divide-border" data-testid="not-compared">{sparse.map(a=><li key={a.id} className="flex flex-wrap justify-between gap-2 px-4 py-3 text-xs"><span>{a.name}<span className="ml-2 text-muted-foreground">{a.agent_key}</span></span><span className="text-muted-foreground"><span className="text-foreground">{EVIDENCE_STATE_LABEL[a.evidence_state]??a.evidence_state}</span> · {a.evidence_reason}</span></li>)}</ul></Panel>}
     <div className="rounded-lg border border-border bg-surface p-4"><p className="scope-label">How to read these findings</p><ul className="mt-2 list-disc space-y-1 pl-4 text-[11px] leading-relaxed text-muted-foreground">{report.limitations.map(l=><li key={l}>{l}</li>)}<li>Thresholds: {report.thresholds.min_runs}+ runs per period; retry rate +{report.thresholds.retry_rate_increase_points} pts; success rate −{report.thresholds.success_rate_decrease_points} pts; tokens per run +{report.thresholds.tokens_per_run_increase_percent}%; duration +{report.thresholds.duration_increase_percent}%; cost per success +{report.thresholds.cost_per_success_increase_percent}%; model cost share ≥{report.thresholds.model_cost_share_percent}%; failed-run cost share ≥{report.thresholds.failed_run_cost_share_percent}%.</li></ul></div>

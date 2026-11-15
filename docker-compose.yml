@@ -50,6 +50,8 @@ services:
     volumes:
       - ./services/core-api:/app
       - core_bundle:/usr/local/bundle
+      # Read-only shared demo specs (enterprise companies) for local demo rake tasks.
+      - ./demo:/demo:ro
     depends_on:
       postgres:
         condition: service_healthy

@@ -103,6 +103,14 @@ Open the app and select a fictional organization and identity. The local demo se
 
 Stop the stack with `docker compose down`. The PostgreSQL volume persists unless explicitly removed.
 
+### Optional: enterprise-scale companies
+
+```bash
+./scripts/setup-enterprise-demo.sh --profile demo     # or --profile smoke for a ~10% quick load
+```
+
+Adds three more fictional companies with twelve months of history (2025-11-01 to 2026-10-31): **Alset** (750 people, EV and hardware, five offices), **Northline Financial** (175, Toronto fintech) and **Memento AI** (18, New York startup). About 100,000 usage events and 16,000 agent runs flow through the same validation, pricing, delivery and ledger as everything else. Use one profile per database. See [enterprise demo data](docs/enterprise-demo-data.md).
+
 ## Demo walkthrough
 
 [docs/demo-walkthrough.md](docs/demo-walkthrough.md) is a six-part tour: leadership analytics, a manager's bounded view, an employee's allowance and request, delegated and financial approval, agent efficiency insights with supporting runs, and ledger reconciliation.
@@ -202,4 +210,6 @@ Productionizing it would require a real identity provider, secret management and
 - [Slice 10 report: integration and reliability](docs/slice10.md)
 - [Demo walkthrough](docs/demo-walkthrough.md)
 - [Final verification results](docs/verification/final-results.md)
+- [Enterprise demo data](docs/enterprise-demo-data.md)
+- [UI conventions](docs/ui-conventions.md)
 - [Demo guide](demo/README.md)

@@ -1,0 +1,2918 @@
+{
+ "spec_version": 1,
+ "start": "2025-11-01",
+ "months": 12,
+ "epoch_days_before_start": 31,
+ "profiles": {
+  "demo": {
+   "scale": 1.0
+  },
+  "smoke": {
+   "scale": 0.1
+  }
+ },
+ "models": {
+  "frontier": {
+   "provider": "anthropic",
+   "model": "demo-frontier-v2"
+  },
+  "balanced": {
+   "provider": "openai",
+   "model": "demo-balanced-v2"
+  },
+  "fast": {
+   "provider": "google",
+   "model": "demo-fast-v2"
+  },
+  "unpriced": {
+   "provider": "local",
+   "model": "demo-selfhosted-v1"
+  }
+ },
+ "rollup_suffix": "-rollup",
+ "tiers": {
+  "very_high": {
+   "events": 5.0,
+   "adoption": {
+    "daily": 0.65,
+    "weekly": 0.25,
+    "occasional": 0.08,
+    "none": 0.02
+   },
+   "lag_months": 1,
+   "daily_calls": [
+    80,
+    240
+   ]
+  },
+  "high": {
+   "events": 2.5,
+   "adoption": {
+    "daily": 0.45,
+    "weekly": 0.35,
+    "occasional": 0.15,
+    "none": 0.05
+   },
+   "lag_months": 3,
+   "daily_calls": [
+    25,
+    75
+   ]
+  },
+  "moderate": {
+   "events": 1.0,
+   "adoption": {
+    "daily": 0.2,
+    "weekly": 0.35,
+    "occasional": 0.3,
+    "none": 0.15
+   },
+   "lag_months": 5,
+   "daily_calls": [
+    6,
+    18
+   ]
+  },
+  "selective": {
+   "events": 0.6,
+   "adoption": {
+    "daily": 0.1,
+    "weekly": 0.3,
+    "occasional": 0.4,
+    "none": 0.2
+   },
+   "lag_months": 4,
+   "daily_calls": [
+    3,
+    9
+   ]
+  },
+  "low": {
+   "events": 0.3,
+   "adoption": {
+    "daily": 0.05,
+    "weekly": 0.25,
+    "occasional": 0.4,
+    "none": 0.3
+   },
+   "lag_months": 7,
+   "daily_calls": [
+    1,
+    4
+   ]
+  }
+ },
+ "workflows": {
+  "code-generation": {
+   "tool": "coding-assistant",
+   "input": [
+    6000,
+    40000
+   ],
+   "output": [
+    800,
+    6000
+   ],
+   "cached": [
+    0.2,
+    0.6
+   ],
+   "models": {
+    "frontier": 0.35,
+    "balanced": 0.5,
+    "fast": 0.15
+   }
+  },
+  "code-review": {
+   "tool": "code-review-agent",
+   "input": [
+    12000,
+    60000
+   ],
+   "output": [
+    1200,
+    5000
+   ],
+   "cached": [
+    0.3,
+    0.7
+   ],
+   "models": {
+    "frontier": 0.5,
+    "balanced": 0.5
+   },
+   "calls": [
+    2,
+    5
+   ]
+  },
+  "debugging": {
+   "tool": "debugging-agent",
+   "input": [
+    10000,
+    50000
+   ],
+   "output": [
+    800,
+    4000
+   ],
+   "cached": [
+    0.25,
+    0.6
+   ],
+   "models": {
+    "frontier": 0.4,
+    "balanced": 0.6
+   },
+   "calls": [
+    2,
+    6
+   ]
+  },
+  "research-analysis": {
+   "tool": "research-assistant",
+   "input": [
+    20000,
+    110000
+   ],
+   "output": [
+    2000,
+    10000
+   ],
+   "cached": [
+    0.1,
+    0.4
+   ],
+   "models": {
+    "frontier": 0.7,
+    "balanced": 0.3
+   }
+  },
+  "data-analysis": {
+   "tool": "analytics-assistant",
+   "input": [
+    6000,
+    30000
+   ],
+   "output": [
+    800,
+    5000
+   ],
+   "cached": [
+    0.2,
+    0.5
+   ],
+   "models": {
+    "frontier": 0.2,
+    "balanced": 0.6,
+    "fast": 0.2
+   }
+  },
+  "document-drafting": {
+   "tool": "writing-assistant",
+   "input": [
+    2000,
+    12000
+   ],
+   "output": [
+    800,
+    5000
+   ],
+   "cached": [
+    0.0,
+    0.3
+   ],
+   "models": {
+    "balanced": 0.5,
+    "fast": 0.5
+   }
+  },
+  "chat-assistant": {
+   "tool": "chat-assistant",
+   "input": [
+    1000,
+    6000
+   ],
+   "output": [
+    300,
+    2000
+   ],
+   "cached": [
+    0.0,
+    0.3
+   ],
+   "models": {
+    "balanced": 0.4,
+    "fast": 0.6
+   }
+  },
+  "simulation-analysis": {
+   "tool": "simulation-agent",
+   "input": [
+    30000,
+    140000
+   ],
+   "output": [
+    2000,
+    8000
+   ],
+   "cached": [
+    0.3,
+    0.7
+   ],
+   "models": {
+    "frontier": 0.6,
+    "balanced": 0.4
+   },
+   "calls": [
+    3,
+    8
+   ]
+  },
+  "vehicle-diagnostics": {
+   "tool": "diagnostics-agent",
+   "input": [
+    15000,
+    60000
+   ],
+   "output": [
+    1000,
+    4000
+   ],
+   "cached": [
+    0.3,
+    0.6
+   ],
+   "models": {
+    "balanced": 0.7,
+    "fast": 0.3
+   },
+   "calls": [
+    2,
+    4
+   ]
+  },
+  "manufacturing-quality": {
+   "tool": "quality-agent",
+   "input": [
+    10000,
+    40000
+   ],
+   "output": [
+    800,
+    3000
+   ],
+   "cached": [
+    0.2,
+    0.5
+   ],
+   "models": {
+    "balanced": 0.6,
+    "fast": 0.4
+   },
+   "calls": [
+    2,
+    4
+   ]
+  },
+  "supply-forecasting": {
+   "tool": "forecasting-agent",
+   "input": [
+    20000,
+    80000
+   ],
+   "output": [
+    1500,
+    6000
+   ],
+   "cached": [
+    0.2,
+    0.5
+   ],
+   "models": {
+    "frontier": 0.3,
+    "balanced": 0.7
+   },
+   "calls": [
+    2,
+    4
+   ]
+  },
+  "fraud-analysis": {
+   "tool": "fraud-agent",
+   "input": [
+    15000,
+    70000
+   ],
+   "output": [
+    1500,
+    5000
+   ],
+   "cached": [
+    0.3,
+    0.6
+   ],
+   "models": {
+    "frontier": 0.4,
+    "balanced": 0.6
+   },
+   "calls": [
+    3,
+    6
+   ]
+  },
+  "reconciliation": {
+   "tool": "reconciliation-agent",
+   "input": [
+    10000,
+    50000
+   ],
+   "output": [
+    800,
+    4000
+   ],
+   "cached": [
+    0.3,
+    0.7
+   ],
+   "models": {
+    "balanced": 0.7,
+    "fast": 0.3
+   },
+   "calls": [
+    2,
+    5
+   ]
+  },
+  "compliance-review": {
+   "tool": "compliance-agent",
+   "input": [
+    30000,
+    120000
+   ],
+   "output": [
+    1500,
+    6000
+   ],
+   "cached": [
+    0.2,
+    0.5
+   ],
+   "models": {
+    "frontier": 0.5,
+    "balanced": 0.5
+   },
+   "calls": [
+    2,
+    4
+   ]
+  },
+  "customer-support": {
+   "tool": "support-assistant",
+   "input": [
+    2000,
+    10000
+   ],
+   "output": [
+    400,
+    2000
+   ],
+   "cached": [
+    0.1,
+    0.4
+   ],
+   "models": {
+    "balanced": 0.3,
+    "fast": 0.7
+   }
+  },
+  "meeting-summarization": {
+   "tool": "meeting-summarizer",
+   "input": [
+    60000,
+    160000
+   ],
+   "output": [
+    3000,
+    12000
+   ],
+   "cached": [
+    0.1,
+    0.4
+   ],
+   "models": {
+    "frontier": 0.3,
+    "balanced": 0.7
+   },
+   "calls": [
+    2,
+    4
+   ]
+  },
+  "action-extraction": {
+   "tool": "action-extractor",
+   "input": [
+    30000,
+    100000
+   ],
+   "output": [
+    1000,
+    4000
+   ],
+   "cached": [
+    0.3,
+    0.6
+   ],
+   "models": {
+    "balanced": 0.8,
+    "fast": 0.2
+   },
+   "calls": [
+    1,
+    3
+   ]
+  },
+  "transcript-analysis": {
+   "tool": "transcript-analyzer",
+   "input": [
+    50000,
+    150000
+   ],
+   "output": [
+    2000,
+    8000
+   ],
+   "cached": [
+    0.1,
+    0.4
+   ],
+   "models": {
+    "frontier": 0.4,
+    "balanced": 0.6
+   },
+   "calls": [
+    2,
+    4
+   ]
+  },
+  "model-evaluation": {
+   "tool": "evaluation-harness",
+   "input": [
+    20000,
+    90000
+   ],
+   "output": [
+    1000,
+    6000
+   ],
+   "cached": [
+    0.2,
+    0.6
+   ],
+   "models": {
+    "frontier": 0.5,
+    "balanced": 0.3,
+    "fast": 0.2
+   },
+   "calls": [
+    4,
+    10
+   ]
+  },
+  "marketing-content": {
+   "tool": "marketing-assistant",
+   "input": [
+    2000,
+    10000
+   ],
+   "output": [
+    800,
+    4000
+   ],
+   "cached": [
+    0.0,
+    0.3
+   ],
+   "models": {
+    "balanced": 0.5,
+    "fast": 0.5
+   }
+  },
+  "hr-assistant": {
+   "tool": "people-assistant",
+   "input": [
+    1000,
+    5000
+   ],
+   "output": [
+    300,
+    1500
+   ],
+   "cached": [
+    0.0,
+    0.2
+   ],
+   "models": {
+    "balanced": 0.2,
+    "fast": 0.8
+   }
+  },
+  "legal-review": {
+   "tool": "legal-assistant",
+   "input": [
+    20000,
+    100000
+   ],
+   "output": [
+    1000,
+    4000
+   ],
+   "cached": [
+    0.1,
+    0.4
+   ],
+   "models": {
+    "frontier": 0.6,
+    "balanced": 0.4
+   }
+  }
+ },
+ "companies": [
+  {
+   "slug": "alset",
+   "name": "Alset",
+   "source": "enterprise-alset-v1",
+   "description": "Fictional global electric vehicle, hardware and technology company headquartered in Austin, Texas, with offices in Palo Alto, Toronto, Berlin and Shanghai. Synthetic demo data.",
+   "offices": {
+    "Austin": -6,
+    "Palo Alto": -8,
+    "Toronto": -5,
+    "Berlin": 1,
+    "Shanghai": 8
+   },
+   "departments": [
+    {
+     "key": "executive",
+     "name": "Executive Leadership",
+     "office": "Austin",
+     "teams": [
+      {
+       "key": "office-of-ceo",
+       "name": "Office of the CEO",
+       "size": 6,
+       "function": "Executive",
+       "title": "Chief of Staff",
+       "lead_title": "Chief Operating Officer"
+      }
+     ],
+     "head": {
+      "title": "Chief Executive Officer",
+      "function": "Executive",
+      "name": "Nole Perfume"
+     }
+    },
+    {
+     "key": "vehicle-software",
+     "name": "Vehicle Software",
+     "office": "Palo Alto",
+     "teams": [
+      {
+       "key": "infotainment",
+       "name": "Infotainment Software",
+       "size": 28,
+       "function": "Software Engineering",
+       "title": "Software Engineer",
+       "lead_title": "Engineering Manager, Infotainment"
+      },
+      {
+       "key": "vehicle-platform",
+       "name": "Vehicle Platform Software",
+       "size": 40,
+       "function": "Software Engineering",
+       "title": "Software Engineer",
+       "lead_title": "Engineering Manager, Vehicle Platform",
+       "office": "Toronto"
+      },
+      {
+       "key": "connected-apps",
+       "name": "Mobile & Connected Apps",
+       "size": 22,
+       "function": "Software Engineering",
+       "title": "Software Engineer",
+       "lead_title": "Engineering Manager, Connected Apps"
+      },
+      {
+       "key": "developer-experience",
+       "name": "Developer Experience",
+       "size": 14,
+       "function": "Software Engineering",
+       "title": "Developer Tools Engineer",
+       "lead_title": "Engineering Manager, Developer Experience",
+       "office": "Toronto"
+      }
+     ],
+     "head": {
+      "title": "VP, Vehicle Software",
+      "function": "Software Engineering",
+      "name": "Rhea Castellanos"
+     }
+    },
+    {
+     "key": "embedded",
+     "name": "Embedded Systems",
+     "office": "Austin",
+     "teams": [
+      {
+       "key": "firmware",
+       "name": "Firmware",
+       "size": 26,
+       "function": "Embedded Engineering",
+       "title": "Firmware Engineer",
+       "lead_title": "Firmware Engineering Manager"
+      },
+      {
+       "key": "powertrain-controls",
+       "name": "Powertrain Controls",
+       "size": 22,
+       "function": "Embedded Engineering",
+       "title": "Controls Engineer",
+       "lead_title": "Controls Engineering Manager",
+       "office": "Berlin"
+      },
+      {
+       "key": "hil-testing",
+       "name": "Hardware-in-the-Loop Testing",
+       "size": 16,
+       "function": "Embedded Engineering",
+       "title": "Test Engineer",
+       "lead_title": "Validation Manager",
+       "office": "Shanghai"
+      }
+     ],
+     "head": {
+      "title": "Director, Embedded Systems",
+      "function": "Embedded Engineering"
+     }
+    },
+    {
+     "key": "autonomy",
+     "name": "Autonomous Systems & AI",
+     "office": "Palo Alto",
+     "teams": [
+      {
+       "key": "perception",
+       "name": "Perception",
+       "size": 40,
+       "function": "Autonomous Systems",
+       "title": "Perception Engineer",
+       "lead_title": "Perception Engineering Manager"
+      },
+      {
+       "key": "planning-control",
+       "name": "Planning & Control",
+       "size": 24,
+       "function": "Autonomous Systems",
+       "title": "Motion Planning Engineer",
+       "lead_title": "Planning Engineering Manager"
+      },
+      {
+       "key": "ai-research",
+       "name": "AI Research",
+       "size": 22,
+       "function": "AI Research",
+       "title": "Research Scientist",
+       "lead_title": "Research Manager"
+      },
+      {
+       "key": "simulation",
+       "name": "Simulation",
+       "size": 18,
+       "function": "Autonomous Systems",
+       "title": "Simulation Engineer",
+       "lead_title": "Simulation Engineering Manager",
+       "office": "Toronto"
+      }
+     ],
+     "head": {
+      "title": "VP, Autonomous Systems & AI",
+      "function": "AI Research"
+     }
+    },
+    {
+     "key": "cloud",
+     "name": "Cloud Infrastructure",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "platform-engineering",
+       "name": "Platform Engineering",
+       "size": 24,
+       "function": "Cloud Infrastructure",
+       "title": "Platform Engineer",
+       "lead_title": "Platform Engineering Manager"
+      },
+      {
+       "key": "sre",
+       "name": "Site Reliability Engineering",
+       "size": 18,
+       "function": "Cloud Infrastructure",
+       "title": "Site Reliability Engineer",
+       "lead_title": "SRE Manager"
+      }
+     ],
+     "head": {
+      "title": "Director, Cloud Infrastructure",
+      "function": "Cloud Infrastructure"
+     }
+    },
+    {
+     "key": "data",
+     "name": "Data Engineering & Analytics",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "data-platform",
+       "name": "Data Platform",
+       "size": 22,
+       "function": "Data Engineering",
+       "title": "Data Engineer",
+       "lead_title": "Data Platform Manager"
+      },
+      {
+       "key": "fleet-analytics",
+       "name": "Fleet Analytics",
+       "size": 18,
+       "function": "Fleet Analytics",
+       "title": "Analytics Engineer",
+       "lead_title": "Fleet Analytics Manager"
+      },
+      {
+       "key": "data-science",
+       "name": "Data Science",
+       "size": 20,
+       "function": "Data Science",
+       "title": "Data Scientist",
+       "lead_title": "Data Science Manager",
+       "office": "Palo Alto"
+      }
+     ],
+     "head": {
+      "title": "Director, Data & Analytics",
+      "function": "Data Science"
+     }
+    },
+    {
+     "key": "battery",
+     "name": "Battery Engineering",
+     "office": "Austin",
+     "teams": [
+      {
+       "key": "cell-engineering",
+       "name": "Cell Engineering",
+       "size": 22,
+       "function": "Battery Engineering",
+       "title": "Battery Cell Engineer",
+       "lead_title": "Cell Engineering Manager"
+      },
+      {
+       "key": "bms",
+       "name": "Battery Management Systems",
+       "size": 18,
+       "function": "Embedded Engineering",
+       "title": "BMS Engineer",
+       "lead_title": "BMS Engineering Manager",
+       "office": "Berlin"
+      }
+     ],
+     "head": {
+      "title": "Director, Battery Engineering",
+      "function": "Battery Engineering"
+     }
+    },
+    {
+     "key": "mechanical",
+     "name": "Mechanical Engineering",
+     "office": "Berlin",
+     "teams": [
+      {
+       "key": "chassis",
+       "name": "Chassis",
+       "size": 20,
+       "function": "Mechanical Engineering",
+       "title": "Mechanical Engineer",
+       "lead_title": "Chassis Engineering Manager"
+      },
+      {
+       "key": "body-interiors",
+       "name": "Body & Interiors",
+       "size": 18,
+       "function": "Mechanical Engineering",
+       "title": "Mechanical Engineer",
+       "lead_title": "Body Engineering Manager"
+      }
+     ],
+     "head": {
+      "title": "Director, Mechanical Engineering",
+      "function": "Mechanical Engineering"
+     }
+    },
+    {
+     "key": "manufacturing",
+     "name": "Manufacturing & Robotics",
+     "office": "Shanghai",
+     "teams": [
+      {
+       "key": "manufacturing-automation",
+       "name": "Manufacturing Automation",
+       "size": 30,
+       "function": "Manufacturing Automation",
+       "title": "Automation Engineer",
+       "lead_title": "Automation Engineering Manager"
+      },
+      {
+       "key": "quality-engineering",
+       "name": "Quality Engineering",
+       "size": 20,
+       "function": "Quality Engineering",
+       "title": "Quality Engineer",
+       "lead_title": "Quality Manager",
+       "office": "Austin"
+      },
+      {
+       "key": "robotics",
+       "name": "Robotics",
+       "size": 18,
+       "function": "Robotics",
+       "title": "Robotics Engineer",
+       "lead_title": "Robotics Engineering Manager"
+      }
+     ],
+     "head": {
+      "title": "VP, Manufacturing",
+      "function": "Manufacturing Automation"
+     }
+    },
+    {
+     "key": "product",
+     "name": "Product Management",
+     "office": "Palo Alto",
+     "teams": [
+      {
+       "key": "vehicle-product",
+       "name": "Vehicle Product",
+       "size": 12,
+       "function": "Product Management",
+       "title": "Product Manager",
+       "lead_title": "Group Product Manager, Vehicle"
+      },
+      {
+       "key": "software-product",
+       "name": "Software Product",
+       "size": 10,
+       "function": "Product Management",
+       "title": "Product Manager",
+       "lead_title": "Group Product Manager, Software"
+      }
+     ],
+     "head": {
+      "title": "VP, Product",
+      "function": "Product Management"
+     }
+    },
+    {
+     "key": "design",
+     "name": "Product Design & UX",
+     "office": "Palo Alto",
+     "teams": [
+      {
+       "key": "ux-design",
+       "name": "UX Design",
+       "size": 14,
+       "function": "Design",
+       "title": "Product Designer",
+       "lead_title": "UX Design Manager"
+      },
+      {
+       "key": "industrial-design",
+       "name": "Industrial Design",
+       "size": 10,
+       "function": "Design",
+       "title": "Industrial Designer",
+       "lead_title": "Industrial Design Manager",
+       "office": "Berlin"
+      }
+     ],
+     "head": {
+      "title": "Head of Design",
+      "function": "Design"
+     }
+    },
+    {
+     "key": "finance",
+     "name": "Finance & FP&A",
+     "office": "Austin",
+     "teams": [
+      {
+       "key": "fpa",
+       "name": "FP&A",
+       "size": 12,
+       "function": "Finance",
+       "title": "Financial Analyst",
+       "lead_title": "FP&A Manager"
+      },
+      {
+       "key": "accounting",
+       "name": "Accounting",
+       "size": 12,
+       "function": "Finance",
+       "title": "Accountant",
+       "lead_title": "Controller"
+      }
+     ],
+     "head": {
+      "title": "Chief Financial Officer",
+      "function": "Finance",
+      "name": "Ingrid Vasquez"
+     }
+    },
+    {
+     "key": "people",
+     "name": "HR & People Operations",
+     "office": "Austin",
+     "teams": [
+      {
+       "key": "people-partners",
+       "name": "People Partners",
+       "size": 10,
+       "function": "People Operations",
+       "title": "People Partner",
+       "lead_title": "People Partner Lead"
+      },
+      {
+       "key": "talent",
+       "name": "Talent Acquisition",
+       "size": 12,
+       "function": "People Operations",
+       "title": "Recruiter",
+       "lead_title": "Talent Acquisition Manager"
+      }
+     ],
+     "head": {
+      "title": "Chief People Officer",
+      "function": "People Operations"
+     }
+    },
+    {
+     "key": "go-to-market",
+     "name": "Sales & Marketing",
+     "office": "Austin",
+     "teams": [
+      {
+       "key": "marketing",
+       "name": "Marketing",
+       "size": 20,
+       "function": "Marketing",
+       "title": "Marketing Manager",
+       "lead_title": "Marketing Director"
+      },
+      {
+       "key": "sales",
+       "name": "Sales",
+       "size": 31,
+       "function": "Sales",
+       "title": "Account Executive",
+       "lead_title": "Regional Sales Director",
+       "office": "Berlin"
+      }
+     ],
+     "head": {
+      "title": "Chief Revenue Officer",
+      "function": "Sales"
+     }
+    },
+    {
+     "key": "supply-chain",
+     "name": "Supply Chain & Operations",
+     "office": "Shanghai",
+     "teams": [
+      {
+       "key": "sourcing",
+       "name": "Global Sourcing",
+       "size": 18,
+       "function": "Supply Chain",
+       "title": "Sourcing Manager",
+       "lead_title": "Sourcing Director"
+      },
+      {
+       "key": "logistics",
+       "name": "Logistics",
+       "size": 16,
+       "function": "Supply Chain",
+       "title": "Logistics Analyst",
+       "lead_title": "Logistics Director",
+       "office": "Berlin"
+      }
+     ],
+     "head": {
+      "title": "VP, Supply Chain",
+      "function": "Supply Chain"
+     }
+    },
+    {
+     "key": "security-legal",
+     "name": "Security, Compliance & Legal",
+     "office": "Austin",
+     "teams": [
+      {
+       "key": "security",
+       "name": "Security Engineering",
+       "size": 14,
+       "function": "Security Engineering",
+       "title": "Security Engineer",
+       "lead_title": "Security Engineering Manager",
+       "office": "Toronto"
+      },
+      {
+       "key": "compliance",
+       "name": "Compliance",
+       "size": 8,
+       "function": "Compliance",
+       "title": "Compliance Analyst",
+       "lead_title": "Compliance Manager"
+      },
+      {
+       "key": "legal",
+       "name": "Legal",
+       "size": 9,
+       "function": "Legal",
+       "title": "Counsel",
+       "lead_title": "Deputy General Counsel"
+      }
+     ],
+     "head": {
+      "title": "General Counsel",
+      "function": "Legal"
+     }
+    }
+   ],
+   "functions": {
+    "Executive": {
+     "tier": "high",
+     "project_share": 0.2,
+     "workflows": {
+      "document-drafting": 0.4,
+      "research-analysis": 0.3,
+      "chat-assistant": 0.3
+     },
+     "budget_usd": 12.5
+    },
+    "Software Engineering": {
+     "tier": "very_high",
+     "project_share": 0.55,
+     "workflows": {
+      "code-generation": 0.45,
+      "code-review": 0.25,
+      "debugging": 0.2,
+      "chat-assistant": 0.1
+     },
+     "budget_usd": 55
+    },
+    "Embedded Engineering": {
+     "tier": "high",
+     "project_share": 0.5,
+     "workflows": {
+      "code-generation": 0.4,
+      "debugging": 0.35,
+      "code-review": 0.15,
+      "chat-assistant": 0.1
+     },
+     "budget_usd": 12.5
+    },
+    "AI Research": {
+     "tier": "very_high",
+     "project_share": 0.7,
+     "workflows": {
+      "research-analysis": 0.35,
+      "simulation-analysis": 0.3,
+      "code-generation": 0.2,
+      "model-evaluation": 0.15
+     },
+     "budget_usd": 55
+    },
+    "Autonomous Systems": {
+     "tier": "very_high",
+     "project_share": 0.75,
+     "workflows": {
+      "simulation-analysis": 0.4,
+      "code-generation": 0.3,
+      "debugging": 0.2,
+      "data-analysis": 0.1
+     },
+     "budget_usd": 55
+    },
+    "Cloud Infrastructure": {
+     "tier": "very_high",
+     "project_share": 0.4,
+     "workflows": {
+      "code-generation": 0.35,
+      "debugging": 0.35,
+      "code-review": 0.2,
+      "chat-assistant": 0.1
+     },
+     "budget_usd": 55
+    },
+    "Data Science": {
+     "tier": "very_high",
+     "project_share": 0.6,
+     "workflows": {
+      "data-analysis": 0.5,
+      "research-analysis": 0.2,
+      "code-generation": 0.2,
+      "vehicle-diagnostics": 0.1
+     },
+     "budget_usd": 55
+    },
+    "Data Engineering": {
+     "tier": "high",
+     "project_share": 0.5,
+     "workflows": {
+      "data-analysis": 0.4,
+      "code-generation": 0.4,
+      "debugging": 0.2
+     },
+     "budget_usd": 12.5
+    },
+    "Fleet Analytics": {
+     "tier": "high",
+     "project_share": 0.7,
+     "workflows": {
+      "vehicle-diagnostics": 0.6,
+      "data-analysis": 0.4
+     },
+     "budget_usd": 12.5
+    },
+    "Battery Engineering": {
+     "tier": "high",
+     "project_share": 0.6,
+     "workflows": {
+      "research-analysis": 0.3,
+      "data-analysis": 0.4,
+      "document-drafting": 0.3
+     },
+     "budget_usd": 12.5
+    },
+    "Mechanical Engineering": {
+     "tier": "moderate",
+     "project_share": 0.4,
+     "workflows": {
+      "document-drafting": 0.5,
+      "data-analysis": 0.3,
+      "chat-assistant": 0.2
+     },
+     "budget_usd": 1
+    },
+    "Manufacturing Automation": {
+     "tier": "high",
+     "project_share": 0.6,
+     "workflows": {
+      "manufacturing-quality": 0.5,
+      "data-analysis": 0.3,
+      "code-generation": 0.2
+     },
+     "budget_usd": 12.5
+    },
+    "Quality Engineering": {
+     "tier": "high",
+     "project_share": 0.6,
+     "workflows": {
+      "manufacturing-quality": 0.6,
+      "data-analysis": 0.4
+     },
+     "budget_usd": 12.5
+    },
+    "Robotics": {
+     "tier": "high",
+     "project_share": 0.6,
+     "workflows": {
+      "code-generation": 0.4,
+      "manufacturing-quality": 0.3,
+      "debugging": 0.3
+     },
+     "budget_usd": 12.5
+    },
+    "Product Management": {
+     "tier": "high",
+     "project_share": 0.5,
+     "workflows": {
+      "document-drafting": 0.5,
+      "research-analysis": 0.2,
+      "data-analysis": 0.2,
+      "chat-assistant": 0.1
+     },
+     "budget_usd": 12.5
+    },
+    "Design": {
+     "tier": "moderate",
+     "project_share": 0.4,
+     "workflows": {
+      "document-drafting": 0.5,
+      "chat-assistant": 0.5
+     },
+     "budget_usd": 1
+    },
+    "Finance": {
+     "tier": "moderate",
+     "project_share": 0.05,
+     "workflows": {
+      "data-analysis": 0.5,
+      "document-drafting": 0.3,
+      "chat-assistant": 0.2
+     },
+     "budget_usd": 1
+    },
+    "People Operations": {
+     "tier": "low",
+     "project_share": 0.0,
+     "workflows": {
+      "hr-assistant": 0.7,
+      "document-drafting": 0.3
+     },
+     "budget_usd": 0.25
+    },
+    "Marketing": {
+     "tier": "moderate",
+     "project_share": 0.1,
+     "workflows": {
+      "marketing-content": 0.7,
+      "chat-assistant": 0.3
+     },
+     "budget_usd": 1
+    },
+    "Sales": {
+     "tier": "moderate",
+     "project_share": 0.05,
+     "workflows": {
+      "document-drafting": 0.5,
+      "chat-assistant": 0.5
+     },
+     "budget_usd": 1
+    },
+    "Supply Chain": {
+     "tier": "moderate",
+     "project_share": 0.5,
+     "workflows": {
+      "supply-forecasting": 0.6,
+      "data-analysis": 0.4
+     },
+     "budget_usd": 1
+    },
+    "Security Engineering": {
+     "tier": "high",
+     "project_share": 0.2,
+     "workflows": {
+      "code-review": 0.5,
+      "debugging": 0.2,
+      "chat-assistant": 0.3
+     },
+     "budget_usd": 12.5
+    },
+    "Compliance": {
+     "tier": "low",
+     "project_share": 0.1,
+     "workflows": {
+      "legal-review": 0.6,
+      "document-drafting": 0.4
+     },
+     "budget_usd": 0.25
+    },
+    "Legal": {
+     "tier": "low",
+     "project_share": 0.0,
+     "workflows": {
+      "legal-review": 0.7,
+      "document-drafting": 0.3
+     },
+     "budget_usd": 0.25
+    }
+   },
+   "projects": [
+    {
+     "key": "autonomous-driving",
+     "name": "Autonomous Driving Intelligence",
+     "lead": "team:perception",
+     "start_month": 0,
+     "teams": {
+      "perception": 0.8,
+      "planning-control": 0.8,
+      "ai-research": 0.6,
+      "simulation": 0.7,
+      "data-science": 0.3,
+      "vehicle-product": 0.3
+     }
+    },
+    {
+     "key": "battery-optimization",
+     "name": "Battery Optimization Platform",
+     "lead": "team:cell-engineering",
+     "start_month": 0,
+     "teams": {
+      "cell-engineering": 0.7,
+      "bms": 0.7,
+      "data-science": 0.25,
+      "firmware": 0.2
+     }
+    },
+    {
+     "key": "vehicle-telemetry",
+     "name": "Vehicle Telemetry Analytics",
+     "lead": "team:fleet-analytics",
+     "start_month": 1,
+     "teams": {
+      "fleet-analytics": 0.8,
+      "data-platform": 0.5,
+      "vehicle-platform": 0.25,
+      "connected-apps": 0.3
+     }
+    },
+    {
+     "key": "embedded-dev-tools",
+     "name": "Embedded Developer Tools",
+     "lead": "team:developer-experience",
+     "start_month": 2,
+     "teams": {
+      "developer-experience": 0.8,
+      "firmware": 0.3,
+      "hil-testing": 0.4,
+      "platform-engineering": 0.2
+     }
+    },
+    {
+     "key": "manufacturing-quality",
+     "name": "Manufacturing Quality Intelligence",
+     "lead": "team:quality-engineering",
+     "start_month": 3,
+     "teams": {
+      "quality-engineering": 0.8,
+      "manufacturing-automation": 0.5,
+      "robotics": 0.4,
+      "data-platform": 0.15
+     }
+    },
+    {
+     "key": "supply-chain-forecasting",
+     "name": "Global Supply Chain Forecasting",
+     "lead": "team:sourcing",
+     "start_month": 4,
+     "teams": {
+      "sourcing": 0.7,
+      "logistics": 0.7,
+      "data-science": 0.2,
+      "fpa": 0.25
+     }
+    },
+    {
+     "key": "internal-ai-productivity",
+     "name": "Internal AI Productivity",
+     "lead": "team:platform-engineering",
+     "start_month": 0,
+     "teams": {
+      "platform-engineering": 0.5,
+      "sre": 0.4,
+      "infotainment": 0.3,
+      "people-partners": 0.3,
+      "marketing": 0.2,
+      "security": 0.3
+     }
+    },
+    {
+     "key": "fleet-diagnostics",
+     "name": "Fleet Diagnostics Platform",
+     "lead": "team:vehicle-platform",
+     "start_month": 5,
+     "teams": {
+      "vehicle-platform": 0.5,
+      "fleet-analytics": 0.4,
+      "firmware": 0.25,
+      "sre": 0.3
+     }
+    }
+   ],
+   "personas": {
+    "leadership": "dept:executive",
+    "financial_operator": "dept:finance",
+    "manager": "dept:vehicle-software",
+    "project_lead": "team:perception",
+    "employee": "member:infotainment:4"
+   },
+   "names": {
+    "team:perception": "Dev Raman",
+    "member:infotainment:4": "Lena Okafor",
+    "team:office-of-ceo": "Marcus Hale"
+   },
+   "agents": [
+    {
+     "key": "fleet-diagnostics-agent",
+     "name": "Fleet Diagnostics Agent",
+     "workflow": "vehicle-diagnostics",
+     "owner": "team:fleet-analytics",
+     "success": 0.91,
+     "retry": 0.08,
+     "drift": [
+      {
+       "from_month": 8,
+       "success": 0.8,
+       "retry": 0.24
+      }
+     ]
+    },
+    {
+     "key": "simulation-scenario-agent",
+     "name": "Simulation Scenario Agent",
+     "workflow": "simulation-analysis",
+     "owner": "team:simulation",
+     "success": 0.86,
+     "retry": 0.12
+    },
+    {
+     "key": "quality-inspection-agent",
+     "name": "Quality Inspection Agent",
+     "workflow": "manufacturing-quality",
+     "owner": "team:quality-engineering",
+     "success": 0.93,
+     "retry": 0.05
+    },
+    {
+     "key": "code-review-agent",
+     "name": "Code Review Agent",
+     "workflow": "code-review",
+     "owner": "team:developer-experience",
+     "success": 0.95,
+     "retry": 0.05
+    },
+    {
+     "key": "debugging-agent",
+     "name": "Debugging Agent",
+     "workflow": "debugging",
+     "owner": "team:platform-engineering",
+     "success": 0.88,
+     "retry": 0.1
+    },
+    {
+     "key": "supply-forecast-agent",
+     "name": "Supply Forecast Agent",
+     "workflow": "supply-forecasting",
+     "owner": "team:sourcing",
+     "success": 0.9,
+     "retry": 0.07,
+     "drift": [
+      {
+       "from_month": 9,
+       "output_multiplier": 1.6
+      }
+     ]
+    }
+   ],
+   "activity": {
+    "events": {
+     "demo": 66000,
+     "smoke": 6600
+    },
+    "weekend_factor": 0.12,
+    "months": [
+     0.62,
+     0.55,
+     0.7,
+     0.76,
+     0.82,
+     0.95,
+     0.88,
+     0.92,
+     0.84,
+     0.98,
+     1.12,
+     1.05
+    ],
+    "frontier_drift": [
+     0.9,
+     1.3
+    ],
+    "rollup_scale": 1.0,
+    "unpriced_share": 0.05,
+    "holidays": [
+     "12-24",
+     "12-25",
+     "12-26",
+     "12-31",
+     "01-01"
+    ]
+   },
+   "funding": {
+    "budget_curve": [
+     0.55,
+     0.7,
+     0.85,
+     0.9,
+     1.0,
+     1.15,
+     1.05,
+     1.1,
+     1.05,
+     1.15,
+     1.3,
+     1.3
+    ],
+    "reserve_buffer": 0.12,
+    "unassigned_share": 0.02,
+    "factors": {
+     "project:autonomous-driving": 0.8,
+     "project:fleet-diagnostics": 0.7,
+     "unit:simulation": 0.75,
+     "unit:people-partners": 3.0,
+     "unit:legal": 2.5,
+     "unit:sales": 1.8
+    }
+   },
+   "controls": {
+    "delegation_max": "400",
+    "employee_ceiling": "150",
+    "requests": [
+     {
+      "by": "employee",
+      "type": "personal_allowance",
+      "amount": "220"
+     },
+     {
+      "by": "project_lead",
+      "type": "project_funding",
+      "project": "autonomous-driving",
+      "amount": "2500"
+     },
+     {
+      "by": "manager",
+      "type": "team_funding",
+      "unit": "vehicle-software",
+      "amount": "1800"
+     }
+    ]
+   },
+   "persona_projects": [
+    "internal-ai-productivity",
+    "vehicle-telemetry"
+   ],
+   "headcount": 750
+  },
+  {
+   "slug": "northline-financial",
+   "name": "Northline Financial",
+   "source": "enterprise-northline-v1",
+   "description": "Fictional Toronto-based payments and fintech company (venture-backed in its fictional history) with remote groups in Montreal and New York. Synthetic demo data.",
+   "offices": {
+    "Toronto": -5,
+    "Montreal": -5,
+    "New York": -5
+   },
+   "departments": [
+    {
+     "key": "executive",
+     "name": "Executive Leadership",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "exec-office",
+       "name": "Executive Office",
+       "size": 4,
+       "function": "Executive",
+       "title": "Executive Business Partner",
+       "lead_title": "Chief Operating Officer"
+      }
+     ],
+     "head": {
+      "title": "Chief Executive Officer",
+      "function": "Executive",
+      "name": "Amara Lindqvist"
+     }
+    },
+    {
+     "key": "payments-engineering",
+     "name": "Backend & Payments Engineering",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "payments-core",
+       "name": "Payments Core",
+       "size": 14,
+       "function": "Backend Engineering",
+       "title": "Backend Engineer",
+       "lead_title": "Engineering Manager, Payments"
+      },
+      {
+       "key": "ledger-services",
+       "name": "Ledger Services",
+       "size": 10,
+       "function": "Backend Engineering",
+       "title": "Backend Engineer",
+       "lead_title": "Engineering Manager, Ledger"
+      }
+     ],
+     "head": {
+      "title": "VP, Engineering",
+      "function": "Backend Engineering",
+      "name": "Tobias Wren"
+     }
+    },
+    {
+     "key": "product-engineering",
+     "name": "Frontend & Product Engineering",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "web",
+       "name": "Web Experience",
+       "size": 10,
+       "function": "Frontend Engineering",
+       "title": "Frontend Engineer",
+       "lead_title": "Web Engineering Manager"
+      },
+      {
+       "key": "mobile",
+       "name": "Mobile",
+       "size": 8,
+       "function": "Frontend Engineering",
+       "title": "Mobile Engineer",
+       "lead_title": "Mobile Engineering Manager",
+       "office": "Montreal"
+      }
+     ],
+     "head": {
+      "title": "Director, Product Engineering",
+      "function": "Frontend Engineering"
+     }
+    },
+    {
+     "key": "infrastructure",
+     "name": "Infrastructure & SRE",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "sre",
+       "name": "Site Reliability",
+       "size": 8,
+       "function": "Infrastructure",
+       "title": "Site Reliability Engineer",
+       "lead_title": "SRE Lead"
+      },
+      {
+       "key": "developer-platform",
+       "name": "Internal Developer Platform",
+       "size": 6,
+       "function": "Developer Tooling",
+       "title": "Platform Engineer",
+       "lead_title": "Developer Platform Lead"
+      }
+     ],
+     "head": {
+      "title": "Director, Infrastructure",
+      "function": "Infrastructure"
+     }
+    },
+    {
+     "key": "data",
+     "name": "Data Engineering",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "data-engineering",
+       "name": "Data Platform Engineering",
+       "size": 11,
+       "function": "Data Engineering",
+       "title": "Data Engineer",
+       "lead_title": "Data Engineering Lead"
+      }
+     ],
+     "head": {
+      "title": "Head of Data",
+      "function": "Data Engineering"
+     }
+    },
+    {
+     "key": "risk",
+     "name": "Risk & Fraud",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "fraud-research",
+       "name": "Fraud Research",
+       "size": 9,
+       "function": "Fraud Research",
+       "title": "Fraud Data Scientist",
+       "lead_title": "Fraud Research Lead"
+      },
+      {
+       "key": "risk-analytics",
+       "name": "Risk Analytics",
+       "size": 7,
+       "function": "Risk Analytics",
+       "title": "Risk Analyst",
+       "lead_title": "Risk Analytics Lead",
+       "office": "New York"
+      }
+     ],
+     "head": {
+      "title": "Head of Risk",
+      "function": "Fraud Research",
+      "name": "Priyanka Doshi"
+     }
+    },
+    {
+     "key": "security",
+     "name": "Security",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "security-engineering",
+       "name": "Security Engineering",
+       "size": 7,
+       "function": "Security",
+       "title": "Security Engineer",
+       "lead_title": "Security Lead"
+      }
+     ],
+     "head": {
+      "title": "Head of Security",
+      "function": "Security"
+     }
+    },
+    {
+     "key": "compliance",
+     "name": "Compliance",
+     "office": "Montreal",
+     "teams": [
+      {
+       "key": "regulatory-compliance",
+       "name": "Regulatory Compliance",
+       "size": 8,
+       "function": "Compliance",
+       "title": "Compliance Analyst",
+       "lead_title": "Compliance Lead"
+      }
+     ],
+     "head": {
+      "title": "Chief Compliance Officer",
+      "function": "Compliance"
+     }
+    },
+    {
+     "key": "product",
+     "name": "Product Management",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "product-managers",
+       "name": "Product Managers",
+       "size": 8,
+       "function": "Product Management",
+       "title": "Product Manager",
+       "lead_title": "Group Product Manager"
+      }
+     ],
+     "head": {
+      "title": "VP, Product",
+      "function": "Product Management"
+     }
+    },
+    {
+     "key": "design",
+     "name": "Design",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "product-design",
+       "name": "Product Design",
+       "size": 6,
+       "function": "Design",
+       "title": "Product Designer",
+       "lead_title": "Design Lead"
+      }
+     ],
+     "head": {
+      "title": "Head of Design",
+      "function": "Design"
+     }
+    },
+    {
+     "key": "finance",
+     "name": "Finance",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "finance-team",
+       "name": "Finance & Accounting",
+       "size": 7,
+       "function": "Finance",
+       "title": "Financial Analyst",
+       "lead_title": "Controller"
+      }
+     ],
+     "head": {
+      "title": "Chief Financial Officer",
+      "function": "Finance",
+      "name": "Gabriel Moreau"
+     }
+    },
+    {
+     "key": "business-operations",
+     "name": "Business Operations",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "bizops",
+       "name": "BizOps & Analytics",
+       "size": 5,
+       "function": "Business Operations",
+       "title": "Business Operations Analyst",
+       "lead_title": "Business Operations Lead"
+      }
+     ],
+     "head": {
+      "title": "Head of Business Operations",
+      "function": "Business Operations"
+     }
+    },
+    {
+     "key": "customer-success",
+     "name": "Customer Success",
+     "office": "Montreal",
+     "teams": [
+      {
+       "key": "merchant-support",
+       "name": "Merchant Support",
+       "size": 9,
+       "function": "Customer Success",
+       "title": "Support Specialist",
+       "lead_title": "Support Manager"
+      },
+      {
+       "key": "onboarding",
+       "name": "Merchant Onboarding",
+       "size": 7,
+       "function": "Customer Success",
+       "title": "Onboarding Specialist",
+       "lead_title": "Onboarding Lead"
+      }
+     ],
+     "head": {
+      "title": "VP, Customer Success",
+      "function": "Customer Success"
+     }
+    },
+    {
+     "key": "sales",
+     "name": "Sales & Partnerships",
+     "office": "New York",
+     "teams": [
+      {
+       "key": "partnerships",
+       "name": "Partnerships",
+       "size": 10,
+       "function": "Sales & Partnerships",
+       "title": "Partnerships Manager",
+       "lead_title": "Head of Partnerships"
+      }
+     ],
+     "head": {
+      "title": "VP, Sales & Partnerships",
+      "function": "Sales & Partnerships"
+     }
+    },
+    {
+     "key": "people",
+     "name": "People Operations",
+     "office": "Toronto",
+     "teams": [
+      {
+       "key": "people-team",
+       "name": "People Partners",
+       "size": 6,
+       "function": "People Operations",
+       "title": "People Partner",
+       "lead_title": "People Operations Lead"
+      }
+     ],
+     "head": {
+      "title": "Head of People",
+      "function": "People Operations"
+     }
+    }
+   ],
+   "functions": {
+    "Executive": {
+     "tier": "high",
+     "project_share": 0.2,
+     "workflows": {
+      "document-drafting": 0.4,
+      "research-analysis": 0.3,
+      "chat-assistant": 0.3
+     },
+     "budget_usd": 14
+    },
+    "Backend Engineering": {
+     "tier": "very_high",
+     "project_share": 0.6,
+     "workflows": {
+      "code-generation": 0.4,
+      "code-review": 0.3,
+      "debugging": 0.2,
+      "reconciliation": 0.1
+     },
+     "budget_usd": 59
+    },
+    "Frontend Engineering": {
+     "tier": "high",
+     "project_share": 0.5,
+     "workflows": {
+      "code-generation": 0.5,
+      "code-review": 0.3,
+      "debugging": 0.2
+     },
+     "budget_usd": 14
+    },
+    "Infrastructure": {
+     "tier": "high",
+     "project_share": 0.4,
+     "workflows": {
+      "code-generation": 0.3,
+      "debugging": 0.4,
+      "code-review": 0.3
+     },
+     "budget_usd": 14
+    },
+    "Developer Tooling": {
+     "tier": "very_high",
+     "project_share": 0.7,
+     "workflows": {
+      "code-generation": 0.4,
+      "code-review": 0.4,
+      "debugging": 0.2
+     },
+     "budget_usd": 59
+    },
+    "Data Engineering": {
+     "tier": "very_high",
+     "project_share": 0.6,
+     "workflows": {
+      "data-analysis": 0.5,
+      "code-generation": 0.3,
+      "reconciliation": 0.2
+     },
+     "budget_usd": 59
+    },
+    "Fraud Research": {
+     "tier": "very_high",
+     "project_share": 0.8,
+     "workflows": {
+      "fraud-analysis": 0.6,
+      "research-analysis": 0.2,
+      "data-analysis": 0.2
+     },
+     "budget_usd": 59
+    },
+    "Risk Analytics": {
+     "tier": "high",
+     "project_share": 0.7,
+     "workflows": {
+      "fraud-analysis": 0.4,
+      "data-analysis": 0.6
+     },
+     "budget_usd": 14
+    },
+    "Security": {
+     "tier": "selective",
+     "project_share": 0.1,
+     "workflows": {
+      "code-review": 0.5,
+      "chat-assistant": 0.5
+     },
+     "budget_usd": 0.25
+    },
+    "Compliance": {
+     "tier": "selective",
+     "project_share": 0.3,
+     "workflows": {
+      "compliance-review": 0.7,
+      "document-drafting": 0.3
+     },
+     "budget_usd": 0.25
+    },
+    "Product Management": {
+     "tier": "moderate",
+     "project_share": 0.5,
+     "workflows": {
+      "document-drafting": 0.5,
+      "research-analysis": 0.2,
+      "data-analysis": 0.3
+     },
+     "budget_usd": 1
+    },
+    "Design": {
+     "tier": "moderate",
+     "project_share": 0.4,
+     "workflows": {
+      "document-drafting": 0.5,
+      "chat-assistant": 0.5
+     },
+     "budget_usd": 1
+    },
+    "Finance": {
+     "tier": "selective",
+     "project_share": 0.2,
+     "workflows": {
+      "data-analysis": 0.5,
+      "reconciliation": 0.3,
+      "document-drafting": 0.2
+     },
+     "budget_usd": 0.25
+    },
+    "Business Operations": {
+     "tier": "moderate",
+     "project_share": 0.2,
+     "workflows": {
+      "data-analysis": 0.4,
+      "document-drafting": 0.4,
+      "chat-assistant": 0.2
+     },
+     "budget_usd": 1
+    },
+    "Customer Success": {
+     "tier": "moderate",
+     "project_share": 0.2,
+     "workflows": {
+      "customer-support": 0.8,
+      "chat-assistant": 0.2
+     },
+     "budget_usd": 1
+    },
+    "Sales & Partnerships": {
+     "tier": "moderate",
+     "project_share": 0.1,
+     "workflows": {
+      "document-drafting": 0.5,
+      "chat-assistant": 0.5
+     },
+     "budget_usd": 1
+    },
+    "People Operations": {
+     "tier": "low",
+     "project_share": 0.0,
+     "workflows": {
+      "hr-assistant": 0.7,
+      "document-drafting": 0.3
+     },
+     "budget_usd": 0.15
+    }
+   },
+   "projects": [
+    {
+     "key": "real-time-payments",
+     "name": "Real-Time Payments Platform",
+     "lead": "team:payments-core",
+     "start_month": 0,
+     "teams": {
+      "payments-core": 0.8,
+      "ledger-services": 0.4,
+      "sre": 0.4,
+      "product-managers": 0.3
+     }
+    },
+    {
+     "key": "fraud-detection-engine",
+     "name": "Fraud Detection Engine",
+     "lead": "team:fraud-research",
+     "start_month": 0,
+     "teams": {
+      "fraud-research": 0.9,
+      "risk-analytics": 0.6,
+      "data-engineering": 0.4,
+      "payments-core": 0.2
+     }
+    },
+    {
+     "key": "merchant-risk",
+     "name": "Merchant Risk Intelligence",
+     "lead": "team:risk-analytics",
+     "start_month": 3,
+     "teams": {
+      "risk-analytics": 0.7,
+      "fraud-research": 0.3,
+      "onboarding": 0.3,
+      "data-engineering": 0.2
+     }
+    },
+    {
+     "key": "onboarding-automation",
+     "name": "Customer Onboarding Automation",
+     "lead": "team:onboarding",
+     "start_month": 2,
+     "teams": {
+      "onboarding": 0.8,
+      "web": 0.4,
+      "regulatory-compliance": 0.4,
+      "merchant-support": 0.2
+     }
+    },
+    {
+     "key": "reconciliation-platform",
+     "name": "Financial Reconciliation Platform",
+     "lead": "team:ledger-services",
+     "start_month": 1,
+     "teams": {
+      "ledger-services": 0.8,
+      "finance-team": 0.5,
+      "data-engineering": 0.3
+     }
+    },
+    {
+     "key": "developer-platform",
+     "name": "Internal Developer Platform",
+     "lead": "team:developer-platform",
+     "start_month": 0,
+     "teams": {
+      "developer-platform": 0.9,
+      "sre": 0.5,
+      "web": 0.3,
+      "mobile": 0.3
+     }
+    },
+    {
+     "key": "compliance-intelligence",
+     "name": "Compliance Document Intelligence",
+     "lead": "team:regulatory-compliance",
+     "start_month": 4,
+     "teams": {
+      "regulatory-compliance": 0.8,
+      "security-engineering": 0.3,
+      "product-managers": 0.2
+     }
+    }
+   ],
+   "personas": {
+    "leadership": "dept:executive",
+    "financial_operator": "dept:finance",
+    "manager": "dept:payments-engineering",
+    "project_lead": "team:fraud-research",
+    "employee": "member:payments-core:3"
+   },
+   "names": {
+    "team:fraud-research": "Mateo Alvarez",
+    "member:payments-core:3": "Hana Takeda"
+   },
+   "agents": [
+    {
+     "key": "fraud-triage-agent",
+     "name": "Fraud Triage Agent",
+     "workflow": "fraud-analysis",
+     "owner": "team:fraud-research",
+     "success": 0.9,
+     "retry": 0.07,
+     "drift": [
+      {
+       "from_month": 9,
+       "retry": 0.22
+      }
+     ]
+    },
+    {
+     "key": "reconciliation-agent",
+     "name": "Reconciliation Agent",
+     "workflow": "reconciliation",
+     "owner": "team:ledger-services",
+     "success": 0.94,
+     "retry": 0.04,
+     "drift": [
+      {
+       "from_month": 10,
+       "success": 0.78
+      }
+     ]
+    },
+    {
+     "key": "code-review-agent",
+     "name": "Code Review Agent",
+     "workflow": "code-review",
+     "owner": "team:developer-platform",
+     "success": 0.95,
+     "retry": 0.05
+    },
+    {
+     "key": "compliance-assistant",
+     "name": "Compliance Document Assistant",
+     "workflow": "compliance-review",
+     "owner": "team:regulatory-compliance",
+     "success": 0.92,
+     "retry": 0.05,
+     "drift": [
+      {
+       "from_month": 7,
+       "output_multiplier": 1.5
+      }
+     ]
+    },
+    {
+     "key": "debugging-agent",
+     "name": "Debugging Agent",
+     "workflow": "debugging",
+     "owner": "team:sre",
+     "success": 0.88,
+     "retry": 0.1
+    }
+   ],
+   "activity": {
+    "events": {
+     "demo": 24000,
+     "smoke": 2400
+    },
+    "weekend_factor": 0.1,
+    "months": [
+     0.7,
+     0.6,
+     0.78,
+     0.86,
+     0.8,
+     0.9,
+     1.05,
+     0.95,
+     0.88,
+     0.92,
+     1.0,
+     1.1
+    ],
+    "frontier_drift": [
+     1.2,
+     0.7
+    ],
+    "rollup_scale": 1.0,
+    "unpriced_share": 0.015,
+    "holidays": [
+     "12-24",
+     "12-25",
+     "12-26",
+     "12-31",
+     "01-01"
+    ]
+   },
+   "funding": {
+    "budget_curve": [
+     0.6,
+     0.8,
+     1.0,
+     1.0,
+     1.05,
+     1.15,
+     1.1,
+     1.05,
+     1.0,
+     1.0,
+     1.05,
+     1.15
+    ],
+    "reserve_buffer": 0.1,
+    "unassigned_share": 0.02,
+    "factors": {
+     "project:fraud-detection-engine": 0.75,
+     "unit:merchant-support": 2.0,
+     "unit:regulatory-compliance": 1.5
+    }
+   },
+   "controls": {
+    "delegation_max": "300",
+    "employee_ceiling": "120",
+    "requests": [
+     {
+      "by": "employee",
+      "type": "personal_allowance",
+      "amount": "180"
+     },
+     {
+      "by": "project_lead",
+      "type": "project_funding",
+      "project": "fraud-detection-engine",
+      "amount": "1500"
+     }
+    ]
+   },
+   "persona_projects": [
+    "real-time-payments",
+    "developer-platform"
+   ],
+   "headcount": 175
+  },
+  {
+   "slug": "memento-ai",
+   "name": "Memento AI",
+   "source": "enterprise-memento-v1",
+   "description": "Fictional New York startup building AI meeting intelligence: capture, summarize and search meetings and organize follow-ups. Synthetic demo data.",
+   "offices": {
+    "New York": -5
+   },
+   "departments": [
+    {
+     "key": "leadership",
+     "name": "Founders",
+     "office": "New York",
+     "teams": [],
+     "head": {
+      "title": "Chief Executive Officer & Founder",
+      "function": "Executive",
+      "name": "Noor Haddad"
+     }
+    },
+    {
+     "key": "engineering",
+     "name": "Engineering",
+     "office": "New York",
+     "teams": [
+      {
+       "key": "ai-ml",
+       "name": "AI & ML",
+       "size": 4,
+       "function": "AI/ML Engineering",
+       "title": "Machine Learning Engineer",
+       "lead": false
+      },
+      {
+       "key": "backend",
+       "name": "Backend",
+       "size": 3,
+       "function": "Backend Engineering",
+       "title": "Backend Engineer",
+       "lead": false
+      },
+      {
+       "key": "full-stack",
+       "name": "Full-Stack",
+       "size": 3,
+       "function": "Full-Stack Engineering",
+       "title": "Full-Stack Engineer",
+       "lead": false
+      }
+     ],
+     "head": {
+      "title": "Chief Technology Officer & Cofounder",
+      "function": "Engineering Leadership",
+      "name": "Jonah Whitfield"
+     }
+    },
+    {
+     "key": "product-design",
+     "name": "Product & Design",
+     "office": "New York",
+     "teams": [
+      {
+       "key": "product",
+       "name": "Product",
+       "size": 1,
+       "function": "Product Management",
+       "title": "Product Manager",
+       "lead": false
+      },
+      {
+       "key": "design",
+       "name": "Design",
+       "size": 1,
+       "function": "Design",
+       "title": "Product Designer",
+       "lead": false
+      }
+     ]
+    },
+    {
+     "key": "go-to-market",
+     "name": "Go-to-Market",
+     "office": "New York",
+     "teams": [
+      {
+       "key": "growth",
+       "name": "Growth",
+       "size": 2,
+       "function": "Growth Marketing",
+       "title": "Growth Marketer",
+       "lead": false
+      },
+      {
+       "key": "customer-success",
+       "name": "Customer Success",
+       "size": 1,
+       "function": "Customer Success",
+       "title": "Customer Success Lead",
+       "lead": false
+      }
+     ]
+    },
+    {
+     "key": "operations",
+     "name": "Operations",
+     "office": "New York",
+     "teams": [
+      {
+       "key": "ops",
+       "name": "Business Operations",
+       "size": 1,
+       "function": "Operations",
+       "title": "Operations Manager",
+       "lead": false
+      }
+     ]
+    }
+   ],
+   "functions": {
+    "Executive": {
+     "tier": "high",
+     "project_share": 0.4,
+     "workflows": {
+      "document-drafting": 0.35,
+      "research-analysis": 0.25,
+      "meeting-summarization": 0.25,
+      "action-extraction": 0.15
+     },
+     "budget_usd": 52
+    },
+    "Engineering Leadership": {
+     "tier": "very_high",
+     "project_share": 0.6,
+     "workflows": {
+      "code-review": 0.4,
+      "research-analysis": 0.3,
+      "model-evaluation": 0.3
+     },
+     "budget_usd": 180
+    },
+    "AI/ML Engineering": {
+     "tier": "very_high",
+     "project_share": 0.85,
+     "workflows": {
+      "model-evaluation": 0.35,
+      "meeting-summarization": 0.2,
+      "transcript-analysis": 0.2,
+      "research-analysis": 0.15,
+      "code-generation": 0.1
+     },
+     "budget_usd": 180
+    },
+    "Backend Engineering": {
+     "tier": "very_high",
+     "project_share": 0.7,
+     "workflows": {
+      "code-generation": 0.4,
+      "code-review": 0.3,
+      "meeting-summarization": 0.15,
+      "action-extraction": 0.15
+     },
+     "budget_usd": 180
+    },
+    "Full-Stack Engineering": {
+     "tier": "very_high",
+     "project_share": 0.7,
+     "workflows": {
+      "code-generation": 0.5,
+      "code-review": 0.3,
+      "action-extraction": 0.2
+     },
+     "budget_usd": 180
+    },
+    "Product Management": {
+     "tier": "high",
+     "project_share": 0.6,
+     "workflows": {
+      "document-drafting": 0.3,
+      "meeting-summarization": 0.3,
+      "research-analysis": 0.2,
+      "action-extraction": 0.2
+     },
+     "budget_usd": 52
+    },
+    "Design": {
+     "tier": "high",
+     "project_share": 0.5,
+     "workflows": {
+      "document-drafting": 0.5,
+      "chat-assistant": 0.5
+     },
+     "budget_usd": 52
+    },
+    "Growth Marketing": {
+     "tier": "high",
+     "project_share": 0.2,
+     "workflows": {
+      "marketing-content": 0.7,
+      "research-analysis": 0.3
+     },
+     "budget_usd": 52
+    },
+    "Customer Success": {
+     "tier": "high",
+     "project_share": 0.3,
+     "workflows": {
+      "customer-support": 0.5,
+      "meeting-summarization": 0.3,
+      "action-extraction": 0.2
+     },
+     "budget_usd": 52
+    },
+    "Operations": {
+     "tier": "moderate",
+     "project_share": 0.1,
+     "workflows": {
+      "document-drafting": 0.5,
+      "data-analysis": 0.5
+     },
+     "budget_usd": 16
+    }
+   },
+   "projects": [
+    {
+     "key": "real-time-meeting-intelligence",
+     "name": "Real-Time Meeting Intelligence",
+     "lead": "dept:engineering",
+     "start_month": 0,
+     "teams": {
+      "ai-ml": 1.0,
+      "backend": 0.7,
+      "full-stack": 0.7,
+      "product": 1.0,
+      "design": 1.0
+     }
+    },
+    {
+     "key": "summarization-engine",
+     "name": "Transcription & Summarization Engine",
+     "lead": "member:ai-ml:0",
+     "start_month": 0,
+     "teams": {
+      "ai-ml": 1.0,
+      "backend": 0.7
+     }
+    },
+    {
+     "key": "meeting-knowledge-graph",
+     "name": "Meeting Knowledge Graph",
+     "lead": "member:backend:0",
+     "start_month": 3,
+     "teams": {
+      "backend": 1.0,
+      "ai-ml": 0.5,
+      "full-stack": 0.4
+     }
+    },
+    {
+     "key": "follow-up-agent",
+     "name": "Automated Follow-Up Agent",
+     "lead": "member:product:0",
+     "start_month": 2,
+     "teams": {
+      "full-stack": 0.7,
+      "ai-ml": 0.5,
+      "customer-success": 1.0
+     }
+    },
+    {
+     "key": "workspace-integrations",
+     "name": "Workspace Integrations",
+     "lead": "member:full-stack:0",
+     "start_month": 1,
+     "teams": {
+      "full-stack": 1.0,
+      "backend": 0.4,
+      "growth": 0.5
+     }
+    },
+    {
+     "key": "evaluation-harness",
+     "name": "Internal Evaluation Harness",
+     "lead": "member:ai-ml:1",
+     "start_month": 0,
+     "teams": {
+      "ai-ml": 1.0
+     }
+    }
+   ],
+   "personas": {
+    "leadership": "dept:leadership",
+    "financial_operator": "dept:leadership",
+    "manager": "dept:engineering",
+    "project_lead": "member:ai-ml:0",
+    "employee": "member:full-stack:1"
+   },
+   "names": {
+    "member:ai-ml:0": "Ines Kowalski",
+    "member:full-stack:1": "Theo Brennan",
+    "member:product:0": "Priya Natarajan",
+    "member:backend:0": "Samir Haddadi",
+    "member:full-stack:0": "Ava Lindgren",
+    "member:ai-ml:1": "Kofi Mensah"
+   },
+   "agents": [
+    {
+     "key": "meeting-summarizer",
+     "name": "Meeting Summarizer",
+     "workflow": "meeting-summarization",
+     "owner": "member:ai-ml:0",
+     "success": 0.93,
+     "retry": 0.08
+    },
+    {
+     "key": "action-item-extractor",
+     "name": "Action Item Extractor",
+     "workflow": "action-extraction",
+     "owner": "member:product:0",
+     "success": 0.9,
+     "retry": 0.1
+    },
+    {
+     "key": "transcript-analyzer",
+     "name": "Transcript Analyzer",
+     "workflow": "transcript-analysis",
+     "owner": "member:ai-ml:0",
+     "success": 0.88,
+     "retry": 0.12
+    },
+    {
+     "key": "evaluation-harness-agent",
+     "name": "Evaluation Harness Agent",
+     "workflow": "model-evaluation",
+     "owner": "member:ai-ml:1",
+     "success": 0.82,
+     "retry": 0.18,
+     "drift": [
+      {
+       "from_month": 8,
+       "retry": 0.38,
+       "success": 0.7
+      }
+     ]
+    },
+    {
+     "key": "code-review-agent",
+     "name": "Code Review Agent",
+     "workflow": "code-review",
+     "owner": "dept:engineering",
+     "success": 0.94,
+     "retry": 0.06
+    }
+   ],
+   "activity": {
+    "events": {
+     "demo": 10000,
+     "smoke": 1000
+    },
+    "weekend_factor": 0.35,
+    "months": [
+     0.45,
+     0.4,
+     0.6,
+     0.72,
+     0.85,
+     1.1,
+     1.0,
+     1.05,
+     0.95,
+     1.15,
+     1.25,
+     1.3
+    ],
+    "frontier_drift": [
+     0.8,
+     1.4
+    ],
+    "rollup_scale": 2.5,
+    "unpriced_share": 0.03,
+    "holidays": [
+     "12-25",
+     "01-01"
+    ]
+   },
+   "funding": {
+    "budget_curve": [
+     0.45,
+     0.5,
+     0.8,
+     0.8,
+     1.15,
+     1.25,
+     1.1,
+     1.15,
+     1.15,
+     1.15,
+     1.35,
+     1.35
+    ],
+    "reserve_buffer": 0.15,
+    "unassigned_share": 0.03,
+    "factors": {
+     "project:evaluation-harness": 0.7
+    }
+   },
+   "controls": {
+    "delegation_max": null,
+    "employee_ceiling": "400",
+    "requests": [
+     {
+      "by": "employee",
+      "type": "personal_allowance",
+      "amount": "550"
+     }
+    ]
+   },
+   "persona_projects": [
+    "real-time-meeting-intelligence",
+    "workspace-integrations"
+   ],
+   "headcount": 18
+  }
+ ],
+ "first_names": [
+  "Aaron",
+  "Abena",
+  "Adele",
+  "Aiko",
+  "Alejandro",
+  "Amir",
+  "Ana",
+  "Anders",
+  "Anika",
+  "Arjun",
+  "Astrid",
+  "Bao",
+  "Beatriz",
+  "Bilal",
+  "Camila",
+  "Carmen",
+  "Chen",
+  "Chidi",
+  "Clara",
+  "Dariusz",
+  "Diego",
+  "Elif",
+  "Elena",
+  "Emeka",
+  "Esme",
+  "Farah",
+  "Felix",
+  "Fatima",
+  "Gustavo",
+  "Hamza",
+  "Hiro",
+  "Ingrid",
+  "Isaac",
+  "Jae",
+  "Javier",
+  "Jin",
+  "Joao",
+  "Julia",
+  "Kai",
+  "Kamala",
+  "Karim",
+  "Kenji",
+  "Lars",
+  "Leila",
+  "Liam",
+  "Lucia",
+  "Mads",
+  "Maria",
+  "Mei",
+  "Mikael",
+  "Mina",
+  "Nadia",
+  "Nikhil",
+  "Noemi",
+  "Olu",
+  "Omar",
+  "Oskar",
+  "Paulo",
+  "Rafael",
+  "Rania",
+  "Rosa",
+  "Sana",
+  "Santiago",
+  "Selin",
+  "Soren",
+  "Sven",
+  "Tariq",
+  "Thandi",
+  "Tomas",
+  "Uma",
+  "Valentina",
+  "Wei",
+  "Xin",
+  "Yara",
+  "Yusuf",
+  "Zara",
+  "Zeynep"
+ ],
+ "last_names": [
+  "Abara",
+  "Achterberg",
+  "Adeyemi",
+  "Alvarado",
+  "Andersen",
+  "Banerjee",
+  "Bauer",
+  "Bianchi",
+  "Castro",
+  "Chaudhry",
+  "Costa",
+  "Dahl",
+  "Delgado",
+  "Dubois",
+  "Eriksen",
+  "Ferreira",
+  "Fischer",
+  "Fujita",
+  "Gallagher",
+  "Garcia",
+  "Gunawardena",
+  "Haugen",
+  "Herrera",
+  "Hoffmann",
+  "Ibrahim",
+  "Iwasaki",
+  "Jansen",
+  "Kapoor",
+  "Kowalczyk",
+  "Laine",
+  "Larsen",
+  "Lim",
+  "Lindahl",
+  "Mahmoud",
+  "Marino",
+  "Mendes",
+  "Morales",
+  "Nakamura",
+  "Nguyen",
+  "Novak",
+  "Ochieng",
+  "Olsen",
+  "Ortiz",
+  "Park",
+  "Petrov",
+  "Quintero",
+  "Rahman",
+  "Reyes",
+  "Rossi",
+  "Saito",
+  "Santos",
+  "Schmidt",
+  "Silva",
+  "Sokolov",
+  "Suzuki",
+  "Tanaka",
+  "Torres",
+  "Ueda",
+  "Valdez",
+  "Vargas",
+  "Wagner",
+  "Watanabe",
+  "Weber",
+  "Yilmaz",
+  "Zhang",
+  "Zimmermann"
+ ]
+}

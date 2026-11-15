@@ -179,6 +179,7 @@ export function PeopleTable({
                     <PersonName person={person} />
                     <p className="mt-0.5 text-[10px] text-muted-foreground">
                       {person.job_title}
+                      {person.office ? ` · ${person.office}` : ""}
                     </p>
                   </div>
                 </div>
@@ -264,5 +265,51 @@ export function ProjectList({ projects }: { projects: Project[] }) {
         </Link>
       ))}
     </div>
+  );
+}
+
+// ---- Shared layout primitives (UI refinement) ---------------------------------------------------------
+// One metric tile pattern for every workspace: equal heights per row, mono value, one short context line.
+export type Metric = { label: string; value: React.ReactNode; detail?: React.ReactNode; title?: string; tone?: "default" | "warning" };
+export function MetricGrid({ metrics, columns = 4, testId }: { metrics: Metric[]; columns?: 3 | 4 | 5 | 6; testId?: string }) {
+  const cols = { 3: "lg:grid-cols-3", 4: "lg:grid-cols-4", 5: "lg:grid-cols-5", 6: "lg:grid-cols-6" }[columns];
+  return (
+    <div data-testid={testId} className={`grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border ${cols}`}>
+      {metrics.map((m) => (
+        <div key={m.label} className="flex min-h-[92px] min-w-0 flex-col justify-between bg-surface p-4 odd:last:col-span-2 lg:odd:last:col-span-1" title={m.title}>
+          <p className="truncate text-[10px] text-muted-foreground">{m.label}</p>
+          <p className={`my-1.5 truncate font-mono text-xl ${m.tone === "warning" ? "text-danger" : ""}`}>{m.value}</p>
+          <p className="truncate text-[10px] text-muted-foreground">{m.detail ?? " "}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+// Accessible segmented tabs; the caller owns state (often the URL).
+export function Segmented<T extends string>({ label, value, options, onChange, size = "md" }: { label: string; value: T; options: { value: T; label: string; count?: number }[]; onChange: (value: T) => void; size?: "sm" | "md" }) {
+  return (
+    <div role="tablist" aria-label={label} className="inline-flex max-w-full overflow-x-auto rounded-md border border-border bg-muted/40 p-0.5">
+      {options.map((o) => (
+        <button key={o.value} role="tab" type="button" aria-selected={o.value === value} onClick={() => onChange(o.value)}
+          className={`whitespace-nowrap rounded px-2.5 ${size === "sm" ? "py-1 text-[11px]" : "py-1.5 text-xs"} ${o.value === value ? "bg-surface font-medium text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+          {o.label}{o.count !== undefined && <span className="ml-1.5 font-mono text-[10px] text-muted-foreground">{o.count}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+// Expands a preview list in place; renders nothing when everything already fits.
+export function ShowMore({ total, shown, expanded, onToggle, noun }: { total: number; shown: number; expanded: boolean; onToggle: () => void; noun: string }) {
+  if (total <= shown && !expanded) return null;
+  return (
+    <button type="button" onClick={onToggle} aria-expanded={expanded} className="w-full border-t border-border px-4 py-2.5 text-left text-[11px] text-muted-foreground hover:bg-muted/40 hover:text-foreground">
+      {expanded ? `Show fewer ${noun}` : `Show all ${total} ${noun}`}
+    </button>
+  );
+}
+export function SearchInput({ value, onChange, label, placeholder }: { value: string; onChange: (value: string) => void; label: string; placeholder?: string }) {
+  return (
+    <input type="search" aria-label={label} placeholder={placeholder ?? label} value={value} onChange={(e) => onChange(e.target.value)}
+      className="h-8 w-full min-w-0 rounded-md border border-border bg-surface px-2.5 text-xs text-foreground placeholder:text-muted-foreground sm:w-56" />
   );
 }

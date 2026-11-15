@@ -22,3 +22,4 @@ test-results/
 **/.gradle/
 **/.kotlin/
 **/build/
+demo/enterprise/generated/

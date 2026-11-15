@@ -15,7 +15,7 @@ class WorkspacePresenter
     full = !directory_only && @policy.management_profile?(record)
     memberships = record.organizational_memberships
     primary = memberships.find(&:is_primary?)
-    result = record.slice(:id, :name, :job_title, :job_function).merge(
+    result = record.slice(:id, :name, :job_title, :job_function, :office).merge(
       visibility: full ? (record.id == @policy.actor.id ? "self" : "management") : "directory",
       can_view: @policy.profile?(record),
       primary_team: primary && unit_link(primary.organizational_unit)

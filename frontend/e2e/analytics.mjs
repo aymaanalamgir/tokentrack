@@ -25,7 +25,8 @@ try{
  assert((await get('analytics?organization_unit_id='+engineering.id)).summary.events<full.summary.events);
  const fraud=full.context.projects.find(p=>p.name==='Fraud Detection Platform');
  await page.getByLabel('Project filter').selectOption(fraud.id);await page.waitForURL(/project_id/);
- await page.getByRole('tab',{name:'models',exact:true}).click();await main.getByText('Synthetic demonstration mapping').first().waitFor();
+ // Detailed tables live behind progressive disclosure; open them, then switch to models.
+ await page.getByRole('button',{name:/Detailed records/}).click();await page.getByRole('tab',{name:'models',exact:true}).click();await main.getByText('Synthetic demonstration mapping').first().waitFor();
  const project=await get('analytics?project_id='+fraud.id);assert(project.accounts.every(a=>a.purpose==='project'));
  await page.getByLabel('Granularity').selectOption('week');await page.waitForURL(/granularity=week/);await page.getByLabel('Granularity').selectOption('month');await page.waitForURL(/granularity=month/);
  await enter('Marcus Rivera');const manager=await get('analytics');assert(manager.summary.active_users<full.summary.active_users);assert(manager.employees.some(e=>e.id===jordan.id));const managerOlivia=await get('analytics?user_id='+olivia.id);assert(managerOlivia.projects.every(p=>manager.context.projects.some(v=>v.id===p.id)));assert(managerOlivia.summary.events<full.employees.find(e=>e.id===olivia.id).events);

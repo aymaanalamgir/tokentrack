@@ -10,6 +10,7 @@ import com.tokentrack.usage.delivery.DeliveryWorker
 import com.tokentrack.usage.delivery.OutboxRepository
 import com.tokentrack.usage.delivery.FinancialReconciler
 import com.tokentrack.usage.generation.SyntheticGenerator
+import com.tokentrack.usage.generation.EnterpriseDemoGenerator
 import com.tokentrack.usage.ingestion.IngestionService
 import com.tokentrack.usage.persistence.UsageRepository
 import com.tokentrack.usage.references.RailsReferenceResolver
@@ -38,7 +39,8 @@ TokenTrack usage CLI
   bin/usage deliver [--limit 1000] [--workers 4] [--retry-dead true]
   bin/usage delivery-report
   bin/usage reconcile [--source SOURCE]
-  bin/usage snapshot --output FILE.json
+  bin/usage snapshot --output FILE.json [--organizations alset,northline-financial,memento-ai]
+  bin/usage generate-enterprise-demo --spec FILE.json --snapshot FILE.json --output-dir DIR --seed 42 [--profile demo|smoke] [--start YYYY-MM-DD] [--company slug,...]
   bin/usage generate --snapshot FILE.json --output FILE.csv --seed 42 --from YYYY-MM-DD --to YYYY-MM-DD [--invalid-output FILE.csv]
   bin/usage agent-import FILE --source STABLE_SOURCE
   bin/usage agent-report BATCH_UUID
@@ -63,7 +65,8 @@ fun main(args: Array<String>) {
     val allowed = when (command) {
         "import" -> setOf("--source")
         "report" -> setOf("--offset", "--limit")
-        "snapshot" -> setOf("--output")
+        "snapshot" -> setOf("--output", "--organizations")
+        "generate-enterprise-demo" -> setOf("--spec", "--snapshot", "--output-dir", "--seed", "--profile", "--start", "--company")
         "generate" -> setOf("--snapshot", "--output", "--seed", "--from", "--to", "--invalid-output")
         "agent-import" -> setOf("--source")
         "agent-report" -> emptySet()
@@ -95,6 +98,8 @@ fun main(args: Array<String>) {
                     "agent-report" -> print(context.getBean(AgentExecutionService::class.java).report(UUID.fromString(positional.single())))
                     "generate-agent-executions" -> print(context.getBean(AgentExecutionGenerator::class.java).generate(Path.of(option("--output")),option("--seed").toLong(),options["--invalid-output"]?.let(Path::of),options["--source"]?:"demo-synthetic-v1"))
                     "generate-agent-insight-scenarios" -> print(context.getBean(AgentInsightScenarioGenerator::class.java).generate(mapper.readTree(Path.of(option("--snapshot")).toFile()),Path.of(option("--usage-output")),Path.of(option("--executions-output")),option("--seed").toLong()))
+                    "generate-enterprise-demo" -> print(context.getBean(EnterpriseDemoGenerator::class.java).generate(mapper.readTree(Path.of(option("--spec")).toFile()), mapper.readTree(Path.of(option("--snapshot")).toFile()),
+                        EnterpriseDemoGenerator.Options(option("--seed").toLong(), options["--profile"] ?: "demo", options["--start"]?.let(LocalDate::parse), options["--company"]?.split(",")?.toSet(), Path.of(option("--output-dir")))).let { it - "companies" + mapOf("companies" to (it["companies"] as Map<*, *>).mapValues { (_, v) -> (v as Map<*, *>) - "files" }) })
                     "generate-pricing-scenarios" -> print(context.getBean(PricingScenarioGenerator::class.java).generate(mapper.readTree(Path.of(option("--snapshot")).toFile()),Path.of(option("--output"))))
                     "close-rate" -> print(context.getBean(PricingRepository::class.java).closeRate(UUID.fromString(option("--id")),java.time.Instant.parse(option("--until"))))
                     "load-prices" -> print(context.getBean(PricingRepository::class.java).loadCatalogue(options["--file"]?.let(Path::of)))
@@ -126,7 +131,7 @@ fun main(args: Array<String>) {
                     }
                     "list" -> { repository.recoverStale(); print(repository.recent()) }
                     "snapshot" -> {
-                        val snapshot = context.getBean(RailsReferenceResolver::class.java).demoSnapshot()
+                        val snapshot = context.getBean(RailsReferenceResolver::class.java).demoSnapshot(options["--organizations"]?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() })
                         val path = Path.of(option("--output")); path.toAbsolutePath().parent?.let { Files.createDirectories(it) }
                         mapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), snapshot)
                         print(mapOf("snapshot" to path.toString(), "users" to snapshot.path("users").size(), "policy_version" to "membership-period-v1"))

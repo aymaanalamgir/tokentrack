@@ -385,6 +385,17 @@ Seeded fixture memberships start at the fixed fictional time 2026-11-07 UTC so t
 
 Browser suites must run with `requests` before `budgets` on a fresh demo (the budgets workflow revises an allowance that a pending request depends on); `verify.sh` does this. The frontend development container has no browser, so use `verify.sh browser` or the Playwright image command below rather than `docker compose exec frontend npm run test:…`.
 
+## Enterprise demo companies
+
+```bash
+docker compose up -d                                   # recreates core-api with the read-only ./demo mount
+./scripts/generate-enterprise-demo.sh --profile smoke   # seed companies + write files only
+./scripts/setup-enterprise-demo.sh --profile demo       # full load: generate, fund, import, price, deliver, agents, controls, reconcile
+docker compose exec core-api bin/rails enterprise_demo:summary
+```
+
+`demo/enterprise/companies-v1.json` is the single source for both services: Rails expands it into units, people, reporting lines, dated project memberships, grants and the funding plan (`enterprise_demo:seed`, `:fund`, `:controls`); Kotlin reads it with the Rails snapshot (`bin/usage snapshot --organizations …`) to write the workload (`bin/usage generate-enterprise-demo`). Edit the spec, not generated files. Start date is configurable only on a database that has not yet seeded these companies, because membership dates are recorded once and never rewritten. Funding is keyed by profile and refuses a second profile in the same database.
+
 ## Slice 9B agent insights
 
 Apply the additive receipts index (`docker compose exec core-api bin/rails db:migrate`, and again with `-e RAILS_ENV=test`), restart the usage engine, then load the scenario source with the commands in [slice9b.md](slice9b.md#demo-scenarios). Thresholds are under `tokentrack.agent-insights` in the usage engine's `application.yml`; `AGENT_INSIGHTS_MIN_RUNS` and `AGENT_INSIGHTS_MIN_RUNS_LIMITED` override the sample sizes. Browser check:

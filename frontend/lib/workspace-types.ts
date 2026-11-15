@@ -9,6 +9,7 @@ export type PersonLink = {
   id: string;
   name: string;
   job_title: string;
+  office?: string | null;
   can_view?: boolean;
 };
 export type Person = PersonLink & {

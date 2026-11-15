@@ -32,7 +32,10 @@ export function IdentityPicker({ onSelected }: { onSelected?: () => void }) {
       ]),
     ).values(),
   ];
-  const selectedOrg = organization || organizations[0]?.id;
+  // Without a session, start on the organization with the most demo identities (the fully staffed walkthrough
+  // tenant) rather than whichever name sorts first.
+  const busiest = [...organizations].sort((a, b) => identities.filter((i) => i.organization.id === b.id).length - identities.filter((i) => i.organization.id === a.id).length)[0];
+  const selectedOrg = organization || busiest?.id;
   const filtered = identities.filter(
     (identity) =>
       identity.organization.id === selectedOrg &&
@@ -43,7 +46,7 @@ export function IdentityPicker({ onSelected }: { onSelected?: () => void }) {
   );
   return (
     <div className="space-y-4">
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {organizations.map((org) => (
           <button
             key={org.id}
