@@ -18,9 +18,14 @@ class OutboxRepository(private val jdbc:JdbcTemplate,manager:PlatformTransaction
             WHERE a.lease_token=o.lease_token AND o.status='delivering' AND o.lease_until<CURRENT_TIMESTAMP AND a.outcome='in_progress'""")
         jdbc.update("""UPDATE usage.delivery_outbox SET status='dead',last_error_code='RETRY_EXHAUSTED',lease_token=NULL,lease_until=NULL
             WHERE status='delivering' AND lease_until<CURRENT_TIMESTAMP AND cycle_attempts>=8""")
-        val records=jdbc.queryForList("""SELECT id,priced_usage_event_id,payload::text,cycle_attempts,attempts FROM usage.delivery_outbox
-            WHERE ((status IN('pending','retry') AND next_attempt_at<=CURRENT_TIMESTAMP) OR (status='delivering' AND lease_until<CURRENT_TIMESTAMP))
-            AND cycle_attempts<8 ORDER BY next_attempt_at,id LIMIT ? FOR UPDATE SKIP LOCKED""",limit.coerceIn(1,100))
+        // Expired leases first (they are already overdue), then due work. Two queries instead of one OR so each is an
+        // ordered scan of a partial index (V9) rather than a full scan and sort of the outbox on every claim.
+        val wanted=limit.coerceIn(1,100)
+        val columns="SELECT id,priced_usage_event_id,payload::text,cycle_attempts,attempts FROM usage.delivery_outbox"
+        val expired=jdbc.queryForList("""$columns WHERE status='delivering' AND lease_until<CURRENT_TIMESTAMP AND cycle_attempts<8
+            ORDER BY next_attempt_at,id LIMIT ? FOR UPDATE SKIP LOCKED""",wanted)
+        val records=expired+(if(expired.size<wanted) jdbc.queryForList("""$columns WHERE status IN('pending','retry') AND next_attempt_at<=CURRENT_TIMESTAMP
+            AND cycle_attempts<8 ORDER BY next_attempt_at,id LIMIT ? FOR UPDATE SKIP LOCKED""",wanted-expired.size) else emptyList())
         records.map { row ->
             val id=row["id"] as UUID; val token=UUID.randomUUID(); val attempt=(row["cycle_attempts"] as Number).toInt()+1
             jdbc.update("UPDATE usage.delivery_outbox SET status='delivering',attempts=attempts+1,cycle_attempts=cycle_attempts+1,lease_token=?,lease_until=CURRENT_TIMESTAMP+INTERVAL '60 seconds' WHERE id=?",token,id)

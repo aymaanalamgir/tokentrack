@@ -16,7 +16,7 @@ try {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(url);
   await page
-    .getByRole("button", { name: "Continue as Jordan Lee", exact: true })
+    .getByRole("button", { name: "Continue as Hana Takeda", exact: true })
     .click();
   await page
     .getByRole("heading", { name: "My workspace", exact: true })

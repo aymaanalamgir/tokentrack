@@ -599,7 +599,7 @@
       {
        "key": "office-of-ceo",
        "name": "Office of the CEO",
-       "size": 6,
+       "size": 9,
        "function": "Executive",
        "title": "Chief of Staff",
        "lead_title": "Chief Operating Officer"
@@ -619,7 +619,7 @@
       {
        "key": "infotainment",
        "name": "Infotainment Software",
-       "size": 28,
+       "size": 41,
        "function": "Software Engineering",
        "title": "Software Engineer",
        "lead_title": "Engineering Manager, Infotainment"
@@ -627,7 +627,7 @@
       {
        "key": "vehicle-platform",
        "name": "Vehicle Platform Software",
-       "size": 40,
+       "size": 58,
        "function": "Software Engineering",
        "title": "Software Engineer",
        "lead_title": "Engineering Manager, Vehicle Platform",
@@ -636,7 +636,7 @@
       {
        "key": "connected-apps",
        "name": "Mobile & Connected Apps",
-       "size": 22,
+       "size": 32,
        "function": "Software Engineering",
        "title": "Software Engineer",
        "lead_title": "Engineering Manager, Connected Apps"
@@ -644,7 +644,7 @@
       {
        "key": "developer-experience",
        "name": "Developer Experience",
-       "size": 14,
+       "size": 21,
        "function": "Software Engineering",
        "title": "Developer Tools Engineer",
        "lead_title": "Engineering Manager, Developer Experience",
@@ -665,7 +665,7 @@
       {
        "key": "firmware",
        "name": "Firmware",
-       "size": 26,
+       "size": 38,
        "function": "Embedded Engineering",
        "title": "Firmware Engineer",
        "lead_title": "Firmware Engineering Manager"
@@ -673,7 +673,7 @@
       {
        "key": "powertrain-controls",
        "name": "Powertrain Controls",
-       "size": 22,
+       "size": 32,
        "function": "Embedded Engineering",
        "title": "Controls Engineer",
        "lead_title": "Controls Engineering Manager",
@@ -682,7 +682,7 @@
       {
        "key": "hil-testing",
        "name": "Hardware-in-the-Loop Testing",
-       "size": 16,
+       "size": 24,
        "function": "Embedded Engineering",
        "title": "Test Engineer",
        "lead_title": "Validation Manager",
@@ -702,7 +702,7 @@
       {
        "key": "perception",
        "name": "Perception",
-       "size": 40,
+       "size": 58,
        "function": "Autonomous Systems",
        "title": "Perception Engineer",
        "lead_title": "Perception Engineering Manager"
@@ -710,7 +710,7 @@
       {
        "key": "planning-control",
        "name": "Planning & Control",
-       "size": 24,
+       "size": 35,
        "function": "Autonomous Systems",
        "title": "Motion Planning Engineer",
        "lead_title": "Planning Engineering Manager"
@@ -718,7 +718,7 @@
       {
        "key": "ai-research",
        "name": "AI Research",
-       "size": 22,
+       "size": 32,
        "function": "AI Research",
        "title": "Research Scientist",
        "lead_title": "Research Manager"
@@ -726,7 +726,7 @@
       {
        "key": "simulation",
        "name": "Simulation",
-       "size": 18,
+       "size": 27,
        "function": "Autonomous Systems",
        "title": "Simulation Engineer",
        "lead_title": "Simulation Engineering Manager",
@@ -746,7 +746,7 @@
       {
        "key": "platform-engineering",
        "name": "Platform Engineering",
-       "size": 24,
+       "size": 35,
        "function": "Cloud Infrastructure",
        "title": "Platform Engineer",
        "lead_title": "Platform Engineering Manager"
@@ -754,7 +754,7 @@
       {
        "key": "sre",
        "name": "Site Reliability Engineering",
-       "size": 18,
+       "size": 27,
        "function": "Cloud Infrastructure",
        "title": "Site Reliability Engineer",
        "lead_title": "SRE Manager"
@@ -773,7 +773,7 @@
       {
        "key": "data-platform",
        "name": "Data Platform",
-       "size": 22,
+       "size": 32,
        "function": "Data Engineering",
        "title": "Data Engineer",
        "lead_title": "Data Platform Manager"
@@ -781,7 +781,7 @@
       {
        "key": "fleet-analytics",
        "name": "Fleet Analytics",
-       "size": 18,
+       "size": 27,
        "function": "Fleet Analytics",
        "title": "Analytics Engineer",
        "lead_title": "Fleet Analytics Manager"
@@ -789,7 +789,7 @@
       {
        "key": "data-science",
        "name": "Data Science",
-       "size": 20,
+       "size": 30,
        "function": "Data Science",
        "title": "Data Scientist",
        "lead_title": "Data Science Manager",
@@ -809,7 +809,7 @@
       {
        "key": "cell-engineering",
        "name": "Cell Engineering",
-       "size": 22,
+       "size": 32,
        "function": "Battery Engineering",
        "title": "Battery Cell Engineer",
        "lead_title": "Cell Engineering Manager"
@@ -817,7 +817,7 @@
       {
        "key": "bms",
        "name": "Battery Management Systems",
-       "size": 18,
+       "size": 27,
        "function": "Embedded Engineering",
        "title": "BMS Engineer",
        "lead_title": "BMS Engineering Manager",
@@ -837,7 +837,7 @@
       {
        "key": "chassis",
        "name": "Chassis",
-       "size": 20,
+       "size": 30,
        "function": "Mechanical Engineering",
        "title": "Mechanical Engineer",
        "lead_title": "Chassis Engineering Manager"
@@ -845,7 +845,7 @@
       {
        "key": "body-interiors",
        "name": "Body & Interiors",
-       "size": 18,
+       "size": 27,
        "function": "Mechanical Engineering",
        "title": "Mechanical Engineer",
        "lead_title": "Body Engineering Manager"
@@ -864,7 +864,7 @@
       {
        "key": "manufacturing-automation",
        "name": "Manufacturing Automation",
-       "size": 30,
+       "size": 43,
        "function": "Manufacturing Automation",
        "title": "Automation Engineer",
        "lead_title": "Automation Engineering Manager"
@@ -872,7 +872,7 @@
       {
        "key": "quality-engineering",
        "name": "Quality Engineering",
-       "size": 20,
+       "size": 30,
        "function": "Quality Engineering",
        "title": "Quality Engineer",
        "lead_title": "Quality Manager",
@@ -881,7 +881,7 @@
       {
        "key": "robotics",
        "name": "Robotics",
-       "size": 18,
+       "size": 27,
        "function": "Robotics",
        "title": "Robotics Engineer",
        "lead_title": "Robotics Engineering Manager"
@@ -900,7 +900,7 @@
       {
        "key": "vehicle-product",
        "name": "Vehicle Product",
-       "size": 12,
+       "size": 18,
        "function": "Product Management",
        "title": "Product Manager",
        "lead_title": "Group Product Manager, Vehicle"
@@ -908,7 +908,7 @@
       {
        "key": "software-product",
        "name": "Software Product",
-       "size": 10,
+       "size": 15,
        "function": "Product Management",
        "title": "Product Manager",
        "lead_title": "Group Product Manager, Software"
@@ -927,7 +927,7 @@
       {
        "key": "ux-design",
        "name": "UX Design",
-       "size": 14,
+       "size": 21,
        "function": "Design",
        "title": "Product Designer",
        "lead_title": "UX Design Manager"
@@ -935,7 +935,7 @@
       {
        "key": "industrial-design",
        "name": "Industrial Design",
-       "size": 10,
+       "size": 15,
        "function": "Design",
        "title": "Industrial Designer",
        "lead_title": "Industrial Design Manager",
@@ -955,7 +955,7 @@
       {
        "key": "fpa",
        "name": "FP&A",
-       "size": 12,
+       "size": 18,
        "function": "Finance",
        "title": "Financial Analyst",
        "lead_title": "FP&A Manager"
@@ -963,7 +963,7 @@
       {
        "key": "accounting",
        "name": "Accounting",
-       "size": 12,
+       "size": 18,
        "function": "Finance",
        "title": "Accountant",
        "lead_title": "Controller"
@@ -983,7 +983,7 @@
       {
        "key": "people-partners",
        "name": "People Partners",
-       "size": 10,
+       "size": 15,
        "function": "People Operations",
        "title": "People Partner",
        "lead_title": "People Partner Lead"
@@ -991,7 +991,7 @@
       {
        "key": "talent",
        "name": "Talent Acquisition",
-       "size": 12,
+       "size": 18,
        "function": "People Operations",
        "title": "Recruiter",
        "lead_title": "Talent Acquisition Manager"
@@ -1010,7 +1010,7 @@
       {
        "key": "marketing",
        "name": "Marketing",
-       "size": 20,
+       "size": 30,
        "function": "Marketing",
        "title": "Marketing Manager",
        "lead_title": "Marketing Director"
@@ -1018,7 +1018,7 @@
       {
        "key": "sales",
        "name": "Sales",
-       "size": 31,
+       "size": 45,
        "function": "Sales",
        "title": "Account Executive",
        "lead_title": "Regional Sales Director",
@@ -1038,7 +1038,7 @@
       {
        "key": "sourcing",
        "name": "Global Sourcing",
-       "size": 18,
+       "size": 27,
        "function": "Supply Chain",
        "title": "Sourcing Manager",
        "lead_title": "Sourcing Director"
@@ -1046,7 +1046,7 @@
       {
        "key": "logistics",
        "name": "Logistics",
-       "size": 16,
+       "size": 24,
        "function": "Supply Chain",
        "title": "Logistics Analyst",
        "lead_title": "Logistics Director",
@@ -1066,7 +1066,7 @@
       {
        "key": "security",
        "name": "Security Engineering",
-       "size": 14,
+       "size": 21,
        "function": "Security Engineering",
        "title": "Security Engineer",
        "lead_title": "Security Engineering Manager",
@@ -1075,7 +1075,7 @@
       {
        "key": "compliance",
        "name": "Compliance",
-       "size": 8,
+       "size": 12,
        "function": "Compliance",
        "title": "Compliance Analyst",
        "lead_title": "Compliance Manager"
@@ -1083,7 +1083,7 @@
       {
        "key": "legal",
        "name": "Legal",
-       "size": 9,
+       "size": 13,
        "function": "Legal",
        "title": "Counsel",
        "lead_title": "Deputy General Counsel"
@@ -1442,7 +1442,13 @@
     "financial_operator": "dept:finance",
     "manager": "dept:vehicle-software",
     "project_lead": "team:perception",
-    "employee": "member:infotainment:4"
+    "employee": "member:infotainment:4",
+    "ai_vp": "dept:autonomy",
+    "data_science_manager": "team:data-science",
+    "tech_lead": "member:perception:0",
+    "data_scientist": "member:data-science:5",
+    "designer": "member:ux-design:3",
+    "sales": "member:sales:6"
    },
    "names": {
     "team:perception": "Dev Raman",
@@ -1514,8 +1520,8 @@
    ],
    "activity": {
     "events": {
-     "demo": 66000,
-     "smoke": 6600
+     "demo": 97000,
+     "smoke": 9700
     },
     "weekend_factor": 0.12,
     "months": [
@@ -1599,7 +1605,9 @@
     "internal-ai-productivity",
     "vehicle-telemetry"
    ],
-   "headcount": 750
+   "working_groups": [],
+   "project_members": {},
+   "headcount": 1100
   },
   {
    "slug": "northline-financial",
@@ -1620,7 +1628,7 @@
       {
        "key": "exec-office",
        "name": "Executive Office",
-       "size": 4,
+       "size": 6,
        "function": "Executive",
        "title": "Executive Business Partner",
        "lead_title": "Chief Operating Officer"
@@ -1640,7 +1648,7 @@
       {
        "key": "payments-core",
        "name": "Payments Core",
-       "size": 14,
+       "size": 13,
        "function": "Backend Engineering",
        "title": "Backend Engineer",
        "lead_title": "Engineering Manager, Payments"
@@ -1648,7 +1656,7 @@
       {
        "key": "ledger-services",
        "name": "Ledger Services",
-       "size": 10,
+       "size": 16,
        "function": "Backend Engineering",
        "title": "Backend Engineer",
        "lead_title": "Engineering Manager, Ledger"
@@ -1668,7 +1676,7 @@
       {
        "key": "web",
        "name": "Web Experience",
-       "size": 10,
+       "size": 16,
        "function": "Frontend Engineering",
        "title": "Frontend Engineer",
        "lead_title": "Web Engineering Manager"
@@ -1676,7 +1684,7 @@
       {
        "key": "mobile",
        "name": "Mobile",
-       "size": 8,
+       "size": 13,
        "function": "Frontend Engineering",
        "title": "Mobile Engineer",
        "lead_title": "Mobile Engineering Manager",
@@ -1696,7 +1704,7 @@
       {
        "key": "sre",
        "name": "Site Reliability",
-       "size": 8,
+       "size": 13,
        "function": "Infrastructure",
        "title": "Site Reliability Engineer",
        "lead_title": "SRE Lead"
@@ -1704,7 +1712,7 @@
       {
        "key": "developer-platform",
        "name": "Internal Developer Platform",
-       "size": 6,
+       "size": 10,
        "function": "Developer Tooling",
        "title": "Platform Engineer",
        "lead_title": "Developer Platform Lead"
@@ -1723,7 +1731,7 @@
       {
        "key": "data-engineering",
        "name": "Data Platform Engineering",
-       "size": 11,
+       "size": 17,
        "function": "Data Engineering",
        "title": "Data Engineer",
        "lead_title": "Data Engineering Lead"
@@ -1742,7 +1750,7 @@
       {
        "key": "fraud-research",
        "name": "Fraud Research",
-       "size": 9,
+       "size": 13,
        "function": "Fraud Research",
        "title": "Fraud Data Scientist",
        "lead_title": "Fraud Research Lead"
@@ -1750,7 +1758,7 @@
       {
        "key": "risk-analytics",
        "name": "Risk Analytics",
-       "size": 7,
+       "size": 11,
        "function": "Risk Analytics",
        "title": "Risk Analyst",
        "lead_title": "Risk Analytics Lead",
@@ -1771,7 +1779,7 @@
       {
        "key": "security-engineering",
        "name": "Security Engineering",
-       "size": 7,
+       "size": 11,
        "function": "Security",
        "title": "Security Engineer",
        "lead_title": "Security Lead"
@@ -1790,7 +1798,7 @@
       {
        "key": "regulatory-compliance",
        "name": "Regulatory Compliance",
-       "size": 8,
+       "size": 13,
        "function": "Compliance",
        "title": "Compliance Analyst",
        "lead_title": "Compliance Lead"
@@ -1809,7 +1817,7 @@
       {
        "key": "product-managers",
        "name": "Product Managers",
-       "size": 8,
+       "size": 13,
        "function": "Product Management",
        "title": "Product Manager",
        "lead_title": "Group Product Manager"
@@ -1828,7 +1836,7 @@
       {
        "key": "product-design",
        "name": "Product Design",
-       "size": 6,
+       "size": 10,
        "function": "Design",
        "title": "Product Designer",
        "lead_title": "Design Lead"
@@ -1847,7 +1855,7 @@
       {
        "key": "finance-team",
        "name": "Finance & Accounting",
-       "size": 7,
+       "size": 11,
        "function": "Finance",
        "title": "Financial Analyst",
        "lead_title": "Controller"
@@ -1867,7 +1875,7 @@
       {
        "key": "bizops",
        "name": "BizOps & Analytics",
-       "size": 5,
+       "size": 8,
        "function": "Business Operations",
        "title": "Business Operations Analyst",
        "lead_title": "Business Operations Lead"
@@ -1886,7 +1894,7 @@
       {
        "key": "merchant-support",
        "name": "Merchant Support",
-       "size": 9,
+       "size": 14,
        "function": "Customer Success",
        "title": "Support Specialist",
        "lead_title": "Support Manager"
@@ -1894,7 +1902,7 @@
       {
        "key": "onboarding",
        "name": "Merchant Onboarding",
-       "size": 7,
+       "size": 11,
        "function": "Customer Success",
        "title": "Onboarding Specialist",
        "lead_title": "Onboarding Lead"
@@ -1913,7 +1921,7 @@
       {
        "key": "partnerships",
        "name": "Partnerships",
-       "size": 10,
+       "size": 16,
        "function": "Sales & Partnerships",
        "title": "Partnerships Manager",
        "lead_title": "Head of Partnerships"
@@ -1932,7 +1940,7 @@
       {
        "key": "people-team",
        "name": "People Partners",
-       "size": 6,
+       "size": 10,
        "function": "People Operations",
        "title": "People Partner",
        "lead_title": "People Operations Lead"
@@ -2126,7 +2134,7 @@
     {
      "key": "fraud-detection-engine",
      "name": "Fraud Detection Engine",
-     "lead": "team:fraud-research",
+     "lead": "member:fraud-research:0",
      "start_month": 0,
      "teams": {
       "fraud-research": 0.9,
@@ -2197,20 +2205,42 @@
    "personas": {
     "leadership": "dept:executive",
     "financial_operator": "dept:finance",
-    "manager": "dept:payments-engineering",
-    "project_lead": "team:fraud-research",
-    "employee": "member:payments-core:3"
+    "director": "dept:payments-engineering",
+    "manager": "team:payments-core",
+    "project_lead": "member:fraud-research:0",
+    "employee": "member:payments-core:3",
+    "colleague": "member:product-design:0",
+    "risk_head": "dept:risk",
+    "compliance_lead": "team:regulatory-compliance",
+    "product_manager": "member:product-managers:2",
+    "data_engineer": "member:data-engineering:4",
+    "support": "member:merchant-support:3",
+    "mobile_engineer": "member:mobile:2"
    },
    "names": {
-    "team:fraud-research": "Mateo Alvarez",
-    "member:payments-core:3": "Hana Takeda"
+    "team:payments-core": "Elliot Brandt",
+    "member:fraud-research:0": "Mateo Alvarez",
+    "member:payments-core:3": "Hana Takeda",
+    "member:product-design:0": "Iris Calloway"
+   },
+   "working_groups": [
+    [
+     "member:payments-core:3",
+     "data-engineering"
+    ]
+   ],
+   "project_members": {
+    "fraud-detection-engine": [
+     "member:payments-core:3",
+     "member:product-design:0"
+    ]
    },
    "agents": [
     {
      "key": "fraud-triage-agent",
      "name": "Fraud Triage Agent",
      "workflow": "fraud-analysis",
-     "owner": "team:fraud-research",
+     "owner": "member:fraud-research:0",
      "success": 0.9,
      "retry": 0.07,
      "drift": [
@@ -2267,8 +2297,8 @@
    ],
    "activity": {
     "events": {
-     "demo": 24000,
-     "smoke": 2400
+     "demo": 36000,
+     "smoke": 3600
     },
     "weekend_factor": 0.1,
     "months": [
@@ -2332,10 +2362,23 @@
       "amount": "180"
      },
      {
+      "by": "employee",
+      "type": "personal_allowance",
+      "amount": "450",
+      "reject_by": "financial_operator",
+      "comment": "Above this month's plan; revisit next month"
+     },
+     {
       "by": "project_lead",
       "type": "project_funding",
       "project": "fraud-detection-engine",
       "amount": "1500"
+     },
+     {
+      "by": "project_lead",
+      "type": "project_funding",
+      "project": "fraud-detection-engine",
+      "amount": "400"
      }
     ]
    },
@@ -2343,7 +2386,7 @@
     "real-time-payments",
     "developer-platform"
    ],
-   "headcount": 175
+   "headcount": 260
   },
   {
    "slug": "memento-ai",
@@ -2373,15 +2416,15 @@
       {
        "key": "ai-ml",
        "name": "AI & ML",
-       "size": 4,
+       "size": 7,
        "function": "AI/ML Engineering",
        "title": "Machine Learning Engineer",
-       "lead": false
+       "lead_title": "Head of AI"
       },
       {
        "key": "backend",
        "name": "Backend",
-       "size": 3,
+       "size": 5,
        "function": "Backend Engineering",
        "title": "Backend Engineer",
        "lead": false
@@ -2389,7 +2432,7 @@
       {
        "key": "full-stack",
        "name": "Full-Stack",
-       "size": 3,
+       "size": 5,
        "function": "Full-Stack Engineering",
        "title": "Full-Stack Engineer",
        "lead": false
@@ -2409,7 +2452,7 @@
       {
        "key": "product",
        "name": "Product",
-       "size": 1,
+       "size": 2,
        "function": "Product Management",
        "title": "Product Manager",
        "lead": false
@@ -2417,7 +2460,7 @@
       {
        "key": "design",
        "name": "Design",
-       "size": 1,
+       "size": 2,
        "function": "Design",
        "title": "Product Designer",
        "lead": false
@@ -2432,7 +2475,7 @@
       {
        "key": "growth",
        "name": "Growth",
-       "size": 2,
+       "size": 3,
        "function": "Growth Marketing",
        "title": "Growth Marketer",
        "lead": false
@@ -2440,7 +2483,7 @@
       {
        "key": "customer-success",
        "name": "Customer Success",
-       "size": 1,
+       "size": 2,
        "function": "Customer Success",
        "title": "Customer Success Lead",
        "lead": false
@@ -2455,7 +2498,7 @@
       {
        "key": "ops",
        "name": "Business Operations",
-       "size": 1,
+       "size": 2,
        "function": "Operations",
        "title": "Operations Manager",
        "lead": false
@@ -2700,8 +2743,8 @@
    ],
    "activity": {
     "events": {
-     "demo": 10000,
-     "smoke": 1000
+     "demo": 16500,
+     "smoke": 1650
     },
     "weekend_factor": 0.35,
     "months": [
@@ -2765,7 +2808,9 @@
     "real-time-meeting-intelligence",
     "workspace-integrations"
    ],
-   "headcount": 18
+   "working_groups": [],
+   "project_members": {},
+   "headcount": 30
   }
  ],
  "first_names": [

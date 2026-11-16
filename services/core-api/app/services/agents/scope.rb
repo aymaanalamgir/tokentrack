@@ -13,7 +13,8 @@ module Agents
       raise Invalid,'Unknown agent filter' unless (filters.keys-keys).empty?
       raise Invalid,'Provide both start and end, or neither' if keys.equal?(INSIGHT_KEYS)&&filters.key?('start')!=filters.key?('end')
       parser=Analytics::Scope.allocate
-      @start=parser.parse_time(filters['start']||(Time.now.utc-30.days).iso8601);@finish=parser.parse_time(filters['end']||(Time.now.utc+1.day).iso8601)
+      default=keys.equal?(KEYS)&&!filters.key?('start')&&!filters.key?('end') ? Analytics::Scope.default_window(policy.organization_id) : [Time.now.utc-30.days,Time.now.utc+1.day]
+      @start=parser.parse_time(filters['start']||default[0].iso8601);@finish=parser.parse_time(filters['end']||default[1].iso8601)
       raise Invalid,'Choose an increasing range of at most 366 days' unless start<finish&&finish-start<=366.days
       %w[agent_id project_id user_id].each{|key|raise Invalid,'Invalid identifier' if filters[key]&&!UUID.match?(filters[key])}
       %w[run_id workflow_type status outcome].each{|key|raise Invalid,'Invalid filter' if filters[key]&&!filters[key].match?(/\A[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\z/)}

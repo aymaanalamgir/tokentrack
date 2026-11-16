@@ -3,7 +3,7 @@ module Budgets
     def initialize(actor,params={})
       @actor=actor;@policy=AccessPolicy.new(actor);@params=params.stringify_keys;@organization=actor.organization_id
       raise Finance::Invalid,'Unknown budget filter' unless (@params.keys-%w[month user_id project_id organization_unit_id account_id as_of limit offset history_offset]).empty?
-      @month=@params['month'] ? Controls.month(@params['month']) : (SpendingLimit.where(organization_id:@organization,user_id:actor.id).maximum(:month_start)||BudgetPeriod.where(organization_id:@organization).minimum(:month_start)||Time.now.utc.to_date.beginning_of_month)
+      @month=@params['month'] ? Controls.month(@params['month']) : (SpendingLimit.where(organization_id:@organization,user_id:actor.id).maximum(:month_start)||BudgetPeriod.where(organization_id:@organization).where('month_start<=?',Time.now.utc.to_date).maximum(:month_start)||BudgetPeriod.where(organization_id:@organization).minimum(:month_start)||Time.now.utc.to_date.beginning_of_month)
       %w[user_id project_id organization_unit_id account_id].each{|key|raise Finance::Invalid,'Invalid budget identifier' if @params[key] && !Analytics::Scope::UUID.match?(@params[key])}
       @limit=integer('limit',25,1..100);@offset=integer('offset',0,0..100000);@history_offset=integer('history_offset',0,0..100000)
       @as_of=@params['as_of'] && Date.iso8601(@params['as_of'])

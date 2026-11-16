@@ -1,8 +1,4 @@
 namespace :finance do
-  task demo_setup: :environment do
-    months = ENV.fetch("MONTHS").split(",")
-    puts JSON.pretty_generate(Finance::DemoSetup.new.call(months))
-  end
   task report: :environment do
     actor = User.find(ENV.fetch("ACTOR_ID"))
     puts JSON.pretty_generate(Finance::Reconciliation.new.report(actor,ENV.fetch("MONTH")))

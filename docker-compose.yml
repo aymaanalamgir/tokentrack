@@ -31,6 +31,9 @@ services:
     init: true
     environment:
       RAILS_ENV: development
+      RAILS_LOG_LEVEL: ${RAILS_LOG_LEVEL:-info}
+      # Puma threads and the DB pool; matches the demo delivery workers' concurrency.
+      RAILS_MAX_THREADS: ${RAILS_MAX_THREADS:-5}
       BUDGET_WARNING_APPROACHING_PERCENT: ${BUDGET_WARNING_APPROACHING_PERCENT:-75}
       BUDGET_WARNING_HIGH_PERCENT: ${BUDGET_WARNING_HIGH_PERCENT:-90}
       USAGE_ANALYTICS_URL: http://usage-engine:8080

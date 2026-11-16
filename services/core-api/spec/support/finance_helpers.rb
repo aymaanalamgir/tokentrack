@@ -1,5 +1,5 @@
 module FinanceHelpers
-  def finance_payload(organization: org, user: person("jordan"), initiative: project, id: SecureRandom.uuid, usage_id: SecureRandom.uuid, amount: "0.1065")
+  def finance_payload(organization: org, user: person("employee"), initiative: project, id: SecureRandom.uuid, usage_id: SecureRandom.uuid, amount: "0.1065")
     { "schema_version"=>1,"calculation_version"=>1,"priced_event_id"=>id,"usage_event_id"=>usage_id,"organization_id"=>organization.id,"user_id"=>user.id,"project_id"=>initiative&.id,
       "source"=>"financial-spec","source_event_id"=>"event-1","usage_fingerprint"=>"a"*64,"provider"=>"openai","model"=>"gpt-5.4-mini","tool"=>"coding-assistant","agent_run_id"=>nil,"workflow_type"=>nil,
       "pricing_provider"=>"openai","pricing_model"=>"gpt-5.4-mini","pricing_rate_id"=>SecureRandom.uuid,"pricing_mapping_id"=>SecureRandom.uuid,"pricing_tier"=>"standard_text_cache_read","billing_basis"=>"synthetic_standard_cache_read","currency"=>"USD",
@@ -7,7 +7,7 @@ module FinanceHelpers
       "input_cost"=>"0.06","cached_input_cost"=>"0.0015","output_cost"=>"0.045","amount"=>amount,"occurred_at"=>"2026-11-15T14:30:00.000000Z",
       "rate_effective_from"=>"2026-11-01T00:00:00.000000Z","rate_effective_until"=>nil,"rate_source_url"=>"https://developers.openai.com/api/docs/pricing","rate_verified_at"=>"2026-11-09T00:00:00.000000Z" }
   end
-  def finance_accounts(organization: org, actor: person("olivia"), initiative: project, unit: team("platform"), funded: true)
+  def finance_accounts(organization: org, actor: person("financial_operator"), initiative: project, unit: team("payments-core"), funded: true)
     RoleAssignment.find_or_create_by!(organization: organization,user: actor,role: "financial_operator",scope_type: "organization")
     owners={"reserve"=>nil,"unassigned"=>nil}
     owners["project"]=initiative if initiative

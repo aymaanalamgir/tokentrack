@@ -7,7 +7,7 @@
 #   ./scripts/verify.sh browser         # the eight Playwright workflows
 #
 # Browser suites run in a fixed order: `requests` must precede `budgets`, because the budgets workflow revises
-# Jordan's allowance and Rails then (correctly) refuses to approve a request submitted against the older revision.
+# Hana Takeda's allowance and Rails then (correctly) refuses to approve a request submitted against the older revision.
 # The projects, budgets and requests workflows write to the development database by design (one archived review
 # project and one 3 USD conserved transfer per run); they never delete or rewrite history.
 #

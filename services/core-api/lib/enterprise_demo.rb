@@ -132,6 +132,10 @@ module EnterpriseDemo
       save(OrganizationalMembership, "#{slug}/home/#{row[:ref]}", { organization: org, user: user, organizational_unit: units.fetch(row[:unit]), is_primary: true, membership_type: "home_team" }, created_at: epoch, update: false)
       save(RoleAssignment, "#{slug}/employee/#{row[:ref]}", organization: org, user: user, role: "employee", scope_type: "self", organizational_unit: nil, project: nil)
     end
+    # Explicit secondary memberships (working groups); they never change the person's home team.
+    company.fetch("working_groups", []).each do |ref, unit|
+      save(OrganizationalMembership, "#{slug}/working-group/#{ref}/#{unit}", { organization: org, user: users.fetch(ref), organizational_unit: units.fetch(unit), is_primary: false, membership_type: "working_group" }, created_at: epoch, update: false)
+    end
     rows.each do |row|
       next unless row[:manager]
       save(ReportingRelationship, "#{slug}/reporting/#{row[:ref]}", organization: org, manager: users.fetch(row[:manager]), report: users.fetch(row[:ref]), relationship_type: "line_manager")
@@ -147,6 +151,8 @@ module EnterpriseDemo
     finance = users.fetch(personas.fetch("financial_operator"))
     save(RoleAssignment, "#{slug}/finance-viewer", organization: org, user: finance, role: "organization_viewer", scope_type: "organization") unless finance == leader
     save(RoleAssignment, "#{slug}/financial-operator", organization: org, user: finance, role: "financial_operator", scope_type: "organization")
+    # The project-lead persona may also start projects (an explicit delegated grant, not implied by leading one).
+    save(RoleAssignment, "#{slug}/delegated-project-creator", organization: org, user: users.fetch(personas.fetch("project_lead")), role: "project_creator", scope_type: "organization") unless personas["project_lead"] == personas["leadership"]
     manager_unit = rows.find { |r| r[:ref] == personas.fetch("manager") }.fetch(:unit)
     save(RoleAssignment, "#{slug}/manager-budget-reader", organization: org, user: users.fetch(personas.fetch("manager")), role: "team_budget_reader", scope_type: "unit", organizational_unit: units.fetch(manager_unit))
     members_by_unit = rows.group_by { |r| r[:unit] }
@@ -161,7 +167,7 @@ module EnterpriseDemo
       save(ProjectMembership, "#{slug}/project-member/#{key}/#{spec_project['lead']}", { organization: org, project: project, user: lead, project_role: "owner", joined_at: begins }, update: false)
       save(RoleAssignment, "#{slug}/project-lead/#{key}", organization: org, user: lead, role: "project_lead", scope_type: "project", project: project)
       save(RoleAssignment, "#{slug}/project-budget-reader/#{key}", organization: org, user: lead, role: "project_budget_reader", scope_type: "project", project: project) if spec_project["lead"] == personas["project_lead"]
-      forced = company.fetch("persona_projects", []).include?(key) ? [personas.fetch("employee")] : []
+      forced = (company.fetch("persona_projects", []).include?(key) ? [personas.fetch("employee")] : []) + company.fetch("project_members", {}).fetch(key, [])
       spec_project.fetch("teams").each do |team, share|
         members_by_unit.fetch(team, []).each do |row|
           ref = row[:ref]
@@ -306,8 +312,14 @@ module EnterpriseDemo
         extra = {}
         extra = { project_id: Project.find_by!(organization: org, slug: request["project"]).id, source_account_id: reserve.id } if request["project"]
         extra = { unit_id: OrganizationalUnit.find(DemoData.uuid("#{slug}/unit/#{request['unit']}")).id, source_account_id: reserve.id } if request["unit"]
-        Requests::CreateService.new(actor).call(request_type: request.fetch("type"), month: month, requested_amount: request.fetch("amount"), request_key: "enterprise/#{slug}/request/#{index}",
+        created = Requests::CreateService.new(actor).call(request_type: request.fetch("type"), month: month, requested_amount: request.fetch("amount"), request_key: "enterprise/#{slug}/request/#{index}",
           reason: "Fictional #{company['name']} #{request['type'].tr('_', ' ')} request for #{month}", **extra)
+        # Optional recorded decision (for a rejection example in request history); idempotent by operation key.
+        if request["reject_by"] && created.pending?
+          Requests::DecisionService.new(persona.call(request["reject_by"])).reject(id: created.id, operation_key: "enterprise/#{slug}/request/#{index}/reject", comment: request.fetch("comment"))
+          created.reload
+        end
+        created
       end
       { slug: slug, ceilings: SpendingLimit.where(organization: org).count, requests: requests.map { |r| { type: r.request_type, status: r.status, approver: r.assigned_approver&.name } } }
     end

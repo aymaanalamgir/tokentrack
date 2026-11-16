@@ -4,12 +4,12 @@ RSpec.describe "Concurrent project authority", type: :model do
   self.use_transactional_tests = false
 
   it "serializes ownership changes and rejects the waiting revoked administrator" do
-    actor = person("priya")
+    actor = person("project_lead")
     record = ProjectManagement.new(actor).create(name: "Concurrent transfer spec", status: "planned")
     ready = Queue.new
     start = Queue.new
     results = Queue.new
-    threads = %w[jordan sofia].map do |key|
+    threads = %w[employee colleague].map do |key|
       target_id = person(key).id
       Thread.new do
         ApplicationRecord.connection_pool.with_connection do

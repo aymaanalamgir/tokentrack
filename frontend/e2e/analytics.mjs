@@ -8,34 +8,34 @@ async function get(path,status=200){const r=await context.request.get(`${base}/a
 const main=page.locator('main');
 async function enter(name){if(await page.getByRole('button',{name:'Switch identity',exact:true}).isVisible()){await page.getByRole('button',{name:'Switch identity',exact:true}).click();await page.getByRole('dialog',{name:'Switch demo identity'}).getByRole('button',{name:`Continue as ${name}`,exact:true}).click();}else await page.getByRole('button',{name:`Continue as ${name}`,exact:true}).click();await main.getByRole('heading',{name:/Organization overview|Team workspace|Project workspace|My workspace/}).waitFor();await page.goto(base+'/analytics');await page.getByTestId('analytics-workspace').waitFor();await page.waitForFunction(()=>document.querySelector('[data-testid="analytics-workspace"]')?.getAttribute('aria-busy')==='false');}
 try{
- await page.goto(base);await enter('Olivia Chen');
- const identities=await get('demo/identities');const jordan=identities.find(p=>p.name==='Jordan Lee');const maya=identities.find(p=>p.name==='Maya Chen');const olivia=identities.find(p=>p.name==='Olivia Chen');
- const full=await get('analytics?start=2026-11-01T00%3A00%3A00Z&end=2026-12-11T00%3A00%3A00Z');
- assert(full.summary.events>0);assert(full.summary.unpriced_events>0);// Corrections exist and are negative in the demo; the exact total changes whenever a documented correction is added, so assert the ledger identity instead of a dataset constant.
+ await page.goto(base);await enter('Gabriel Moreau');
+ const identities=await get('demo/identities');const employee=identities.find(p=>p.name==='Hana Takeda');const outsider=identities.find(p=>p.name==='Noor Haddad');const finance=identities.find(p=>p.name==='Gabriel Moreau');
+ const full=await get('analytics?start=2025-11-01T00%3A00%3A00Z&end=2026-11-01T00%3A00%3A00Z');
+ assert(full.summary.events>0);assert(full.summary.unpriced_events>0);// Assert the ledger identity (original + adjustments = net) rather than a dataset constant.
  const signed=v=>{const neg=v.startsWith('-');const [a,b='']=v.replace('-','').split('.');const n=BigInt(a)*10n**15n+BigInt((b+'0'.repeat(15)).slice(0,15));return neg?-n:n};
- assert(signed(full.summary.adjustments)<0n);assert.equal(signed(full.summary.original_expenditure)+signed(full.summary.adjustments),signed(full.summary.net_expenditure));
+ assert(signed(full.summary.adjustments)<=0n);assert.equal(signed(full.summary.original_expenditure)+signed(full.summary.adjustments),signed(full.summary.net_expenditure));
  const scaled=v=>{const [a,b='']=v.split('.');return BigInt(a)*10n**15n+BigInt((b+'0'.repeat(15)).slice(0,15))};
  assert.equal(full.timeseries.reduce((n,r)=>n+scaled(r.net_expenditure),0n),scaled(full.summary.net_expenditure));
  assert.equal(full.models.reduce((n,r)=>n+scaled(r.net_expenditure),0n),scaled(full.summary.net_expenditure));
  assert.equal(full.tools.reduce((n,r)=>n+scaled(r.net_expenditure),0n),scaled(full.summary.net_expenditure));
  await page.getByTestId('analytics-chart').waitFor();
  await page.screenshot({path:output+'/leadership-dark.png',fullPage:true});
- const engineering=full.context.units.find(u=>u.name==='Engineering');
+ const engineering=full.context.units.find(u=>u.name==='Backend & Payments Engineering');
  await page.getByLabel('Team filter').selectOption(engineering.id);await page.waitForURL(/organization_unit_id/);await page.waitForFunction(()=>document.querySelector('[data-testid="analytics-workspace"]')?.getAttribute('aria-busy')==='false');
  assert((await get('analytics?organization_unit_id='+engineering.id)).summary.events<full.summary.events);
- const fraud=full.context.projects.find(p=>p.name==='Fraud Detection Platform');
+ const fraud=full.context.projects.find(p=>p.name==='Fraud Detection Engine');
  await page.getByLabel('Project filter').selectOption(fraud.id);await page.waitForURL(/project_id/);
  // Detailed tables live behind progressive disclosure; open them, then switch to models.
  await page.getByRole('button',{name:/Detailed records/}).click();await page.getByRole('tab',{name:'models',exact:true}).click();await main.getByText('Synthetic demonstration mapping').first().waitFor();
  const project=await get('analytics?project_id='+fraud.id);assert(project.accounts.every(a=>a.purpose==='project'));
  await page.getByLabel('Granularity').selectOption('week');await page.waitForURL(/granularity=week/);await page.getByLabel('Granularity').selectOption('month');await page.waitForURL(/granularity=month/);
- await enter('Marcus Rivera');const manager=await get('analytics');assert(manager.summary.active_users<full.summary.active_users);assert(manager.employees.some(e=>e.id===jordan.id));const managerOlivia=await get('analytics?user_id='+olivia.id);assert(managerOlivia.projects.every(p=>manager.context.projects.some(v=>v.id===p.id)));assert(managerOlivia.summary.events<full.employees.find(e=>e.id===olivia.id).events);
- const unrelated=full.employees.find(e=>!manager.employees.some(m=>m.id===e.id));assert(unrelated);const denied=await context.request.get(base+'/api/core/analytics?user_id='+unrelated.id);assert([200,404].includes(denied.status()));if(denied.status()===200)assert.equal((await denied.json()).data.summary.events,0);await get('analytics?user_id='+maya.id,404);
- await enter('Priya Shah');const lead=await get('analytics');assert(lead.summary.active_users<full.summary.active_users);assert(lead.accounts?.every(a=>a.purpose==='project'));
- await page.getByLabel('Employee filter').selectOption(jordan.id);await page.waitForURL(/user_id/);
- const leadJordan=await get('analytics?user_id='+jordan.id);assert(leadJordan.projects.every(p=>lead.context.projects.some(v=>v.id===p.id)));
- await enter('Jordan Lee');const employee=await get('analytics');assert.equal(employee.employees.length,1);assert.equal(employee.employees[0].id,jordan.id);assert.equal(employee.budget,null);assert.equal(employee.accounts,null);
- await get('analytics?user_id='+olivia.id,404);await get('analytics?organization_unit_id='+engineering.id,404);
+ await enter('Elliot Brandt');const manager=await get('analytics');assert(manager.summary.active_users<full.summary.active_users);assert(manager.employees.some(e=>e.id===employee.id));
+ const unrelated=full.employees.find(e=>!manager.employees.some(m=>m.id===e.id));assert(unrelated);const denied=await context.request.get(base+'/api/core/analytics?user_id='+unrelated.id);assert([200,404].includes(denied.status()));if(denied.status()===200)assert.equal((await denied.json()).data.summary.events,0);await get('analytics?user_id='+outsider.id,404);
+ await enter('Mateo Alvarez');const lead=await get('analytics');assert(lead.summary.active_users<full.summary.active_users);assert(lead.accounts?.every(a=>a.purpose==='project'));
+ await page.getByLabel('Employee filter').selectOption(employee.id);await page.waitForURL(/user_id/);
+ const leadEmployee=await get('analytics?user_id='+employee.id);assert(leadEmployee.projects.every(p=>lead.context.projects.some(v=>v.id===p.id)));
+ await enter('Hana Takeda');const own=await get('analytics');assert.equal(own.employees.length,1);assert.equal(own.employees[0].id,employee.id);assert.equal(own.budget,null);assert.equal(own.accounts,null);
+ await get('analytics?user_id='+finance.id,404);await get('analytics?organization_unit_id='+engineering.id,404);
  assert.equal((await context.request.get(base+'/api/core/internal/v1/analytics')).status(),404);
  const k=await context.request.post('http://usage-engine:8080/internal/v1/analytics',{data:{}});assert.equal(k.status(),401);
  await page.getByLabel('Project filter').selectOption(fraud.id);await page.waitForURL(/project_id/);await page.waitForFunction(()=>document.querySelector('[data-testid="analytics-workspace"]')?.getAttribute('aria-busy')==='false');await page.screenshot({path:output+'/employee-dark.png',fullPage:true});

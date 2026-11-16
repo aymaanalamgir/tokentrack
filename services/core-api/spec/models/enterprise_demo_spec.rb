@@ -22,16 +22,16 @@ RSpec.describe EnterpriseDemo do
       expect(company["personas"].values - refs).to be_empty
       [company["slug"], people.size]
     end
-    expect(sizes).to eq("alset" => 750, "northline-financial" => 175, "memento-ai" => 18)
+    expect(sizes).to eq("alset" => 1100, "northline-financial" => 260, "memento-ai" => 30)
     expect(EnterpriseDemo.people(spec, EnterpriseDemo.company(spec, "alset")).map { |p| p[:office] }.uniq).to match_array(["Austin", "Palo Alto", "Toronto", "Berlin", "Shanghai"])
   end
 
   it "seeds, reseeds idempotently and funds Memento AI only through financial operations" do
     result = EnterpriseDemo.seed!(spec, only: ["memento-ai"]).first
-    expect(result).to include(people: 18, projects: 6, offices: 1)
+    expect(result).to include(people: 30, projects: 6, offices: 1)
     org = Organization.find_by!(slug: "memento-ai")
     expect(User.where(organization: org, demo_identity: true).pluck(:name)).to match_array(["Noor Haddad", "Jonah Whitfield", "Ines Kowalski", "Theo Brennan"])
-    expect(ReportingRelationship.where(organization: org).count).to eq(17)
+    expect(ReportingRelationship.where(organization: org).count).to eq(29)
     noor = User.find_by!(organization: org, name: "Noor Haddad")
     expect(AccessPolicy.new(noor)).to be_financial_operator.and(be_organization_viewer)
     expect(AccessPolicy.new(User.find_by!(organization: org, name: "Theo Brennan"))).not_to be_financial_operator
@@ -58,26 +58,34 @@ RSpec.describe EnterpriseDemo do
     expect { EnterpriseDemo.fund!(spec, profile: "smoke", only: ["memento-ai"]) }.not_to change(FinancialTransaction, :count)
     expect { EnterpriseDemo.fund!(spec, profile: "demo", only: ["memento-ai"]) }.to raise_error(Finance::Conflict, /another profile/)
   end
+
+  it "gives the Northline scenario personas the explicit structure the access and approval workflows rely on" do
+    expect(person("employee").name).to eq("Hana Takeda")
+    expect(person("employee").manager_relationships.sole.manager).to eq(person("manager"))
+    expect(person("manager").manager_relationships.sole.manager).to eq(person("director"))
+    expect(ReportingRelationship.where(manager: person("project_lead"))).to be_empty
+    expect(OrganizationalMembership.where(user: person("employee"), is_primary: false).sole.organizational_unit).to eq(team("data-engineering"))
+    expect(ProjectMembership.where(project: project, user: [person("employee"), person("colleague")]).count).to eq(2)
+    expect(RoleAssignment.where(user: person("project_lead"), role: %w[project_creator project_lead]).pluck(:role)).to match_array(%w[project_creator project_lead])
+    expect(RoleAssignment.where(user: person("manager"), role: "project_lead").sole.project).to eq(project("real-time-payments"))
+  end
 end
 
 RSpec.describe "Enterprise demo snapshot export", type: :request do
   before { skip "enterprise spec not mounted" unless File.exist?(EnterpriseDemo::SPEC_PATH) }
   def snapshot(query = "") = get("/api/v1/internal/usage-references/demo-snapshot#{query}", headers: { "Authorization" => "Bearer #{ENV.fetch('USAGE_REFERENCE_TOKEN')}" })
 
-  it "keeps the default export unchanged and exports named enterprise tenants with fixture references" do
-    EnterpriseDemo.seed!(EnterpriseDemo.spec, only: ["memento-ai"])
-    memento = Organization.find_by!(slug: "memento-ai")
+  it "exports every demo tenant by default and named tenants with fixture references" do
     snapshot
     expect(response).to have_http_status(:ok)
-    expect(json.dig("data", "organizations").map { |o| o["slug"] }).not_to include("memento-ai")
-    expect(json.dig("data", "users").map { |u| u["organization_id"] }).not_to include(memento.id)
+    expect(json.dig("data", "organizations").map { |o| o["slug"] }).to match_array(%w[northline-financial memento-ai])
     snapshot("?organizations=memento-ai")
     data = json.fetch("data")
     expect(data["organizations"].map { |o| o["slug"] }).to eq(["memento-ai"])
-    expect(data["users"].size).to eq(18)
+    expect(data["users"].size).to eq(30)
     expect(data["users"].map { |u| u["office"] }.uniq).to eq(["New York"])
     expect(data["organizations"].first["references"]).to include("member:ai-ml:0" => EnterpriseDemo.person_id("memento-ai", "member:ai-ml:0"))
-    snapshot("?organizations=aperture-technologies"); expect(response).to have_http_status(:bad_request)
+    snapshot("?organizations=unknown-company"); expect(response).to have_http_status(:bad_request)
     snapshot("?organizations=Bad;Slug"); expect(response).to have_http_status(:bad_request)
   end
 end

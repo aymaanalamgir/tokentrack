@@ -3,5 +3,11 @@ set -eu
 cd /app
 # Compile using the pinned container toolchain; Java receives original arguments
 # without flattening filenames or placing credentials in process arguments.
-gradle --quiet classes writeCliClasspath >&2
-exec java -Dspring.devtools.restart.enabled=false -cp "$(cat build/cli-classpath.txt)" com.tokentrack.usage.cli.UsageCliKt "$@"
+# Gradle's own up-to-date check costs ~5 s per call, so it only runs when a source or build file is newer than
+# the last successful compile (or USAGE_CLI_REBUILD=1).
+stamp=build/cli-classpath.txt
+if [ "${USAGE_CLI_REBUILD:-0}" = 1 ] || [ ! -f "$stamp" ] || [ -n "$(find src/main build.gradle.kts settings.gradle.kts gradle.properties -newer "$stamp" -print 2>/dev/null | head -n 1)" ]; then
+  gradle --quiet classes writeCliClasspath >&2
+  touch "$stamp"
+fi
+exec java -Dspring.devtools.restart.enabled=false -cp "$(cat "$stamp")" com.tokentrack.usage.cli.UsageCliKt "$@"

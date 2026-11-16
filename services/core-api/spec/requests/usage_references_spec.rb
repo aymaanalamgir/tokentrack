@@ -5,7 +5,7 @@ RSpec.describe "Internal usage reference contract", type: :request do
   let(:headers) { { "Authorization" => "Bearer #{credential}" } }
   before { allow(ENV).to receive(:[]).and_call_original; allow(ENV).to receive(:[]).with("USAGE_REFERENCE_TOKEN").and_return(credential) }
 
-  def reference(user = person("jordan"), initiative = project, time: Time.current)
+  def reference(user = person("employee"), initiative = project, time: Time.current)
     { key: "reference_1", organization_id: org.id, user_id: user.id, project_id: initiative&.id, occurred_at: time.iso8601(6) }
   end
   def validate_references(entries, auth = headers)
@@ -13,7 +13,7 @@ RSpec.describe "Internal usage reference contract", type: :request do
   end
 
   it "requires a service credential independently of interactive sessions or browser origin" do
-    sign_in("olivia")
+    sign_in("leadership")
     validate_references([reference], origin_headers)
     expect(response).to have_http_status(:unauthorized)
     validate_references([reference], { "Authorization" => "Bearer wrong" })
@@ -31,18 +31,18 @@ RSpec.describe "Internal usage reference contract", type: :request do
   end
 
   it "accepts cross-functional attribution and unassigned activity without changing business records" do
-    jordan = person("jordan")
-    rows = [reference(jordan, project("fraud-detection")), reference(jordan, project("developer-productivity")).merge(key: "second"), reference(jordan, nil).merge(key: "unassigned")]
-    before = [jordan.organizational_memberships.pluck(:id), jordan.manager_relationships.pluck(:id)]
+    employee = person("employee")
+    rows = [reference(employee, project("fraud-detection-engine")), reference(employee, project("real-time-payments")).merge(key: "second"), reference(employee, nil).merge(key: "unassigned")]
+    before = [employee.organizational_memberships.pluck(:id), employee.manager_relationships.pluck(:id)]
     validate_references(rows)
     expect(data.map { |r| r["valid"] }).to eq([true, true, true])
-    expect([jordan.organizational_memberships.pluck(:id), jordan.manager_relationships.pluck(:id)]).to eq(before)
+    expect([employee.organizational_memberships.pluck(:id), employee.manager_relationships.pluck(:id)]).to eq(before)
     expect(data.first.keys).to match_array(%w[key valid])
   end
 
   it "rejects unknown organizations, users, projects, and foreign tenant references" do
     unknown = SecureRandom.uuid
-    variants = [[:organization_id, unknown, "UNKNOWN_ORGANIZATION"], [:user_id, unknown, "INVALID_USER_REFERENCE"], [:user_id, person("sam", "northstar-labs").id, "INVALID_USER_REFERENCE"], [:project_id, unknown, "INVALID_PROJECT_REFERENCE"], [:project_id, org("northstar-labs").projects.first.id, "INVALID_PROJECT_REFERENCE"]]
+    variants = [[:organization_id, unknown, "UNKNOWN_ORGANIZATION"], [:user_id, unknown, "INVALID_USER_REFERENCE"], [:user_id, person("employee", "memento-ai").id, "INVALID_USER_REFERENCE"], [:project_id, unknown, "INVALID_PROJECT_REFERENCE"], [:project_id, org("memento-ai").projects.first.id, "INVALID_PROJECT_REFERENCE"]]
     variants.each do |field, value, code|
       validate_references([reference.merge(field => value)])
       expect(data.first["code"]).to eq(code)
@@ -51,7 +51,7 @@ RSpec.describe "Internal usage reference contract", type: :request do
   end
 
   it "uses half-open recorded membership periods, including archived projects" do
-    membership = ProjectMembership.active.find_by!(project: project, user: person("jordan"))
+    membership = ProjectMembership.active.find_by!(project: project, user: person("employee"))
     joined = membership.joined_at
     membership.update!(left_at: joined + 1.hour)
     project.update!(status: "archived")
@@ -63,10 +63,10 @@ RSpec.describe "Internal usage reference contract", type: :request do
   end
 
   it "uses known rejoin periods without filling gaps in history" do
-    membership = ProjectMembership.active.find_by!(project: project, user: person("jordan"))
+    membership = ProjectMembership.active.find_by!(project: project, user: person("employee"))
     joined = membership.joined_at
     membership.update!(left_at: joined + 1.hour)
-    ProjectMembership.create!(organization: org, project: project, user: person("jordan"), joined_at: joined + 3.hours, project_role: "contributor")
+    ProjectMembership.create!(organization: org, project: project, user: person("employee"), joined_at: joined + 3.hours, project_role: "contributor")
     validate_references([reference(time: joined + 2.hours)])
     expect(data.first["valid"]).to be(false)
     validate_references([reference(time: joined + 4.hours)])
@@ -74,8 +74,8 @@ RSpec.describe "Internal usage reference contract", type: :request do
   end
 
   it "rejects currently inactive users rather than inventing historical eligibility" do
-    person("jordan").update!(status: "inactive")
-    validate_references([reference(person("jordan"), nil)])
+    person("employee").update!(status: "inactive")
+    validate_references([reference(person("employee"), nil)])
     expect(data.first["code"]).to eq("USER_INELIGIBLE")
   end
 
@@ -96,11 +96,13 @@ RSpec.describe "Internal usage reference contract", type: :request do
   it "exports minimal flagged fictional snapshot identifiers and recorded periods" do
     get "/api/v1/internal/usage-references/demo-snapshot", headers: headers
     expect(response).to have_http_status(:ok)
-    expect(data["organizations"].size).to eq(2)
-    expect(data["users"].size).to eq(74)
-    expect(data["users"].first.keys).to match_array(%w[id organization_id job_function primary_unit_id])
+    expect(data["organizations"].map { |o| o["slug"] }).to match_array(%w[northline-financial memento-ai])
+    expect(data["users"].size).to eq(290)
+    expect(data["users"].first.keys).to match_array(%w[id organization_id job_function primary_unit_id office])
     expect(data["memberships"].first.keys).to match_array(%w[organization_id user_id project_id joined_at left_at])
-    expect(data.to_json).not_to include("email", "managers", "permissions")
+    keys = ->(node) { node.is_a?(Hash) ? node.keys + node.values.flat_map { |v| keys.(v) } : node.is_a?(Array) ? node.flat_map { |v| keys.(v) } : [] }
+    expect(keys.(data) & %w[email managers permissions]).to be_empty
+    expect(data.to_json).not_to include(".example")
     allow(DemoSession).to receive(:enabled?).and_return(false)
     get "/api/v1/internal/usage-references/demo-snapshot", headers: headers
     expect(response).to have_http_status(:not_found)

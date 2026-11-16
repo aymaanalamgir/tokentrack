@@ -2,28 +2,28 @@ require "rails_helper"
 
 RSpec.describe "Financial request and approval API", type: :request do
   let(:month) { "2026-11" }
-  let(:olivia) { person("olivia") }
-  let(:jordan) { person("jordan") }
-  let(:marcus) { person("marcus") }
-  let(:priya) { person("priya") }
+  let(:finance) { person("financial_operator") }
+  let(:employee) { person("employee") }
+  let(:manager) { person("manager") }
+  let(:lead) { person("project_lead") }
 
-  def establish_ceiling(user = jordan, amount: "500", key: SecureRandom.uuid)
-    Budgets::AllowanceOperations.new(olivia).revise(user_id: user.id, month: month, amount: amount,
+  def establish_ceiling(user = employee, amount: "500", key: SecureRandom.uuid)
+    Budgets::AllowanceOperations.new(finance).revise(user_id: user.id, month: month, amount: amount,
       request_key: key, reason: "Request workflow baseline", kind: "ceiling")
   end
 
   def delegate(cap: "1000", key: SecureRandom.uuid)
-    Budgets::AllowanceOperations.new(olivia).delegate(manager_id: marcus.id, unit_id: team("platform").id,
+    Budgets::AllowanceOperations.new(finance).delegate(manager_id: manager.id, unit_id: team("payments-core").id,
       maximum_amount: cap, from_month: month, until_month: month, request_key: key, reason: "Request approval authority")
   end
 
   def create_personal(amount: "750", key: SecureRandom.uuid)
-    Requests::CreateService.new(jordan).call(request_type: "personal_allowance", month: month,
+    Requests::CreateService.new(employee).call(request_type: "personal_allowance", month: month,
       requested_amount: amount, reason: "Additional development work", request_key: key)
   end
 
   def create_project(accounts, amount: "2", key: SecureRandom.uuid)
-    Requests::CreateService.new(priya).call(request_type: "project_funding", month: month,
+    Requests::CreateService.new(lead).call(request_type: "project_funding", month: month,
       requested_amount: amount, reason: "More evaluation activity", request_key: key,
       project_id: project.id, source_account_id: accounts.fetch("unit").id)
   end
@@ -35,10 +35,10 @@ RSpec.describe "Financial request and approval API", type: :request do
     first = establish_ceiling
     delegate
     request = create_personal
-    expect(request.assigned_approver).to eq(marcus)
+    expect(request.assigned_approver).to eq(manager)
     expect(request.routing_reason).to include("1000 USD")
     ledger_count = FinancialTransaction.count
-    approved = Requests::DecisionService.new(marcus).approve(id: request.id, operation_key: "approve-personal", comment: "Within delegated authority")
+    approved = Requests::DecisionService.new(manager).approve(id: request.id, operation_key: "approve-personal", comment: "Within delegated authority")
     expect(approved.reload).to have_attributes(status: "approved", execution_transaction_id: nil)
     expect(approved.execution_revision.limit_amount).to eq(BigDecimal("750"))
     expect(approved.execution_revision.revision_number).to eq(first.revision_number + 1)
@@ -51,9 +51,9 @@ RSpec.describe "Financial request and approval API", type: :request do
     establish_ceiling
     delegate
     request = create_personal(amount: "1500")
-    expect(request.assigned_approver).to eq(olivia)
+    expect(request.assigned_approver).to eq(finance)
     expect(request.routing_reason).to include("Financial operator")
-    expect { Requests::DecisionService.new(jordan).approve(id: request.id, operation_key: "self", comment: "No") }.to raise_error(Finance::Forbidden)
+    expect { Requests::DecisionService.new(employee).approve(id: request.id, operation_key: "self", comment: "No") }.to raise_error(Finance::Forbidden)
     expect(request.reload.status).to eq("pending")
   end
 
@@ -62,14 +62,14 @@ RSpec.describe "Financial request and approval API", type: :request do
     first = establish_ceiling
     grant = delegate
     revoked = create_personal
-    Budgets::AllowanceOperations.new(olivia).revoke(grant.id)
-    expect { Requests::DecisionService.new(marcus).approve(id: revoked.id, operation_key: "revoked", comment: "Old authority") }.to raise_error(Finance::Forbidden)
+    Budgets::AllowanceOperations.new(finance).revoke(grant.id)
+    expect { Requests::DecisionService.new(manager).approve(id: revoked.id, operation_key: "revoked", comment: "Old authority") }.to raise_error(Finance::Forbidden)
     expect(revoked.reload.status).to eq("pending")
 
     fresh = create_personal(amount: "800")
-    Budgets::AllowanceOperations.new(olivia).revise(user_id: jordan.id, month: month, amount: "600",
+    Budgets::AllowanceOperations.new(finance).revise(user_id: employee.id, month: month, amount: "600",
       expected_revision: first.id, request_key: "intervening", reason: "Current change", kind: "ceiling")
-    expect { Requests::DecisionService.new(olivia).approve(id: fresh.id, operation_key: "stale", comment: "Outdated") }.to raise_error(Finance::Conflict, /changed after submission/)
+    expect { Requests::DecisionService.new(finance).approve(id: fresh.id, operation_key: "stale", comment: "Outdated") }.to raise_error(Finance::Conflict, /changed after submission/)
     expect(fresh.reload.status).to eq("pending")
   end
 
@@ -77,8 +77,8 @@ RSpec.describe "Financial request and approval API", type: :request do
     accounts = finance_accounts
     request = create_project(accounts)
     total = LedgerEntry.where(organization: org).sum(:funding_delta)
-    approved = Requests::DecisionService.new(olivia).approve(id: request.id, operation_key: "project-approve", comment: "Approved evaluation")
-    replay = Requests::DecisionService.new(olivia).approve(id: request.id, operation_key: "project-approve", comment: "Approved evaluation")
+    approved = Requests::DecisionService.new(finance).approve(id: request.id, operation_key: "project-approve", comment: "Approved evaluation")
+    replay = Requests::DecisionService.new(finance).approve(id: request.id, operation_key: "project-approve", comment: "Approved evaluation")
     expect(replay.id).to eq(approved.id)
     expect(FinancialTransaction.where(source_type: "funding_transfer", source_id: "request/#{request.id}/approve").count).to eq(1)
     expect(LedgerEntry.where(organization: org).sum(:funding_delta)).to eq(total)
@@ -87,21 +87,21 @@ RSpec.describe "Financial request and approval API", type: :request do
 
   it "allows a manager to request team funding but requires a different financial operator" do
     accounts = finance_accounts
-    request = Requests::CreateService.new(marcus).call(request_type: "team_funding", month: month,
+    request = Requests::CreateService.new(manager).call(request_type: "team_funding", month: month,
       requested_amount: "3", reason: "Increased development demand", request_key: "team-request",
-      unit_id: team("platform").id, source_account_id: accounts.fetch("reserve").id)
-    expect(request.assigned_approver).to eq(olivia)
-    expect { Requests::DecisionService.new(marcus).approve(id: request.id, operation_key: "team-self", comment: "No") }.to raise_error(Finance::Forbidden)
-    expect { Requests::DecisionService.new(olivia).approve(id: request.id, operation_key: "team-ok", comment: "Approved") }.to change { FinancialTransaction.where(source_id: "request/#{request.id}/approve").count }.by(1)
+      unit_id: team("payments-core").id, source_account_id: accounts.fetch("reserve").id)
+    expect(request.assigned_approver).to eq(finance)
+    expect { Requests::DecisionService.new(manager).approve(id: request.id, operation_key: "team-self", comment: "No") }.to raise_error(Finance::Forbidden)
+    expect { Requests::DecisionService.new(finance).approve(id: request.id, operation_key: "team-ok", comment: "Approved") }.to change { FinancialTransaction.where(source_id: "request/#{request.id}/approve").count }.by(1)
   end
 
   it "records rejection and cancellation without financial effects" do
     accounts = finance_accounts
     rejected = create_project(accounts)
     before = FinancialTransaction.count
-    Requests::DecisionService.new(olivia).reject(id: rejected.id, operation_key: "reject", comment: "Not justified")
+    Requests::DecisionService.new(finance).reject(id: rejected.id, operation_key: "reject", comment: "Not justified")
     own = create_project(accounts, key: "cancel-me")
-    Requests::DecisionService.new(priya).cancel(id: own.id, operation_key: "cancel", comment: "No longer needed")
+    Requests::DecisionService.new(lead).cancel(id: own.id, operation_key: "cancel", comment: "No longer needed")
     expect(rejected.reload.status).to eq("rejected")
     expect(own.reload.status).to eq("cancelled")
     expect(FinancialTransaction.count).to eq(before)
@@ -110,9 +110,9 @@ RSpec.describe "Financial request and approval API", type: :request do
   it "rolls back approval when source funding becomes insufficient" do
     accounts = finance_accounts
     request = create_project(accounts, amount: "15")
-    Finance::Operations.new(olivia).transfer(from: accounts.fetch("unit").id, to: accounts.fetch("reserve").id,
+    Finance::Operations.new(finance).transfer(from: accounts.fetch("unit").id, to: accounts.fetch("reserve").id,
       month: month, amount: "10", key: "drain-source", reason: "Capacity changed")
-    expect { Requests::DecisionService.new(olivia).approve(id: request.id, operation_key: "insufficient", comment: "Attempt") }.to raise_error(Finance::Invalid, /exceeds/)
+    expect { Requests::DecisionService.new(finance).approve(id: request.id, operation_key: "insufficient", comment: "Attempt") }.to raise_error(Finance::Invalid, /exceeds/)
     expect(request.reload).to have_attributes(status: "pending", execution_transaction_id: nil, resolved_at: nil)
     expect(request.request_events.where(event_type: "approved")).to be_empty
   end
@@ -144,14 +144,14 @@ RSpec.describe "Financial request and approval API", type: :request do
     establish_ceiling
     delegate
     request = create_personal
-    sign_in("jordan")
+    sign_in("employee")
     get "/api/v1/requests", params: { month: month }
     expect(data["my_requests"].map { |row| row["id"] }).to include(request.id)
     expect(data["pending_review"]).to be_empty
-    sign_in("marcus")
+    sign_in("manager")
     get "/api/v1/requests", params: { month: month }
     expect(data["pending_review"].map { |row| row["id"] }).to include(request.id)
-    sign_in("sofia")
+    sign_in("colleague")
     get "/api/v1/requests/#{request.id}"
     expect(response).to have_http_status(:not_found)
     post "/api/v1/requests/#{request.id}/approve", params: { request_action: { operation_key: "private", comment: "No authority" } }, headers: origin_headers, as: :json
@@ -160,7 +160,7 @@ RSpec.describe "Financial request and approval API", type: :request do
 
   it "validates API origins, tenant references, filters, and stable creation keys" do
     accounts = finance_accounts
-    sign_in("priya")
+    sign_in("project_lead")
     body = { request_type: "project_funding", month: month, requested_amount: "2", reason: "API request",
       request_key: "api-create", project_id: project.id, source_account_id: accounts.fetch("unit").id }
     post "/api/v1/requests", params: { request: body }, headers: origin_headers, as: :json
@@ -170,7 +170,7 @@ RSpec.describe "Financial request and approval API", type: :request do
     expect(data["id"]).to eq(id)
     post "/api/v1/requests", params: { request: body.merge(requested_amount: "3") }, headers: origin_headers, as: :json
     expect(response).to have_http_status(:conflict)
-    get "/api/v1/requests", params: { requester_id: person("maya", "northstar-labs").id }
+    get "/api/v1/requests", params: { requester_id: person("leadership", "memento-ai").id }
     expect(data["my_requests"]).to be_empty
     post "/api/v1/requests/#{id}/cancel", params: { request_action: { operation_key: "bad-origin", comment: "No" } }, headers: { "Origin" => "https://foreign.example" }, as: :json
     expect(response).to have_http_status(:forbidden)

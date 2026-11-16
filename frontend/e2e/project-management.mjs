@@ -17,9 +17,9 @@ const main = page.locator("main");
 const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
 let record;
-let priya;
-let jordan;
-let sofia;
+let lead;
+let employee;
+let colleague;
 const origin = { Origin: new URL(base).origin };
 async function get(path, status = 200) {
   const response = await context.request.get(`${base}/api/core/${path}`);
@@ -39,7 +39,7 @@ async function write(path, method, payload, status = 200) {
   );
   return response.json();
 }
-async function identity(name, organization = "Aperture Technologies") {
+async function identity(name, organization = "Northline Financial") {
   if (
     await page
       .getByRole("button", { name: "Switch identity", exact: true })
@@ -120,11 +120,11 @@ async function lifecycle(label) {
 try {
   await page.goto(base);
   const identities = (await get("demo/identities")).data;
-  priya = identities.find((person) => person.name === "Priya Shah");
-  jordan = identities.find((person) => person.name === "Jordan Lee");
-  sofia = identities.find((person) => person.name === "Sofia Patel");
-  await identity("Jordan Lee");
-  const before = (await get(`users/${jordan.id}`)).data;
+  lead = identities.find((person) => person.name === "Mateo Alvarez");
+  employee = identities.find((person) => person.name === "Hana Takeda");
+  colleague = identities.find((person) => person.name === "Iris Calloway");
+  await identity("Hana Takeda");
+  const before = (await get(`users/${employee.id}`)).data;
   await page.goto(`${base}/projects`);
   await main.getByRole("heading", { name: "Projects", exact: true }).waitFor();
   assert.equal(
@@ -133,7 +133,7 @@ try {
       .count(),
     0,
   );
-  await identity("Priya Shah");
+  await identity("Mateo Alvarez");
   await page.locator('aside a[href="/projects"]').click();
   await main
     .getByRole("button", { name: "Create project", exact: true })
@@ -179,7 +179,7 @@ try {
     (project) => project.name === name,
   );
   assert.equal(record.contributor_count, 1);
-  assert.equal(record.administrators[0].id, priya.id);
+  assert.equal(record.administrators[0].id, lead.id);
   await page.locator('aside a[href="/projects"]').click();
   await main
     .getByRole("button", { name: "Create project", exact: true })
@@ -195,14 +195,14 @@ try {
     .getByRole("button", { name: "Close create project", exact: true })
     .click();
   await page.goto(`${base}/projects/${record.id}`);
-  await add("Jordan Lee");
-  await add("Sofia Patel", "lead");
+  await add("Hana Takeda");
+  await add("Iris Calloway", "lead");
   let memberships = (await get(`projects/${record.id}/memberships`)).data;
-  const oldJordanMembership = memberships.find(
-    (member) => member.user.id === jordan.id,
+  const oldEmployeeMembership = memberships.find(
+    (member) => member.user.id === employee.id,
   );
   const sofiaMembership = memberships.find(
-    (member) => member.user.id === sofia.id,
+    (member) => member.user.id === colleague.id,
   );
   assert.equal(
     sofiaMembership.administrator,
@@ -212,11 +212,11 @@ try {
   const platform = main
     .locator("details")
     .filter({
-      has: page.locator("summary").filter({ hasText: "Platform Engineering" }),
+      has: page.locator("summary").filter({ hasText: "Payments Core" }),
     });
   await platform.locator("summary").click();
   await platform
-    .getByRole("link", { name: "Jordan Lee", exact: true })
+    .getByRole("link", { name: "Hana Takeda", exact: true })
     .waitFor();
   assert.equal(
     (await get(`projects/${record.id}/team-groups`)).data.some(
@@ -224,9 +224,9 @@ try {
     ),
     true,
   );
-  await get(`users/${jordan.id}?view=management`, 403);
+  await get(`users/${employee.id}?view=management`, 403);
   await main
-    .getByRole("button", { name: "Edit role for Sofia Patel", exact: true })
+    .getByRole("button", { name: "Edit role for Iris Calloway", exact: true })
     .click();
   const roleDialog = page.getByRole("dialog", {
     name: "Edit contributor role",
@@ -240,12 +240,12 @@ try {
   await roleDialog.waitFor({ state: "hidden" });
   assert.equal(
     (await get(`projects/${record.id}/memberships`)).data.find(
-      (member) => member.user.id === sofia.id,
+      (member) => member.user.id === colleague.id,
     ).project_role,
     "reviewer",
   );
   await main
-    .getByRole("button", { name: "Remove Jordan Lee", exact: true })
+    .getByRole("button", { name: "Remove Hana Takeda", exact: true })
     .click();
   const remove = page.getByRole("dialog", {
     name: "Remove contributor",
@@ -259,21 +259,21 @@ try {
     .getByRole("combobox", { name: "Membership history" })
     .selectOption("past");
   await main
-    .getByRole("link", { name: "Jordan Lee", exact: true })
+    .getByRole("link", { name: "Hana Takeda", exact: true })
     .first()
     .waitFor();
   await main
     .getByRole("combobox", { name: "Membership history" })
     .selectOption("active");
-  await add("Jordan Lee");
+  await add("Hana Takeda");
   memberships = (await get(`projects/${record.id}/memberships`)).data;
   assert.notEqual(
-    memberships.find((member) => member.user.id === jordan.id).id,
-    oldJordanMembership.id,
+    memberships.find((member) => member.user.id === employee.id).id,
+    oldEmployeeMembership.id,
   );
   assert.equal(
     (await get(`projects/${record.id}/memberships?state=past`)).data[0].id,
-    oldJordanMembership.id,
+    oldEmployeeMembership.id,
   );
   console.log(
     "PASS: creation, validation/loading, explicit administration, cross-functional assignment, role edits, removal, history, rejoining, no full-page creation reload",
@@ -299,9 +299,9 @@ try {
   );
   await main
     .getByRole("textbox", { name: "Find contributors", exact: true })
-    .fill("Sofia");
+    .fill("Iris");
   await main
-    .getByRole("link", { name: "Sofia Patel", exact: true })
+    .getByRole("link", { name: "Iris Calloway", exact: true })
     .first()
     .waitFor();
   await main
@@ -311,15 +311,15 @@ try {
     path: `${output}/project-management-dark.png`,
     fullPage: true,
   });
-  await identity("Marcus Rivera");
+  await identity("Elliot Brandt");
   await page.goto(`${base}/teams`);
-  const jordanRow = main
+  const employeeRow = main
     .getByRole("row")
     .filter({
-      has: page.getByRole("link", { name: "Jordan Lee", exact: true }),
+      has: page.getByRole("link", { name: "Hana Takeda", exact: true }),
     });
-  await jordanRow.getByRole("link", { name, exact: true }).waitFor();
-  await jordanRow.getByRole("link", { name, exact: true }).click();
+  await employeeRow.getByRole("link", { name, exact: true }).waitFor();
+  await employeeRow.getByRole("link", { name, exact: true }).click();
   assert.equal(
     await main
       .getByRole("button", { name: "Add contributor", exact: true })
@@ -329,11 +329,11 @@ try {
   await write(
     `projects/${record.id}/memberships`,
     "POST",
-    { membership: { user_id: sofia.id } },
+    { membership: { user_id: colleague.id } },
     403,
   );
-  await identity("Jordan Lee");
-  const after = (await get(`users/${jordan.id}`)).data;
+  await identity("Hana Takeda");
+  const after = (await get(`users/${employee.id}`)).data;
   assert.equal(after.primary_team.id, before.primary_team.id);
   assert.deepEqual(after.managers, before.managers);
   assert.equal(
@@ -349,20 +349,20 @@ try {
     0,
   );
   await write(
-    `projects/${record.id}/memberships/${oldJordanMembership.id}`,
+    `projects/${record.id}/memberships/${oldEmployeeMembership.id}`,
     "PATCH",
     { membership: { project_role: "owner" } },
     403,
   );
-  await identity("Maya Chen", "Northstar Labs");
+  await identity("Noor Haddad", "Memento AI");
   await get(`projects/${record.id}`, 404);
   await write(
     `projects/${record.id}/memberships`,
     "POST",
-    { membership: { user_id: sofia.id } },
+    { membership: { user_id: colleague.id } },
     404,
   );
-  await identity("Priya Shah");
+  await identity("Mateo Alvarez");
   await page.goto(`${base}/projects/${record.id}`);
   const observer = await context.newPage();
   observer.setDefaultTimeout(20000);
@@ -372,10 +372,10 @@ try {
     .selectOption("past");
   await observer
     .locator("main")
-    .getByRole("link", { name: "Jordan Lee", exact: true })
+    .getByRole("link", { name: "Hana Takeda", exact: true })
     .first()
     .waitFor();
-  await transfer("Jordan Lee");
+  await transfer("Hana Takeda");
   await observer
     .getByRole("combobox", { name: "Membership history" })
     .waitFor({ state: "hidden" });
@@ -405,14 +405,14 @@ try {
     { project: { name: "Denied stale authority" } },
     403,
   );
-  await identity("Jordan Lee");
+  await identity("Hana Takeda");
   await page.goto(`${base}/projects/${record.id}`);
   await main
     .getByRole("button", { name: "Add contributor", exact: true })
     .waitFor();
   assert.equal(
     await main
-      .getByRole("button", { name: "Remove Jordan Lee", exact: true })
+      .getByRole("button", { name: "Remove Hana Takeda", exact: true })
       .count(),
     0,
   );
@@ -428,7 +428,7 @@ try {
   assert.equal((await get(`projects/${record.id}`)).data.status, "active");
   assert.equal(
     (await get(`projects/${record.id}/memberships`)).data.some(
-      (member) => member.user.id === jordan.id && member.administrator,
+      (member) => member.user.id === employee.id && member.administrator,
     ),
     true,
   );
@@ -456,9 +456,9 @@ try {
 } finally {
   // Keep a reviewable archived project and its history without leaving a new
   // administration grant on the employee persona used by the regression suite.
-  if (record && priya && jordan) {
+  if (record && lead && employee) {
     try {
-      for (const actor of [jordan, priya]) {
+      for (const actor of [employee, lead]) {
         await write("demo/sessions", "POST", { user_id: actor.id }, 201);
         const current = (await get(`projects/${record.id}`)).data;
         if (!current.permissions.lifecycle_manage) continue;
@@ -466,17 +466,17 @@ try {
           await write(`projects/${record.id}`, "PATCH", {
             project: { status: "active" },
           });
-        if (actor.id !== priya.id)
+        if (actor.id !== lead.id)
           await write(`projects/${record.id}/transfer-ownership`, "POST", {
-            user_id: priya.id,
+            user_id: lead.id,
           });
         break;
       }
-      await write("demo/sessions", "POST", { user_id: priya.id }, 201);
+      await write("demo/sessions", "POST", { user_id: lead.id }, 201);
       const members = (await get(`projects/${record.id}/memberships?limit=100`))
         .data;
       for (const member of members.filter(
-        (member) => member.user.id !== priya.id,
+        (member) => member.user.id !== lead.id,
       ))
         await write(
           `projects/${record.id}/memberships/${member.id}`,

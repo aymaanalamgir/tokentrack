@@ -133,7 +133,14 @@ module Requests
         expenditure: Finance::Money.string(period.expenditure), available: Finance::Money.string(period.available) }
     end
 
-    def selected_month = @selected_month ||= Budgets::Controls.month(@params["month"].presence || Date.current.strftime("%Y-%m"))
+    # Without an explicit month: the current month, or the latest funded month when the organization has no
+    # budget period for the current month (for example a historical demo workload).
+    def selected_month = @selected_month ||= Budgets::Controls.month(@params["month"].presence || default_month)
+    def default_month
+      today = Date.current.beginning_of_month
+      periods = BudgetPeriod.where(organization_id: @actor.organization_id)
+      (periods.where(month_start: today).exists? ? today : (periods.where("month_start<=?", today).maximum(:month_start) || today)).strftime("%Y-%m")
+    end
     def integer(key, default, minimum, maximum)
       value = @params[key].presence || default.to_s
       raise Finance::Invalid, "#{key} must be an integer" unless value.to_s.match?(/\A\d+\z/)

@@ -16,11 +16,11 @@ page.on("pageerror", (error) => errors.push(error.message));
 const main = page.locator("main");
 const nav = page.locator("aside nav");
 const headings = {
-  "Olivia Chen": "Organization overview",
-  "Marcus Rivera": "Team workspace",
-  "Priya Shah": "Project workspace",
-  "Jordan Lee": "My workspace",
-  "Maya Chen": "Organization overview",
+  "Amara Lindqvist": "Organization overview",
+  "Elliot Brandt": "Team workspace",
+  "Mateo Alvarez": "Project workspace",
+  "Hana Takeda": "My workspace",
+  "Noor Haddad": "Organization overview",
 };
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -65,16 +65,16 @@ try {
   await main.getByRole("heading", { name: "Enter a workspace" }).waitFor();
   const identities = (await get("demo/identities")).data;
   const find = (name) => identities.find((person) => person.name === name);
-  const casey = find("Casey Ellis");
-  const jordan = find("Jordan Lee");
-  const maya = find("Maya Chen");
-  await identity("Olivia Chen");
-  await nav.getByRole("link", { name: "Teams", exact: true }).waitFor();
+  const director = find("Tobias Wren");
+  const employee = find("Hana Takeda");
+  const outsider = find("Noor Haddad");
+  await identity("Amara Lindqvist");
+  // The CEO heads the Executive department, so the team entry reads "My teams".
+  await nav.getByRole("link", { name: /^(My teams|Teams)$/ }).waitFor();
   let overview = (await get("me/overview")).data;
   assert.equal(
     overview.counts.find((item) => item.label === "Employees").value,
-    identities.filter((i) => i.organization.id === jordan.organization.id)
-      .length,
+    260,
   );
   await page.screenshot({
     path: `${screenshots}/leadership-dark.png`,
@@ -82,26 +82,26 @@ try {
   });
   await nav.getByRole("link", { name: "Organization", exact: true }).click();
   await main
-    .getByRole("button", { name: /^Platform Engineering/ })
+    .getByRole("button", { name: /^Payments Core/ })
     .first()
     .click();
   await main
-    .getByRole("heading", { name: "Platform Engineering", exact: true })
+    .getByRole("heading", { name: "Payments Core", exact: true })
     .waitFor();
   await main
-    .getByRole("link", { name: "Jordan Lee", exact: true })
+    .getByRole("link", { name: "Hana Takeda", exact: true })
     .first()
     .click();
   await main
-    .getByText("jordan@aperture-technologies.example", { exact: true })
+    .getByText("hana.takeda@northline-financial.example", { exact: true })
     .waitFor();
 
   // Cache a privileged profile in a second tab, then verify it disappears on a
   // cross-tab switch as well as in the tab initiating the switch.
   const otherTab = await context.newPage();
-  await otherTab.goto(`${base}/people/${casey.id}`);
+  await otherTab.goto(`${base}/people/${director.id}`);
   await otherTab
-    .getByText("casey@aperture-technologies.example", { exact: true })
+    .getByText("tobias.wren@northline-financial.example", { exact: true })
     .waitFor();
   const delaySession = async (route) => {
     await sleep(400);
@@ -113,12 +113,12 @@ try {
     .click();
   await page
     .getByRole("dialog", { name: "Switch demo identity" })
-    .getByRole("button", { name: "Continue as Jordan Lee", exact: true })
+    .getByRole("button", { name: "Continue as Hana Takeda", exact: true })
     .click();
   await main.getByText("Switching identity…", { exact: true }).waitFor();
   assert.equal(
     await main
-      .getByText("jordan@aperture-technologies.example", { exact: true })
+      .getByText("hana.takeda@northline-financial.example", { exact: true })
       .count(),
     0,
   );
@@ -129,18 +129,18 @@ try {
   await otherTab.waitForFunction(
     () =>
       !document.body.textContent.includes(
-        "casey@aperture-technologies.example",
+        "tobias.wren@northline-financial.example",
       ) && !document.querySelector('aside a[href="/teams"]'),
   );
   await otherTab.close();
   assert.equal(
-    await nav.getByRole("link", { name: "Teams", exact: true }).count(),
+    await nav.getByRole("link", { name: /^(My teams|Teams)$/ }).count(),
     0,
   );
-  await get(`users/${casey.id}?view=management`, 403);
-  await get(`users/${maya.id}`, 404);
-  await get(`organizations/${maya.organization.id}`, 404);
-  const coworker = (await get(`users/${casey.id}`)).data;
+  await get(`users/${director.id}?view=management`, 403);
+  await get(`users/${outsider.id}`, 404);
+  await get(`organizations/${outsider.organization.id}`, 404);
+  const coworker = (await get(`users/${director.id}`)).data;
   assert.equal(coworker.visibility, "directory");
   assert.equal("email" in coworker, false);
   await nav
@@ -151,14 +151,14 @@ try {
     .waitFor();
   await main.getByText("profile read self", { exact: true }).waitFor();
   await main
-    .getByRole("link", { name: "Marcus Rivera", exact: true })
+    .getByRole("link", { name: "Elliot Brandt", exact: true })
     .waitFor();
   await main
     .getByText("Unrelated requests, analytics, and unauthorized funding allocations", { exact: true })
     .waitFor();
   assert.equal(
-    (await get(`users/${jordan.id}/reporting-context`)).data.ancestors.some(
-      (p) => p.name === "Ellis Morgan",
+    (await get(`users/${employee.id}/reporting-context`)).data.ancestors.some(
+      (p) => p.name === "Tobias Wren",
     ),
     true,
   );
@@ -181,37 +181,37 @@ try {
   await main
     .getByRole("heading", { name: "Access & permissions", exact: true })
     .waitFor();
-  assert.equal((await get("me")).data.user.id, jordan.id);
+  assert.equal((await get("me")).data.user.id, employee.id);
   console.log(
     "PASS: leadership/employee views, session persistence, limited directory projection, cross-tenant denial, same-tab and cross-tab cache isolation",
   );
 
-  await identity("Marcus Rivera");
+  await identity("Elliot Brandt");
   await nav.getByRole("link", { name: "My teams", exact: true }).click();
   await main
-    .getByRole("heading", { name: "Platform Engineering", exact: true })
+    .getByRole("heading", { name: "Payments Core", exact: true })
     .waitFor();
   await main
-    .getByRole("link", { name: "Jordan Lee", exact: true })
+    .getByRole("link", { name: "Hana Takeda", exact: true })
     .first()
     .click();
   await main
-    .getByText("jordan@aperture-technologies.example", { exact: true })
+    .getByText("hana.takeda@northline-financial.example", { exact: true })
     .waitFor();
-  await get(`users/${casey.id}?view=management`, 403);
+  await get(`users/${director.id}?view=management`, 403);
   await page.screenshot({
     path: `${screenshots}/manager-report-dark.png`,
     fullPage: true,
   });
 
-  await identity("Priya Shah");
+  await identity("Mateo Alvarez");
   assert.equal(
     await nav.getByRole("link", { name: "My teams", exact: true }).count(),
     0,
   );
-  await get(`users/${jordan.id}/reporting-context`, 403);
+  await get(`users/${employee.id}/reporting-context`, 403);
   const projects = (await get("projects?membership=led")).data;
-  const fraud = projects.find((project) => project.slug === "fraud-detection");
+  const fraud = projects.find((project) => project.slug === "fraud-detection-engine");
   await page.goto(`${base}/projects/${fraud.id}`);
   await main
     .getByRole("button", { name: "Edit project", exact: true })
@@ -252,13 +252,13 @@ try {
   await main.getByText("No matching projects", { exact: true }).waitFor();
   await main.getByRole("combobox", { name: "Project status" }).selectOption("");
   await main
-    .getByRole("link", { name: "Fraud Detection Platform", exact: true })
+    .getByRole("link", { name: "Fraud Detection Engine", exact: true })
     .waitFor();
   console.log(
     "PASS: manager report access, project lead boundaries, project filters, authorized project edits and targeted refresh",
   );
 
-  await identity("Jordan Lee");
+  await identity("Hana Takeda");
   const failProjects = (route) =>
     route.fulfill({
       status: 502,
@@ -285,12 +285,12 @@ try {
   await main.getByRole("button", { name: "Try again", exact: true }).click();
   await main.getByText("Updating projects", { exact: true }).waitFor();
   await main
-    .getByRole("link", { name: "Fraud Detection Platform", exact: true })
+    .getByRole("link", { name: "Fraud Detection Engine", exact: true })
     .waitFor();
   await page.unroute(/\/api\/core\/projects\?/, slowProjects);
   await page.goto(`${base}/projects/${fraud.id}`);
   await main
-    .getByRole("heading", { name: "Fraud Detection Platform", exact: true })
+    .getByRole("heading", { name: "Fraud Detection Engine", exact: true })
     .waitFor();
   assert.equal(
     await main
@@ -307,7 +307,7 @@ try {
   );
   await page.setViewportSize({ width: 390, height: 844 });
   await main
-    .getByRole("heading", { name: "Fraud Detection Platform", exact: true })
+    .getByRole("heading", { name: "Fraud Detection Engine", exact: true })
     .waitFor();
   assert.equal(
     await page.evaluate(
@@ -337,26 +337,26 @@ try {
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
 
-  await identity("Maya Chen", "Northstar Labs");
+  await identity("Noor Haddad", "Memento AI");
   overview = (await get("me/overview")).data;
   assert.equal(
     overview.counts.find((item) => item.label === "Employees").value,
-    10,
+    30,
   );
-  await get(`users/${jordan.id}`, 404);
+  await get(`users/${employee.id}`, 404);
   await page.screenshot({
-    path: `${screenshots}/northstar-light.png`,
+    path: `${screenshots}/memento-light.png`,
     fullPage: true,
   });
   const deniedOrigin = await context.request.post(
     `${base}/api/core/demo/sessions`,
     {
       headers: { Origin: "https://evil.example" },
-      data: { user_id: jordan.id },
+      data: { user_id: employee.id },
     },
   );
   assert.equal(deniedOrigin.status(), 403);
-  assert.equal((await get("me")).data.user.id, maya.id);
+  assert.equal((await get("me")).data.user.id, outsider.id);
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await main
     .getByRole("heading", { name: "Enter a workspace", exact: true })

@@ -5,7 +5,7 @@ Kotlin/Spring Boot owns the usage schema and the CLI ingestion pipeline. Spring 
 ```bash
 # From repository root with Compose running:
 docker compose exec usage-engine bin/usage help
-docker compose exec usage-engine bin/usage import /app/demo/fixtures/usage-events-v1.csv --source demo-synthetic-v1
+docker compose exec usage-engine sh -c 'bin/usage import /app/demo/enterprise/generated/demo-seed42/memento-ai/usage-*.csv --source enterprise-memento-v1'
 docker compose exec usage-engine bin/usage list
 docker compose exec usage-engine gradle test
 docker compose exec usage-engine gradle integrationTest

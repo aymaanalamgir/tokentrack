@@ -7,6 +7,9 @@ Rails.application.configure do
   # A database outage must reach the health controller, not fail in migration middleware.
   # Run db:migrate explicitly when adding migrations in later slices.
   config.active_record.migration_error = false
-  config.active_record.verbose_query_logs = true
+  # Compose defaults RAILS_LOG_LEVEL to info: debug SQL logging writes hundreds of MB to the bind-mounted log
+  # during a demo load. Set RAILS_LOG_LEVEL=debug to trace queries.
+  config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "debug").to_sym
+  config.active_record.verbose_query_logs = config.log_level == :debug
   config.hosts << "core-api"
 end

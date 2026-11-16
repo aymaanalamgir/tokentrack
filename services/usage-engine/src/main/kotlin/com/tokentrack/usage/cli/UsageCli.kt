@@ -5,7 +5,6 @@ import com.tokentrack.usage.UsageEngineApplication
 import com.tokentrack.usage.domain.ImportFailure
 import com.tokentrack.usage.pricing.PricingRepository
 import com.tokentrack.usage.pricing.PricingService
-import com.tokentrack.usage.pricing.PricingScenarioGenerator
 import com.tokentrack.usage.delivery.DeliveryWorker
 import com.tokentrack.usage.delivery.OutboxRepository
 import com.tokentrack.usage.delivery.FinancialReconciler
@@ -15,7 +14,6 @@ import com.tokentrack.usage.ingestion.IngestionService
 import com.tokentrack.usage.persistence.UsageRepository
 import com.tokentrack.usage.references.RailsReferenceResolver
 import com.tokentrack.usage.agents.AgentExecutionGenerator
-import com.tokentrack.usage.agents.AgentInsightScenarioGenerator
 import com.tokentrack.usage.agents.AgentExecutionService
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.builder.SpringApplicationBuilder
@@ -28,10 +26,9 @@ import kotlin.system.exitProcess
 
 private val help = """
 TokenTrack usage CLI
-  bin/usage import FILE --source STABLE_SOURCE
+  bin/usage import FILE [FILE ...] --source STABLE_SOURCE   (each file is its own batch)
   bin/usage report BATCH_UUID [--offset 0] [--limit 100]
   bin/usage list
-  bin/usage generate-pricing-scenarios --snapshot FILE.json --output FILE.csv
   bin/usage load-prices [--file CATALOGUE.json]
   bin/usage price [--source SOURCE]
   bin/usage close-rate --id RATE_UUID --until ISO_TIMESTAMP
@@ -42,10 +39,9 @@ TokenTrack usage CLI
   bin/usage snapshot --output FILE.json [--organizations alset,northline-financial,memento-ai]
   bin/usage generate-enterprise-demo --spec FILE.json --snapshot FILE.json --output-dir DIR --seed 42 [--profile demo|smoke] [--start YYYY-MM-DD] [--company slug,...]
   bin/usage generate --snapshot FILE.json --output FILE.csv --seed 42 --from YYYY-MM-DD --to YYYY-MM-DD [--invalid-output FILE.csv]
-  bin/usage agent-import FILE --source STABLE_SOURCE
+  bin/usage agent-import FILE [FILE ...] --source STABLE_SOURCE   (each file is its own batch)
   bin/usage agent-report BATCH_UUID
   bin/usage generate-agent-executions --output FILE.jsonl --seed 42 [--source STABLE_SOURCE] [--invalid-output FILE.jsonl]
-  bin/usage generate-agent-insight-scenarios --snapshot FILE.json --usage-output FILE.csv --executions-output FILE.jsonl --seed 42
 Exit codes: 0 completed/duplicates/report; 2 completed with rejected rows; 3 failed/partial/infrastructure; 64 invalid arguments.
 """.trimIndent()
 
@@ -71,16 +67,14 @@ fun main(args: Array<String>) {
         "agent-import" -> setOf("--source")
         "agent-report" -> emptySet()
         "generate-agent-executions" -> setOf("--output", "--seed", "--source", "--invalid-output")
-        "generate-agent-insight-scenarios" -> setOf("--snapshot","--usage-output","--executions-output","--seed")
         "list", "delivery-report" -> emptySet()
         "load-prices" -> setOf("--file")
         "close-rate" -> setOf("--id","--until")
-        "generate-pricing-scenarios" -> setOf("--snapshot","--output")
         "price", "pricing-report", "reconcile" -> setOf("--source")
         "deliver" -> setOf("--limit", "--workers", "--retry-dead")
         else -> { System.err.println(help); exitProcess(64) }
     }
-    if (!allowed.containsAll(options.keys) || positional.size != (if (command in listOf("import", "report", "agent-import", "agent-report")) 1 else 0)) { System.err.println(help); exitProcess(64) }
+    if (!allowed.containsAll(options.keys) || !(when (command) { "import", "agent-import" -> positional.size in 1..500; "report", "agent-report" -> positional.size == 1; else -> positional.isEmpty() })) { System.err.println(help); exitProcess(64) }
     fun option(name: String) = options[name] ?: throw IllegalArgumentException("Required option $name is missing")
     var exit = 0
     try {
@@ -92,15 +86,15 @@ fun main(args: Array<String>) {
                 fun print(value: Any) = println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value))
                 when (command) {
                     "agent-import" -> {
-                        val result=context.getBean(AgentExecutionService::class.java).importFile(Path.of(positional.single()),option("--source"));print(result)
-                        if(result["batch"].toString().contains("completed_with_rejections"))exit=2
+                        // Several files share one JVM start; each remains an independent, idempotent batch.
+                        val results=positional.map { file -> context.getBean(AgentExecutionService::class.java).importFile(Path.of(file),option("--source")) }
+                        print(results.singleOrNull() ?: results)
+                        if(results.any { it["batch"].toString().contains("completed_with_rejections") })exit=2
                     }
                     "agent-report" -> print(context.getBean(AgentExecutionService::class.java).report(UUID.fromString(positional.single())))
                     "generate-agent-executions" -> print(context.getBean(AgentExecutionGenerator::class.java).generate(Path.of(option("--output")),option("--seed").toLong(),options["--invalid-output"]?.let(Path::of),options["--source"]?:"demo-synthetic-v1"))
-                    "generate-agent-insight-scenarios" -> print(context.getBean(AgentInsightScenarioGenerator::class.java).generate(mapper.readTree(Path.of(option("--snapshot")).toFile()),Path.of(option("--usage-output")),Path.of(option("--executions-output")),option("--seed").toLong()))
                     "generate-enterprise-demo" -> print(context.getBean(EnterpriseDemoGenerator::class.java).generate(mapper.readTree(Path.of(option("--spec")).toFile()), mapper.readTree(Path.of(option("--snapshot")).toFile()),
                         EnterpriseDemoGenerator.Options(option("--seed").toLong(), options["--profile"] ?: "demo", options["--start"]?.let(LocalDate::parse), options["--company"]?.split(",")?.toSet(), Path.of(option("--output-dir")))).let { it - "companies" + mapOf("companies" to (it["companies"] as Map<*, *>).mapValues { (_, v) -> (v as Map<*, *>) - "files" }) })
-                    "generate-pricing-scenarios" -> print(context.getBean(PricingScenarioGenerator::class.java).generate(mapper.readTree(Path.of(option("--snapshot")).toFile()),Path.of(option("--output"))))
                     "close-rate" -> print(context.getBean(PricingRepository::class.java).closeRate(UUID.fromString(option("--id")),java.time.Instant.parse(option("--until"))))
                     "load-prices" -> print(context.getBean(PricingRepository::class.java).loadCatalogue(options["--file"]?.let(Path::of)))
                     "price" -> {
@@ -120,9 +114,13 @@ fun main(args: Array<String>) {
                         exit=when(result["status"]) { "reconciled"->0;"discrepancy"->3;else->2 }
                     }
                     "import" -> {
-                        val result = context.getBean(IngestionService::class.java).importFile(Path.of(positional.single()), option("--source"))
-                        print(mapOf("batch" to result, "errors" to repository.errors(result.id), "rejections" to repository.rejections(result.id)))
-                        exit = when (result.status) { "completed" -> 0; "completed_with_rejections" -> 2; else -> 3 }
+                        // Several files share one JVM start; each remains an independent, idempotent batch.
+                        val results = positional.map { file ->
+                            val result = context.getBean(IngestionService::class.java).importFile(Path.of(file), option("--source"))
+                            exit = maxOf(exit, when (result.status) { "completed" -> 0; "completed_with_rejections" -> 2; else -> 3 })
+                            mapOf("batch" to result, "errors" to repository.errors(result.id), "rejections" to repository.rejections(result.id))
+                        }
+                        print(results.singleOrNull() ?: results)
                     }
                     "report" -> {
                         repository.recoverStale()

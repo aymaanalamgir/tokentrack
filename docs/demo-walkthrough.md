@@ -1,6 +1,6 @@
 # Demo walkthrough
 
-A repeatable tour of TokenTrack on the fictional Aperture Technologies tenant. Every step reads real stored data; nothing is reset between runs. All dates are simulated (2026-11-10 to 2026-12-10), so pick months and ranges inside that window.
+A repeatable tour of TokenTrack on the fictional Northline Financial tenant, with Alset for scale and Memento AI as a second tenant. Every step reads real stored data; nothing is reset between runs. The data covers 2025-11-01 to 2026-11-01 (UTC); pages opened without a range land on the latest recorded month, October 2026.
 
 ## Before you start
 
@@ -9,49 +9,49 @@ docker compose up --build -d
 ./scripts/setup-demo.sh
 ```
 
-Open <http://localhost:3000>. Switch identity at any time from the header menu; each switch creates a real server session with that person's scope.
+Open <http://localhost:3000>. The identity picker opens on Northline Financial; switch identity at any time from the header menu. Each switch creates a real server session with that person's scope.
 
 | Identity | Grants | Use it to show |
 | --- | --- | --- |
-| Olivia Chen (CTO) | Organization viewer, financial operator | The whole tenant, funding, approvals |
-| Marcus Rivera (Engineering Manager) | Platform team manager, Developer Productivity lead, capped allowance delegation | A manager's bounded view and delegated approval |
-| Priya Shah (Product Manager) | Fraud Detection and Customer Analytics lead | Project scope without line-management authority |
-| Jordan Lee (Software Engineer) | Employee | Personal usage, allowance and requests |
+| Amara Lindqvist (CEO) | Organization viewer, project creator | The whole tenant |
+| Gabriel Moreau (CFO) | Financial operator, organization viewer | Funding, transfers, approvals |
+| Elliot Brandt (Payments Core lead) | Team manager, Real-Time Payments Platform lead, $300 allowance delegation | A manager's bounded view and delegated approval |
+| Mateo Alvarez (Fraud Research) | Fraud Detection Engine lead, project creator | Project scope without line-management authority |
+| Hana Takeda (Backend Engineer) | Employee | Personal usage, allowance and requests |
 
-## 1. Leadership overview (Olivia Chen)
+## 1. Leadership overview (Amara Lindqvist, then Gabriel Moreau)
 
-1. Choose **Aperture Technologies → Olivia Chen**. The overview shows the organization structure, teams and projects.
-2. Open **Analytics**. Set the range to 2026-11-01 → 2026-12-11. Point out net expenditure next to the pricing-coverage figure: part of the usage has no supported pricing profile, and its cost is shown as unknown rather than zero.
-3. Scroll to the team, project, model and tool breakdowns. Click a project to drill in; the date range is preserved. Each breakdown reconciles to the same total and they are not meant to be added together.
+1. Choose **Amara Lindqvist**. The overview shows 260 people across 15 departments and three offices; **Organization** opens any department down to its people.
+2. Switch to **Gabriel Moreau** and open **Analytics**. Set the range to 2025-11-01 → 2026-11-01 with monthly granularity: about $51,000 of corrected spend over the year. Point out pricing coverage below 100%: usage on the self-hosted model has no pricing profile, and its cost is shown as unknown rather than zero.
+3. Use **Explore expenditure** to switch between teams, projects, models and tools; selecting a row filters the page. Each breakdown reconciles to the same total, and they are not meant to be added together. **Detailed records** at the bottom holds the full tables and the ledger audit.
 
-## 2. Engineering manager (Marcus Rivera)
+## 2. Manager (Elliot Brandt)
 
-1. Switch to **Marcus Rivera**. Navigation now shows "My teams"; Analytics covers his managed people plus the Developer Productivity project he leads, not the organization.
-2. Open **People** or **My teams** and open a report. Their project memberships are listed while their home team stays Platform Engineering: cross-functional work does not move someone's reporting line.
-3. Open **Budgets** at month 2026-11. Marcus sees employee ceilings for his direct reports with **Manage ceiling**, limited to the cap Olivia delegated (visible to Olivia under "Explicit allowance delegation"). Moving funding needs the separate financial-operator grant, which a manager title does not imply.
+1. Switch to **Elliot Brandt**. Navigation shows "My teams"; Analytics covers Payments Core plus the Real-Time Payments Platform project he leads, not the organization.
+2. Open **My teams** and then Hana. Her project memberships are listed while her home team stays Payments Core: cross-functional work does not move a reporting line.
+3. Open **Budgets** (October 2026). Elliot sees his reports' ceilings with **Manage ceiling**, limited to the $300 cap Gabriel delegated. Moving funding needs the separate financial-operator grant, which a manager title does not imply.
 
-## 3. Employee (Jordan Lee)
+## 3. Employee (Hana Takeda)
 
-1. Switch to **Jordan Lee**. Analytics shows only Jordan's own consumption.
-2. Open **Budgets**, month 2026-11. The personal allowance panel shows the monthly ceiling and the per-project sublimits. **Adjust allocations** rebalances sublimits within the ceiling; an amount above the ceiling disables Save. Sublimits and ceilings are controls, not money: they never change funding.
-3. Open **Requests**. "My requests" lists Jordan's allowance requests with the approver each was routed to and why. **New request** starts another.
+1. Switch to **Hana Takeda**. Analytics shows only her own consumption.
+2. Open **Budgets**. The personal allowance shows her monthly ceiling and per-project sublimits. **Adjust allocations** rebalances sublimits within the ceiling; capacity a project has already used can't be taken away, and an amount above the ceiling disables Save. Sublimits and ceilings are controls, not money.
+3. Open **Requests**. "My requests" lists her $180 allowance request (routed to Elliot, within his cap) and her $450 request (routed to Gabriel because it exceeds the cap, and rejected).
 
 ## 4. Financial approval
 
-1. On a freshly initialized demo the $750 allowance request is pending with Marcus (it is within his delegated cap): switch to **Marcus Rivera → Requests → Pending review**, open it and choose **Approve & execute**. If it is already approved, open it from History instead and show the decision event and the allowance revision it produced.
-2. Switch to **Olivia Chen → Requests → Pending review**. The $1,500 request was routed to her because it exceeds Marcus's cap; project and team funding requests are also hers as financial operator. Approving a funding request executes one balanced transfer in the same transaction as the decision.
-3. Open **Budgets → Funding movement history** to show the resulting transfer with actor and reason. Total authorized funding is unchanged by transfers.
+1. On a freshly loaded demo, the $180 request is pending with Elliot: switch to **Elliot Brandt → Requests → Pending review**, open it and choose **Approve & execute**. It adds an allowance revision and no ledger entry. If it is already approved, open it from History to show the decision event.
+2. Switch to **Gabriel Moreau → Requests → Pending review**. Mateo's $400 Fraud Detection Engine request executes one balanced transfer from the reserve in the same transaction as the decision. His $1,500 request exceeds the reserve's October balance: approving it fails safely and it stays pending with no execution.
+3. Open **Budgets → Funding movement history** to show the transfer with actor and reason. Total authorized funding is unchanged by transfers.
 
 Approving requests is permanent history. To demonstrate without consuming a scenario, open an already-decided request and walk through its event timeline.
 
-## 5. Agent intelligence (Olivia Chen)
+## 5. Agent intelligence (Gabriel Moreau)
 
-1. Open **Agents**. Overview shows runs, outcomes, retries, tokens and corrected cost; a note marks the outcomes as synthetic demo fixtures.
-2. **Efficiency** compares the last 14 recorded days with the 14 before. Expand **Support Summarizer**: its cost per success more than doubled, the exact split shows no volume effect, and the model-mix table shows usage moving to a costlier model. Then look at **Docs Indexer**: runs more than doubled, cost per success is flat, and it has no finding.
-3. **Insights**: filter to "Retry increase". PR Review Assistant's retry rate rose from 4.8% to 23.8%. **Show evidence** lists the recorded attempts and what else changed in the same periods, labelled as not causes. **View supporting runs** opens exactly those executions.
-4. Filter to "Model cost concentration" and show the rate-only comparison: it is labelled hypothetical and lists what it ignores.
-5. Under "Not compared", Incident Scribe has three runs per period and is reported as insufficient data instead of a finding.
-6. Switch to Marcus, then Jordan: the same agents are recomputed from their narrower populations, and agents outside their scope disappear.
+1. Open **Agents**. The overview shows runs, outcomes, retries, tokens and corrected cost, with an agent explorer; outcomes are marked as synthetic.
+2. Open **Insights** with the range 2026-09-01 → 2026-11-01 (compared with the two months before). The Fraud Triage Agent's retry rate rose 10.7 points (12.2% → 23.0%) and the Reconciliation Agent's success rate fell 16.9 points (95.7% → 78.8%). **Show evidence** lists what else changed in the same periods, labelled as not causes; **View supporting runs** opens exactly the retried executions.
+3. On **Efficiency**, expand the Reconciliation Agent's cost drivers: the exact split separates volume from per-run cost.
+4. Every agent also shows a pricing-coverage gap: part of its usage has no price, so its cost is incomplete rather than estimated.
+5. Switch to Elliot, then Hana: the same agents are recomputed from their narrower populations.
 
 ## 6. Financial correctness
 
@@ -61,15 +61,15 @@ docker compose exec usage-engine bin/usage reconcile
 
 - `status: balanced_with_unpriced_usage` means the ledger matches every priced event, and some usage is deliberately unpriced. It is not a discrepancy.
 - `priced_events` equals `posted_events`; `amount_discrepancies`, `duplicate_expenses`, `unbalanced_transfers` and `delivered_missing_postings` are 0.
-- `authorized_adjustment_delta_usd` is the sum of explicit corrections. Originals are never edited: the ledger audit table at the bottom of **Analytics** lists a corrected charge as its original, a reversal and an adjustment.
+- One documented correction (a Memento AI agent charge) shows corrected cost: the ledger audit lists it as the original, a reversal and an adjustment, never an edit.
 - Run `./scripts/setup-demo.sh` again: every import reports duplicates and the totals do not move.
 
-## 7. Enterprise scale (optional)
+## 7. Scale and isolation
 
-After `./scripts/setup-enterprise-demo.sh`, choose **Alset → Nole Perfume** in the identity picker and open Analytics with 2025-11-01 → 2026-11-01 and monthly granularity: twelve months, about $177k of corrected spend, 695 active users across five offices. Explore expenditure by team (AI Research and Data Science lead), then switch to **Northline Financial → Gabriel Moreau** (financial operator) for budgets with real over- and under-used accounts, and **Memento AI → Noor Haddad** for the highest spend per employee. In Agents → Insights, compare month over month with an end date of 2026-08-01 to see Alset's Fleet Diagnostics Agent degrade.
+- Choose **Alset → Nole Perfume** and open Analytics for 2025-11-01 → 2026-11-01: 1,100 people across five offices and about $267,000 of corrected spend. A year of the largest company takes a few seconds to aggregate.
+- Choose **Memento AI → Noor Haddad**: a 30-person startup with the highest spend per employee. Nothing from Northline or Alset is visible from here.
 
 ## Tips
 
-- If a page looks empty, check the month or date range is inside the simulated window.
-- December's Fraud Detection project account is intentionally small and shows a budget warning; recorded spend is never dropped when a limit is exceeded.
-- Northstar Labs (Maya Chen) is a second tenant for showing that nothing crosses organizations.
+- If a page looks empty, check the month or range is inside 2025-11 → 2026-10.
+- Budget overruns are real: spend is never dropped when an account exceeds its plan.

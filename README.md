@@ -10,7 +10,7 @@ Built as a portfolio-quality systems project, it emphasizes the parts that tend 
 
 - A complete TypeScript, Ruby, Kotlin, and PostgreSQL application—not a static dashboard.
 - Role-aware product experiences for leadership, managers, project leads, and employees.
-- Canonical usage ingestion with validation, durable diagnostics, deduplication, and deterministic synthetic fixtures.
+- Canonical usage ingestion with validation, durable diagnostics, deduplication, and a deterministic synthetic workload generator.
 - Effective-dated AI pricing with precise decimal arithmetic and immutable price provenance.
 - An append-only, corrected financial ledger with idempotent delivery and reconciliation.
 - Project-first cost attribution that supports cross-functional work without double-counting expenditure.
@@ -40,7 +40,7 @@ flowchart LR
   Web -->|HTTP-only demo session| Rails[Rails API]
   Rails -->|scoped aggregate request<br/>separate service token| Kotlin[Kotlin / Spring Boot]
   Kotlin -->|reference validation<br/>separate service token| Rails
-  Fixtures[Usage CSV + execution JSONL] -->|CLI import| Kotlin
+  Generator[Generated usage CSV + execution JSONL] -->|CLI import| Kotlin
   Kotlin -->|priced usage, idempotent delivery| Rails
   Rails --> Business[(PostgreSQL<br/>business schema)]
   Kotlin --> Usage[(PostgreSQL<br/>usage schema)]
@@ -90,7 +90,7 @@ docker compose up --build -d
 ./scripts/setup-demo.sh
 ```
 
-`setup-demo.sh` applies migrations, seeds the two fictional organizations, creates synthetic funding, imports and prices usage, delivers it to the ledger, imports agent executions, creates budget and request examples, and finishes with a reconciliation summary. It is idempotent: run it again at any time and nothing is duplicated or reset. The individual commands it runs are documented in [development](docs/development.md).
+`setup-demo.sh` applies migrations, seeds the three fictional companies, generates twelve months of synthetic usage and agent runs, creates monthly funding through the normal financial operations, imports, prices and delivers the usage to the ledger, adds spending controls and requests, and finishes with a reconciliation summary. It is idempotent: a second run replays every import as duplicates and changes nothing. A full load takes roughly 10–15 minutes; `--profile smoke` loads a ~10% subset in a few minutes.
 
 | Service | Address |
 | --- | --- |
@@ -99,17 +99,9 @@ docker compose up --build -d
 | Kotlin health | <http://localhost:8080/actuator/health> |
 | PostgreSQL | `localhost:5432` |
 
-Open the app and select a fictional organization and identity. The local demo session is HTTP-only and Rails disables demo authentication in production mode. All demo data is simulated for 2026-11-10 to 2026-12-10, so choose months and date ranges in that window.
+Open the app and select a fictional organization and identity. The local demo session is HTTP-only and Rails disables demo authentication in production mode. The demo covers twelve simulated months, 2025-11-01 to 2026-11-01 (UTC); views without an explicit range open on the most recent recorded month.
 
 Stop the stack with `docker compose down`. The PostgreSQL volume persists unless explicitly removed.
-
-### Optional: enterprise-scale companies
-
-```bash
-./scripts/setup-enterprise-demo.sh --profile demo     # or --profile smoke for a ~10% quick load
-```
-
-Adds three more fictional companies with twelve months of history (2025-11-01 to 2026-10-31): **Alset** (750 people, EV and hardware, five offices), **Northline Financial** (175, Toronto fintech) and **Memento AI** (18, New York startup). About 100,000 usage events and 16,000 agent runs flow through the same validation, pricing, delivery and ledger as everything else. Use one profile per database. See [enterprise demo data](docs/enterprise-demo-data.md).
 
 ## Demo walkthrough
 
@@ -117,12 +109,15 @@ Adds three more fictional companies with twelve months of history (2025-11-01 to
 
 ## Demo identities and access model
 
-The demo includes two fictional tenants:
+The demo includes three fictional companies, defined in [demo/enterprise/companies-v1.json](demo/enterprise/companies-v1.json) and described in [enterprise demo data](docs/enterprise-demo-data.md):
 
-- **Aperture Technologies** — a larger multi-team organization with cross-functional projects.
-- **Northstar Labs** — a smaller organization for contrasting scopes and structures.
+| Company | People | Profile |
+| --- | --- | --- |
+| **Alset** | 1,100 | Global EV, hardware and technology company; Austin HQ with Palo Alto, Toronto, Berlin and Shanghai offices |
+| **Northline Financial** | 260 | Toronto payments and fintech company with Montreal and New York groups |
+| **Memento AI** | 30 | New York startup building AI meeting intelligence |
 
-Try Olivia Chen (organization viewer), Marcus Rivera (team manager), Priya Shah (project lead), and Jordan Lee (employee). Their views differ because every request is evaluated by Rails `AccessPolicy`; navigation and client state are not authorities.
+Northline Financial carries the role scenarios: Amara Lindqvist (CEO, organization viewer), Gabriel Moreau (CFO, financial operator), Elliot Brandt (Payments Core team manager and project lead), Mateo Alvarez (Fraud Detection Engine project lead), Hana Takeda (engineer) and Iris Calloway (designer). Alset (Nole Perfume, CEO) shows scale; Memento AI (Noor Haddad, founder) is a second tenant for isolation. Their views differ because every request is evaluated by Rails `AccessPolicy`; navigation and client state are not authorities.
 
 - Organization viewers can inspect their tenant’s organizational reporting data.
 - Managers see their managed people and unit scope, not the organization by default.
@@ -176,7 +171,7 @@ The last recorded run is in [docs/verification/final-results.md](docs/verificati
 - **Append-only money.** Corrections are new reversal and adjustment transactions; reconciliation proves the ledger against priced usage instead of trusting it.
 - **Limits are not funding.** Personal ceilings and project sublimits are controls that warn; only transfers move funding, and spend is recorded even past a limit.
 - **Deterministic insights.** Agent findings are threshold rules with evidence and sample-size states. They report measured change, never a cause or a prediction.
-- **Demo over generality.** Identity is a local persona picker, data is synthetic and date-anchored, and aggregates are direct SQL sized for a small dataset.
+- **Demo over generality.** Identity is a local persona picker, data is synthetic and date-anchored, and aggregates are direct SQL: fine for the demo's ~165,000 events, though a year of the 1,100-person company takes a few seconds to aggregate.
 
 ## Repository guide
 
@@ -186,7 +181,7 @@ frontend/               Next.js application and browser checks
 services/core-api/      Rails API, policies, finance, requests, RSpec
 services/usage-engine/  Kotlin ingestion, pricing, analytics, Flyway, JUnit
 contracts/              Versioned service and import contracts
-demo/                   Fictional organizations, generators, and fixtures
+demo/                   Fictional company spec, spec builder and synthetic pricing
 docs/                   Architecture, development, metric definitions, verification
 infra/                  PostgreSQL bootstrap and local infrastructure
 ```
@@ -210,6 +205,6 @@ Productionizing it would require a real identity provider, secret management and
 - [Slice 10 report: integration and reliability](docs/slice10.md)
 - [Demo walkthrough](docs/demo-walkthrough.md)
 - [Final verification results](docs/verification/final-results.md)
-- [Enterprise demo data](docs/enterprise-demo-data.md)
+- [Demo data: companies, workload and funding](docs/enterprise-demo-data.md)
 - [UI conventions](docs/ui-conventions.md)
 - [Demo guide](demo/README.md)

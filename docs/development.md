@@ -75,31 +75,17 @@ Stop the Compose frontend first to free port 3000. Host Rails uses Ruby 3.4, a P
 
 Rebuild after adding the backend credential: `docker compose up --build -d`. The usage role already owns the usage schema in development/test databases. Flyway creates its history and versioned tables inside that schema with create-schemas=false and clean disabled. No administrator credential is given to Kotlin. Migrations remain under `services/usage-engine/src/main/resources/db/migration`; introduce a new version rather than editing an applied migration. Rails structure.sql remains business-only.
 
-Export current fictional references and generate a deterministic dataset:
+The demo workload is generated from the company spec and a Rails snapshot (see [demo data](enterprise-demo-data.md)):
 
 ```bash
-demo/generators/generate-usage.sh 2026-11-10 2026-12-10 42
-# Explicit alternative steps:
-docker compose exec usage-engine bin/usage snapshot --output /app/demo/fixtures/organization-snapshot-v1.json
-docker compose exec usage-engine bin/usage generate \
-  --snapshot /app/demo/fixtures/organization-snapshot-v1.json \
-  --output /app/demo/fixtures/usage-events-v1.csv \
-  --invalid-output /app/demo/fixtures/usage-events-invalid-v1.csv \
-  --seed 42 --from 2026-11-10 --to 2026-12-10
-```
-
-Dates are explicit UTC start-inclusive/end-exclusive. Choose a window that overlaps the snapshot's recorded joined_at/left_at periods to generate project attribution. Missing earlier membership history produces unassigned generated activity; existing memberships are never backdated. Currently archived projects are omitted from generated project choices, although the validator can accept their historical events. A saved snapshot, generator version, seed, and dates reproduce identical CSV records; the adjacent manifest records the snapshot hash and coverage. Re-exporting changed organizational data changes the input. The default simulation uses fictional future dates deliberately, rather than pretending the newly seeded membership existed for the previous month.
-
-```bash
-docker compose exec usage-engine bin/usage import /app/demo/fixtures/usage-events-v1.csv --source demo-synthetic-v1
+./scripts/generate-enterprise-demo.sh --profile demo --seed 42
+docker compose exec usage-engine sh -c 'bin/usage import /app/demo/enterprise/generated/demo-seed42/memento-ai/usage-*.csv --source enterprise-memento-v1'
 # Run the same command again: zero inserts, existing events counted as duplicates.
 docker compose exec usage-engine bin/usage list
 docker compose exec usage-engine bin/usage report BATCH_UUID --offset 0 --limit 100
-# Expected exit 2: valid rows persist alongside validation failures.
-docker compose exec usage-engine bin/usage import /app/demo/fixtures/usage-events-invalid-v1.csv --source demo-validation-v1
-# Expected exit 3: complete preceding rows persist; unsafe quoting stops scanning.
-docker compose exec usage-engine bin/usage import /app/demo/fixtures/usage-events-malformed-v1.csv --source demo-malformed-v1
 ```
+
+`import` and `agent-import` accept several files in one call (one JVM start); each file is still its own batch with its own report. A completed import with rejected rows exits 2; a malformed or partial import exits 3, keeping the complete rows read before the problem. The Kotlin ingestion tests cover invalid, duplicate, conflicting and malformed input against PostgreSQL.
 
 CLI stdout contains structured JSON; compiler/runtime diagnostics go to stderr. bin/usage compiles using the container's pinned Gradle/JDK and launches a non-web process with DevTools restart disabled. Database migrations also apply in the CLI. Use bin/usage help without connecting to the database. Exit 0 means success (including identical duplicates); 2 means completed with rejected rows; 3 means partial/fatal/infrastructure failure; 64 means invalid arguments or unknown report batch. No upload endpoint or new dashboard exists.
 
@@ -199,7 +185,7 @@ Both seed/reset require demo mode in development/test. All organizational/projec
 
 Slice 3 migration `20261109000100` preserves existing IDs, adds creator/restore metadata and membership periods, and checks administrator integrity with deferred PostgreSQL triggers. Its rollback is intentionally irreversible: multiple historical periods must be reconciled before restoring the old all-time uniqueness rule. Review/back up real data before adapting demo migrations outside this local workflow.
 
-Project creation requires an organization-scoped `project_creator` grant; seed identities Olivia/Maya/Priya have one. Existing `project_lead` grants explicitly authorize staffing/lifecycle/transfer on that project. `owner` and `lead` membership labels alone do not. Archived projects are read-only until restored. Use the UI to transfer before removing the final administrator. The API has no project-delete action. Browser project checks retain an archived `Slice 3 Collaboration ...` review project/history, restore Priya's administration, and close other contributors' periods. Repeated runs add review projects; `demo:reset` deliberately removes all demo edits if a clean fixture set is needed.
+Project creation requires an organization-scoped `project_creator` grant; the seed gives one to each company's leader and project-lead persona (for example Amara Lindqvist and Mateo Alvarez). Existing `project_lead` grants explicitly authorize staffing/lifecycle/transfer on that project. `owner` and `lead` membership labels alone do not. Archived projects are read-only until restored. Use the UI to transfer before removing the final administrator. The API has no project-delete action. Browser project checks retain an archived `Slice 3 Collaboration ...` review project/history, restore Mateo's administration, and close other contributors' periods. Repeated runs add review projects; `demo:reset` deliberately removes all demo edits if a clean fixture set is needed.
 
 The development migration-check middleware is disabled so a database outage can always reach the health controller and return structured JSON. Run migration commands explicitly after adding migrations. Avoid `db:reset`, `db:create`, or `db:drop` with the restricted application role. Flyway now manages Kotlin tables; do not edit database initialization SQL or Rails snapshots for usage changes.
 
@@ -237,183 +223,58 @@ Destructive volume resets and host-native service commands were not executed dur
 - **Gradle cache/build problems:** stop usage-engine, then remove only `tokentrack_usage_gradle` or `tokentrack_usage_build` and rebuild. Do not delete the database volume to repair a build.
 - **Credentials in logs:** do not print `.env`, run interpolated `docker compose config` in shared logs, or share connection URLs containing passwords. `docker compose config --quiet` validates without printing values.
 
-## Slice 5 pricing and finance operations
-
-Existing `.env` files need a newly generated `USAGE_FINANCIAL_TOKEN` (at least 32 characters); keep it independent from `USAGE_REFERENCE_TOKEN`. Recreate backend containers with `docker compose up -d` after editing environment. Neither token belongs in frontend variables. Rails migration commands above apply financial tables; Kotlin startup/CLI applies Flyway V2–V5. Never edit applied migration files or reset the database to install this slice.
-
-```bash
-docker compose exec core-api env MONTHS=2026-11,2026-12 bin/rails finance:demo_setup
-docker compose exec usage-engine bin/usage load-prices
-docker compose exec usage-engine bin/usage price --source demo-synthetic-v1
-demo/generators/generate-pricing-scenarios.sh
-docker compose exec usage-engine bin/usage import /app/demo/fixtures/pricing-scenarios-v1.csv --source demo-pricing-scenarios-v1
-docker compose exec usage-engine bin/usage price --source demo-pricing-scenarios-v1
-docker compose exec usage-engine bin/usage pricing-report
-docker compose exec usage-engine bin/usage deliver --limit 10000 --workers 4
-docker compose exec usage-engine bin/usage delivery-report
-docker compose exec usage-engine bin/usage reconcile
-```
-
-`price` processes only unpriced records. It never rewrites usage or existing price snapshots. `load-prices --file /app/custom.json` loads explicit additional catalogue records, rejecting conflicting existing IDs. See [schedule closure](model-pricing.md). Commands emit JSON; pricing/reconciliation exit 2 can indicate deliberately unsupported/unpriced coverage, while discrepancy exits 3. Delivery exit 2 reports retry/dead work. Due retries need another explicit worker invocation; no daemon is scheduled. After repairing permanent failures, `deliver --retry-dead true` explicitly starts another bounded cycle while preserving history.
-
-Demo setup prints actor/account UUIDs. Copy the desired own-tenant values into these local trusted operations; the actor must have explicit financial_operator authority:
-
-```bash
-docker compose exec core-api env ACTOR_ID=ACTOR_UUID MONTH=2026-11 bin/rails finance:report
-docker compose exec core-api env ACTOR_ID=ACTOR_UUID ACCOUNT_ID=RESERVE_UUID MONTH=2026-11 AMOUNT=1000 REQUEST_KEY=unique-funding-key REASON='Explicit demo funding' bin/rails finance:fund
-docker compose exec core-api env ACTOR_ID=ACTOR_UUID FROM_ACCOUNT_ID=UNIT_ACCOUNT_UUID TO_ACCOUNT_ID=PROJECT_ACCOUNT_UUID MONTH=2026-11 AMOUNT=3000 REQUEST_KEY=unique-transfer-key REASON='Project allocation' bin/rails finance:transfer
-docker compose exec core-api env ACTOR_ID=ACTOR_UUID TRANSACTION_ID=CHARGE_UUID AMOUNT=0.1 REQUEST_KEY=unique-correction-key REASON='Explicit synthetic correction' bin/rails finance:correct
-```
-
-Omit AMOUNT for reversal without replacement. Money inputs are decimal strings, never float arithmetic. Reuse a request key only for the identical operation. Normal seeds do not create finance grants/accounts. Demo reset now refuses financial history; preserve the volume and audit trail. There is no public correction endpoint.
-
-```bash
-docker compose exec core-api bin/rails zeitwerk:check
-docker compose exec core-api bundle exec rspec
-docker compose exec usage-engine gradle test integrationTest
-```
-
-Integration tests require the existing isolated test database and real PostgreSQL. Test cleanup is tenant/source scoped; development financial records are never removed. [Slice 5 verification](slice5.md) distinguishes successful financial reconciliation from incomplete pricing coverage.
-
-## Slice 6 analytics
-
-Add a separately generated `USAGE_ANALYTICS_TOKEN` to existing ignored `.env` files (`openssl rand -hex 32`). It must differ from the reference and financial credentials. Compose passes it only to the two backends; Rails uses `USAGE_ANALYTICS_URL=http://usage-engine:8080`. Recreate backend containers after environment changes.
-
-```bash
-docker compose up -d
-docker compose exec core-api bin/rails db:migrate
-docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
-docker compose exec core-api bin/rails analytics:demo_access
-```
-
-Kotlin startup applies additive Flyway V6 reporting indexes; Rails adds reporting indexes and explicit unit/project budget reader roles. Demo access adds read grants only to flagged demo identities in demo organizations, and is disabled outside local demo mode. It changes no funding, expenses, canonical events or historical snapshots. The existing financial setup remains a separate explicit action.
-
-Open `/analytics` as Olivia/Maya, Marcus, Priya and Jordan to compare organization, combined managed/led-project, project-lead and self scopes. The default follows the actual recorded data end rather than today's date. Project/account views explicitly distinguish attribution from funding. Reader grants do not authorize financial mutations. Ordinary growth percentages are suppressed when either comparison period is outside the recorded window.
-
-```bash
-docker compose exec core-api bundle exec rspec
-docker compose exec usage-engine gradle test integrationTest
-docker compose exec frontend npm run lint
-docker compose exec frontend npm run typecheck
-docker compose exec frontend npm test
-# In the existing Playwright container workflow, also run:
-npm run test:analytics
-```
-
-The browser suite needs access to both the frontend and internal usage-engine hostname to verify internal authentication denial; use the existing `tokentrack_default` network and pinned Playwright 1.56.1 image. It exports authorized report JSON only on explicit user action. Tests capture desktop dark/mobile light screenshots and exercise identity switching, date/granularity/drill-down, correction totals, authorization and loading/error/empty states. Browser management tests leave their usual archived review project.
-
-[Analytics contract](analytics-contract.md) specifies exact GET/internal parameters, bounds, response fields and metric semantics. [Slice 6 report](slice6.md) lists actual latency measurements and reconciliation. Do not reset either financial or canonical usage data to install or demonstrate analytics.
-
-## Slice 7 budgets and allowances
-
-Apply the additive business migrations; Kotlin schema/pricing/ingestion needs no Slice 7 changes. Preserve the existing data volume and uncommitted Slice 6 work.
-
-```bash
-docker compose up -d
-docker compose exec core-api bin/rails db:migrate
-docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
-docker compose exec core-api bin/rails budgets:demo_setup
-```
-
-Setup creates Jordan's explicit 500 USD ceiling and initial 250/150 project partitions for existing demo months, Sofia's explicitly small control scenario using existing actual expense, and Marcus's capped direct-report delegation. It creates no financial funding transaction. Repeating setup preserves existing user-edited controls and the original delegation audit record. Normal organizational seeds still grant no financial mutation authority.
-
-For a visibly small project allocation while preserving all expenses and total organization funding:
-
-```bash
-docker compose exec -e SMALL_BUDGET_SCENARIO=true core-api bin/rails budgets:demo_setup
-```
-
-This optional command appends an idempotent transfer of unused December Fraud Detection funding back to reserve, retaining approximately 95% utilization. It changes allocation, not expense, and labels the reason in the financial audit. No usage inflation or ledger reset is performed.
-
-Open `/budgets?month=2026-11` as Jordan, Marcus, Priya and Olivia. Test allocation editing, explicit delegation boundaries, project-scoped contributor views and reviewed transfers. December demonstrates the high-utilization/run-rate scenario; the as-of comes from recorded usage dates. Month and forecast as-of filters are explicit. Full-month totals remain distinct from the forecast-only cutoff.
-
-Optional global warning settings in `.env`: `BUDGET_WARNING_APPROACHING_PERCENT=75` and `BUDGET_WARNING_HIGH_PERCENT=90`. Compose forwards them only to Rails; recreate core-api after changes. Configuration must satisfy 0 < approaching < high < 100. Do not scatter thresholds into client components.
-
-```bash
-docker compose exec core-api bundle exec rspec
-docker compose exec usage-engine gradle test integrationTest --rerun-tasks
-docker compose exec frontend npm run lint
-docker compose exec frontend npm run typecheck
-docker compose exec frontend npm test
-# Existing pinned Playwright container/network workflow:
-npm run test:budgets
-# Existing reconciliation:
-docker compose exec usage-engine bin/usage reconcile
-```
-
-The budget browser suite performs real authorized local transfers, including one stable-key 3,000 USD demonstration and a new 3 USD reviewed UI transfer per run. It also creates immutable control revisions. Rerunning it preserves old history and may append another distinct reviewed 3 USD action; total funding and expenditure remain conserved. Financial request replay with the same key never duplicates its effect. Backend concurrency tests use only isolated test tenants and guarded test-only cleanup.
-
-[Budget/allowance contract](budget-allowances.md) defines precise bodies, permissions, bounds, warnings and forecasts. [Slice 7 report](slice7.md) records actual observed results. Do not reset organizations with financial or spending-control history.
-
-## Slice 8 requests and approvals
-
-Apply the additive request migrations after Slice 7, preserving all ledger and allowance history:
-
-```bash
-docker compose exec core-api bin/rails db:migrate
-docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
-docker compose exec core-api bin/rails requests:demo_setup
-```
-
-The setup is local-demo-only and idempotent. It creates submitted request/audit records and one rejected scenario; it does not reset usage, create reserve funding, or approve the pending financial examples. Open `/requests?month=2026-11`, switch among Jordan, Marcus, Priya, Olivia, and Sofia, and exercise the role-specific workflow. A failed approval remains pending with no partial execution.
-
-```bash
-docker compose exec core-api bundle exec rspec
-docker compose exec usage-engine ./gradlew test integrationTest --rerun-tasks
-docker compose exec frontend npm run lint
-docker compose exec frontend npm run typecheck
-docker compose exec frontend npm test
-docker compose exec frontend npm run test:requests
-docker compose exec usage-engine bin/usage reconcile
-```
-
-Reconciliation exits with its documented incomplete-pricing status while the ledger is balanced if intentionally unsupported/unrated events remain. Inspect the JSON integrity counters rather than treating those unpriced events as a request failure. The [Slice 8 report](slice8.md) defines routing, API, atomic execution, current results, and limitations. Demo reset refuses append-only request history.
-
-## One-command demo and verification (Slice 10)
+## Demo data, pricing and finance operations
 
 ```bash
 docker compose up --build -d
-./scripts/setup-demo.sh     # idempotent; exit 0 ready, 1 a step failed, 69 a service is unavailable
-./scripts/verify.sh         # or: frontend | backend | browser
-```
-
-`setup-demo.sh` runs the commands documented in the sections below, in this order: Rails migrations (development and test), seeds, `finance:demo_setup`, `analytics:demo_access`, `load-prices` (catalogue and agent-scenario mappings), the three usage imports, `price` per source, `deliver`, both `agent-import`s, `budgets:demo_setup` with `SMALL_BUDGET_SCENARIO=true`, `requests:demo_setup`, `agents:demo_correction`, then `reconcile`. It imports the checked-in fixtures and never regenerates them. Each step's output is kept in a temporary log directory printed on the first line. Set `DOCKER_COMPOSE` to target another Compose project, and `DOCKER` / `PLAYWRIGHT_IMAGE` for `verify.sh`.
-
-`price` and `reconcile` exit 2 because the demo deliberately contains unpriced usage; the script accepts that and fails on anything else, including any non-zero discrepancy counter.
-
-Seeded fixture memberships start at the fixed fictional time 2026-11-07 UTC so the simulated events validate whenever the database is created. Memberships created through the application still record the real time.
-
-Browser suites must run with `requests` before `budgets` on a fresh demo (the budgets workflow revises an allowance that a pending request depends on); `verify.sh` does this. The frontend development container has no browser, so use `verify.sh browser` or the Playwright image command below rather than `docker compose exec frontend npm run test:…`.
-
-## Enterprise demo companies
-
-```bash
-docker compose up -d                                   # recreates core-api with the read-only ./demo mount
-./scripts/generate-enterprise-demo.sh --profile smoke   # seed companies + write files only
-./scripts/setup-enterprise-demo.sh --profile demo       # full load: generate, fund, import, price, deliver, agents, controls, reconcile
+./scripts/setup-demo.sh                # idempotent; exit 0 ready, 1 a step failed, 64 bad arguments, 69 a service is unavailable
+./scripts/setup-demo.sh --profile smoke   # ~10% subset; use one profile per database
+./scripts/verify.sh                    # or: frontend | backend | browser
 docker compose exec core-api bin/rails enterprise_demo:summary
 ```
 
-`demo/enterprise/companies-v1.json` is the single source for both services: Rails expands it into units, people, reporting lines, dated project memberships, grants and the funding plan (`enterprise_demo:seed`, `:fund`, `:controls`); Kotlin reads it with the Rails snapshot (`bin/usage snapshot --organizations …`) to write the workload (`bin/usage generate-enterprise-demo`). Edit the spec, not generated files. Start date is configurable only on a database that has not yet seeded these companies, because membership dates are recorded once and never rewritten. Funding is keyed by profile and refuses a second profile in the same database.
+`setup-demo.sh` runs, in order: Rails migrations (development and test), `generate-enterprise-demo.sh` (seed, snapshot, generate), `load-prices` (catalogue and synthetic historical rates), `enterprise_demo:fund`, one `import` per company, `price` per source, `deliver` until the outbox drains, one `agent-import` per company, `enterprise_demo:controls`, `agents:demo_correction`, then `reconcile` with zero-discrepancy checks. Each step's output is kept in a temporary log directory printed on the first line. Set `DOCKER_COMPOSE` to target another Compose project, and `DOCKER` / `PLAYWRIGHT_IMAGE` for `verify.sh`.
 
-## Slice 9B agent insights
+`demo/enterprise/companies-v1.json` (built by `demo/enterprise/build-spec.py`) is the single source for both services: Rails expands it into units, people, reporting lines, dated project memberships, grants and the funding plan (`enterprise_demo:seed`, `:fund`, `:controls`; `COMPANY=slug` limits them); Kotlin reads it with the Rails snapshot to write the workload. The start date is configurable only before the companies are seeded, because membership dates are recorded once and never rewritten.
 
-Apply the additive receipts index (`docker compose exec core-api bin/rails db:migrate`, and again with `-e RAILS_ENV=test`), restart the usage engine, then load the scenario source with the commands in [slice9b.md](slice9b.md#demo-scenarios). Thresholds are under `tokentrack.agent-insights` in the usage engine's `application.yml`; `AGENT_INSIGHTS_MIN_RUNS` and `AGENT_INSIGHTS_MIN_RUNS_LIMITED` override the sample sizes. Browser check:
+`price` processes only unpriced records and never rewrites usage or existing price snapshots; it exits 2 because the demo deliberately includes a self-hosted model with no pricing profile. `load-prices --file /app/custom.json` loads additional catalogue records and rejects conflicting IDs (see [schedule closure](model-pricing.md)). Delivery exit 2 reports retry or dead work; due retries need another `deliver`, and `deliver --retry-dead true` starts another bounded cycle after a permanent failure is repaired. `reconcile` exits 2 for "balanced with unpriced usage" and 3 for a discrepancy.
+
+Local trusted financial operations (the actor needs an explicit financial_operator grant, for example Northline's Gabriel Moreau):
+
+```bash
+docker compose exec core-api env ACTOR_ID=ACTOR_UUID MONTH=2026-10 bin/rails finance:report
+docker compose exec core-api env ACTOR_ID=ACTOR_UUID ACCOUNT_ID=RESERVE_UUID MONTH=2026-10 AMOUNT=1000 REQUEST_KEY=unique-funding-key REASON='Explicit demo funding' bin/rails finance:fund
+docker compose exec core-api env ACTOR_ID=ACTOR_UUID FROM_ACCOUNT_ID=UNIT_ACCOUNT_UUID TO_ACCOUNT_ID=PROJECT_ACCOUNT_UUID MONTH=2026-10 AMOUNT=300 REQUEST_KEY=unique-transfer-key REASON='Project allocation' bin/rails finance:transfer
+docker compose exec core-api env ACTOR_ID=ACTOR_UUID TRANSACTION_ID=CHARGE_UUID AMOUNT=0.1 REQUEST_KEY=unique-correction-key REASON='Explicit synthetic correction' bin/rails finance:correct
+```
+
+Omit AMOUNT for a reversal without replacement. Money inputs are decimal strings. Reuse a request key only for the identical operation. Demo reset refuses organizations with financial, request or spending-control history; preserve the volume and audit trail.
+
+Optional budget warning thresholds in `.env`: `BUDGET_WARNING_APPROACHING_PERCENT=75` and `BUDGET_WARNING_HIGH_PERCENT=90` (0 < approaching < high < 100; recreate core-api after changes). Agent insight thresholds are under `tokentrack.agent-insights` in the usage engine's `application.yml`; `AGENT_INSIGHTS_MIN_RUNS` and `AGENT_INSIGHTS_MIN_RUNS_LIMITED` override the sample sizes.
+
+## Tests
+
+```bash
+docker compose exec core-api bin/rails zeitwerk:check
+docker compose exec core-api bundle exec rspec          # seeds Northline Financial and Memento AI into the test database
+docker compose exec usage-engine gradle test integrationTest
+docker compose exec frontend npm run lint
+docker compose exec frontend npm run typecheck
+docker compose exec frontend npm test
+./scripts/verify.sh browser                              # Playwright suites in the pinned image
+```
+
+Rails specs address people by persona (`person("employee")` is Hana Takeda at Northline; see `spec/support/demo_helpers.rb`). Kotlin integration tests use the isolated test database and clean up only their own records.
+
+Browser suites run against the loaded development demo (Northline Financial, October 2026) and must run with `requests` before `budgets`: the budgets workflow revises Hana's allowance, which a pending request depends on. `verify.sh` keeps that order. They write real local history by design: an archived review project per run, immutable allowance revisions, an idempotent 25 USD and a new 3 USD reviewed transfer per budgets run, and the approvals the requests workflow performs. The frontend development container has no browser; use `verify.sh browser` or:
 
 ```bash
 docker run --rm --network tokentrack_default -e BASE_URL=http://frontend:3000 \
   -v "$PWD/frontend:/app" -w /app mcr.microsoft.com/playwright:v1.56.1-noble npm run test:agent-insights
 ```
 
-## Slice 9A agent execution tracking
+## Docker resource notes
 
-Restart Kotlin to apply Flyway v7/v8, then generate the execution JSONL from the canonical usage rows already carrying run IDs:
-
-```bash
-docker compose restart usage-engine
-demo/generators/generate-agent-executions.sh 42 demo-synthetic-v1
-docker compose exec usage-engine bin/usage agent-import /app/demo/fixtures/agent-executions-v1.jsonl --source demo-synthetic-v1
-docker compose exec usage-engine bin/usage agent-import /app/demo/fixtures/agent-executions-invalid-v1.jsonl --source demo-synthetic-v1
-```
-
-The invalid import exits 2 with a stored rejection. Exact valid replay reports duplicates. Run `docker compose exec usage-engine ./gradlew integrationTest --tests com.tokentrack.usage.agents.AgentExecutionPostgresTest`, `docker compose exec core-api bundle exec rspec spec/requests/agents_spec.rb`, and `docker compose exec frontend npm run test:agents`. The browser never receives the internal analytics token and cannot proxy Kotlin's internal route.
+- Every `bin/usage` call starts a JVM with a Spring context (~2 s). It skips Gradle's ~5 s up-to-date check when no source or build file is newer than the last compile; set `USAGE_CLI_REBUILD=1` to force it.
+- Rails logs at `info` in Compose (`RAILS_LOG_LEVEL`); `debug` writes every SQL statement to the bind-mounted log, hundreds of MB per demo load. `RAILS_MAX_THREADS` (default 5) sets Puma threads and the database pool.
+- The stack needs about 2 GB of memory when idle and more while loading. Docker Desktop's default 8 GB fits one stack; a second Compose project at the same time can push the VM into out-of-memory kills (exit 137), so stop one with `docker compose -p NAME down` first.

@@ -39,24 +39,20 @@ module Api
 
         def demo_snapshot
           return head :not_found unless DemoSession.enabled?
-          # Export only flagged fictional fixture identities and their recorded
-          # history. IDs are exported from Rails, never reconstructed in Kotlin.
-          # Default: the original fixture tenants' flagged identities (unchanged). With ?organizations=, the named
-          # enterprise demo tenants and all their active (fictional) people, plus Rails-owned fixture references.
-          enterprise = params[:organizations].to_s.split(",").map(&:strip).reject(&:blank?)
-          return head :bad_request unless enterprise.size <= 20 && enterprise.all? { |slug| slug.match?(/\A[a-z0-9-]{1,64}\z/) }
-          spec = EnterpriseDemo.spec if enterprise.any? || File.exist?(EnterpriseDemo::SPEC_PATH)
-          enterprise_slugs = spec ? EnterpriseDemo.slugs(spec) : []
-          return head :bad_request unless (enterprise - enterprise_slugs).empty?
-          organizations = Organization.where(demo: true).order(:id)
-          organizations = enterprise.any? ? organizations.where(slug: enterprise) : organizations.where.not(slug: enterprise_slugs)
+          # Export the flagged fictional demo tenants (optionally ?organizations=slug,slug), their active people,
+          # recorded membership periods and Rails-owned fixture references. IDs are exported from Rails, never
+          # reconstructed in Kotlin.
+          requested = params[:organizations].to_s.split(",").map(&:strip).reject(&:blank?)
+          return head :bad_request unless requested.size <= 20 && requested.all? { |slug| slug.match?(/\A[a-z0-9-]{1,64}\z/) }
+          spec = EnterpriseDemo.spec
+          return head :bad_request unless (requested - EnterpriseDemo.slugs(spec)).empty?
+          organizations = Organization.where(demo: true, slug: requested.presence || EnterpriseDemo.slugs(spec)).order(:id)
           users = User.where(organization_id: organizations.select(:id), status: "active").order(:id)
-          users = users.where(demo_identity: true) if enterprise.empty?
           homes = OrganizationalMembership.where(user_id: users.select(:id), is_primary: true).pluck(:user_id, :organizational_unit_id).to_h
           render json: { data: {
             snapshot_version: 1, policy_version: "membership-period-v1",
-            organizations: organizations.map { |o| o.slice(:id, :slug).merge(enterprise.any? ? { references: EnterpriseDemo.references(spec, EnterpriseDemo.company(spec, o.slug)) } : {}) },
-            users: users.map { |u| u.slice(:id, :organization_id, :job_function).merge(primary_unit_id: homes[u.id]).merge(enterprise.any? ? { office: u.office } : {}) },
+            organizations: organizations.map { |o| o.slice(:id, :slug).merge(references: EnterpriseDemo.references(spec, EnterpriseDemo.company(spec, o.slug))) },
+            users: users.map { |u| u.slice(:id, :organization_id, :job_function, :office).merge(primary_unit_id: homes[u.id]) },
             projects: Project.where(organization_id: organizations.select(:id)).order(:id).map { |p| p.slice(:id, :organization_id, :slug, :status) },
             memberships: ProjectMembership.where(user_id: users.select(:id)).order(:id).map { |m| m.slice(:organization_id, :user_id, :project_id).merge(joined_at: m.joined_at.iso8601(6), left_at: m.left_at&.iso8601(6)) }
           } }

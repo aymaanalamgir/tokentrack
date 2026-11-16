@@ -5,7 +5,7 @@ RSpec.describe 'Authorized agent efficiency insights',type: :request do
   let(:agent_id){SecureRandom.uuid}
   let(:other_id){SecureRandom.uuid}
   before{allow(Agents::UsageClient).to receive(:new).and_return(usage)}
-  def insights(actor='olivia',params={});sign_in(actor);get '/api/v1/agents/insights',params:params end
+  def insights(actor='financial_operator',params={});sign_in(actor);get '/api/v1/agents/insights',params:params end
   def run(id,agent:agent_id,at:'2026-11-20T10:00:00Z',outcome:'success',retried:false)={'source'=>'financial-spec','run_id'=>id,'agent_id'=>agent,'outcome'=>outcome,'retried'=>retried,'started_at'=>at}
   def post_cost(run_id,**overrides)=Finance::PricedUsagePosting.new.call(finance_payload.merge('agent_run_id'=>run_id).merge(overrides.stringify_keys))
   def types(agent=agent_id)=data['insights'].select{|i|i['agent_id']==agent}.map{|i|i['type']}
@@ -21,11 +21,11 @@ RSpec.describe 'Authorized agent efficiency insights',type: :request do
   it 'requires an authenticated identity and rejects unknown or malformed filters' do
     get '/api/v1/agents/insights';expect(response).to have_http_status(:unauthorized)
     usage.insights=insights_response([])
-    insights('olivia',organization_id:org.id);expect(response).to have_http_status(:bad_request)
-    insights('olivia',compare:'decade');expect(response).to have_http_status(:bad_request)
-    insights('olivia',insight_type:'vibes');expect(response).to have_http_status(:bad_request)
-    insights('olivia',start:'2026-11-01T00:00:00Z');expect(response).to have_http_status(:bad_request)
-    insights('olivia',severity:['warning']);expect(response).to have_http_status(:bad_request)
+    insights('financial_operator',organization_id:org.id);expect(response).to have_http_status(:bad_request)
+    insights('financial_operator',compare:'decade');expect(response).to have_http_status(:bad_request)
+    insights('financial_operator',insight_type:'vibes');expect(response).to have_http_status(:bad_request)
+    insights('financial_operator',start:'2026-11-01T00:00:00Z');expect(response).to have_http_status(:bad_request)
+    insights('financial_operator',severity:['warning']);expect(response).to have_http_status(:bad_request)
     insights;expect(response).to have_http_status(:ok)
     expect(data).to include('schema_version'=>1,'analysis_version'=>1,'currency'=>'USD','insights'=>[],'thresholds'=>AgentInsightHelpers::THRESHOLDS)
     expect(data['summary']).to include('findings'=>0,'agents_analyzed'=>0)
@@ -40,7 +40,7 @@ RSpec.describe 'Authorized agent efficiency insights',type: :request do
     expect(finding['suggested_action']).to include('cost-driver breakdown')
     expect(finding.dig('evidence','current')).to include('corrected_modeled_cost'=>'0.3195','adjustments'=>'0','cost_completeness'=>'complete')
     expect(finding['drilldown']).to eq('agent_id'=>agent_id,'start'=>'2026-11-15T00:00:00Z','end'=>'2026-12-01T00:00:00Z')
-    Finance::Operations.new(person('olivia')).correct(original_id:@current.first[:financial_transaction_id],amount:'0.05',key:'insight-correction',reason:'Insight correction')
+    Finance::Operations.new(person('financial_operator')).correct(original_id:@current.first[:financial_transaction_id],amount:'0.05',key:'insight-correction',reason:'Insight correction')
     insights
     expect(data['insights']).to eq([])
     agent=data['agents'].sole
@@ -83,8 +83,8 @@ RSpec.describe 'Authorized agent efficiency insights',type: :request do
     expect(gap['suggested_action']).to include('Resolve unsupported pricing profiles')
     expect(data.dig('coverage','current')).to include('cost_completeness'=>'partial_unpriced_or_unposted','unpriced_events'=>4)
     expect(data['agents'].sole.dig('decomposition','basis')).to eq('known_posted_cost_only')
-    insights('olivia',evidence_quality:'sufficient');expect(data['insights']).to eq([]);expect(data['summary']).to include('findings'=>0,'total_findings'=>2)
-    insights('olivia',insight_type:'pricing_coverage_gap');expect(types).to eq(['pricing_coverage_gap'])
+    insights('financial_operator',evidence_quality:'sufficient');expect(data['insights']).to eq([]);expect(data['summary']).to include('findings'=>0,'total_findings'=>2)
+    insights('financial_operator',insight_type:'pricing_coverage_gap');expect(types).to eq(['pricing_coverage_gap'])
   end
 
   it 'does not assert cost anomalies on sparse or limited samples or missing baselines' do
@@ -129,7 +129,7 @@ RSpec.describe 'Authorized agent efficiency insights',type: :request do
   it 'passes operational findings through with wording, coverage and neutral associated observations' do
     cost_rise(current:metric_side(runs:20,retried:5),baseline:metric_side(runs:20,retried:1))
     usage.insights['insights']=[{'type'=>'retry_increase','agent_id'=>agent_id,'metric'=>'retry_rate_percent','unit'=>'percent','baseline'=>'5','current'=>'25','absolute_change'=>'20','percent_change'=>'400','threshold'=>{'kind'=>'points','value'=>'10'},'severity'=>'critical','evidence_quality'=>'sufficient','quality_reason'=>'20 current and 20 comparison runs.','sample_size'=>{'baseline_runs'=>20,'current_runs'=>20,'basis'=>'runs'},'evidence'=>{'current'=>{'retried_runs'=>5}}}]
-    insights('olivia',insight_type:'retry_increase')
+    insights('financial_operator',insight_type:'retry_increase')
     finding=data['insights'].sole
     expect(finding).to include('finding'=>'Retry rate increased 20.0 percentage points (5.0% to 25.0%).','status'=>'open','financial_coverage'=>{'baseline'=>'complete','current'=>'complete'})
     expect(finding['suggested_action']).to start_with('Inspect recent provider-error and timeout patterns before changing retry policy')
@@ -141,35 +141,35 @@ RSpec.describe 'Authorized agent efficiency insights',type: :request do
   it 'derives the population from AccessPolicy for every persona and never from request parameters' do
     usage.insights=insights_response([])
     payload=->{usage.calls.reverse.find{|path,_|path=='agent-insights'}.last}
-    insights('olivia');expect(payload.call).to include(organization_id:org.id,all_users:true,scope_users:[],start:nil,end:nil,compare:'previous_period')
-    insights('jordan');expect(payload.call).to include(all_users:false,scope_users:[person('jordan').id],scope_projects:[])
-    insights('marcus');manager=payload.call
-    expect(manager[:all_users]).to be(false);expect(manager[:scope_users]).to match_array(AccessPolicy.new(person('marcus')).managed_user_ids);expect(manager[:scope_projects]).to eq([project('developer-productivity').id])
-    expect(manager[:scope_users]).not_to include(person('priya').id)
-    insights('priya');expect(payload.call).to include(scope_users:[person('priya').id]);expect(payload.call[:scope_projects]).to match_array([project('fraud-detection').id,project('customer-analytics').id])
-    insights('maya','northstar-labs') rescue nil
-    sign_in('maya','northstar-labs');get '/api/v1/agents/insights'
-    expect(payload.call[:organization_id]).to eq(org('northstar-labs').id);expect(payload.call[:organization_id]).not_to eq(org.id)
-    expect(data.dig('scope','organization_id')).to eq(org('northstar-labs').id)
+    insights('financial_operator');expect(payload.call).to include(organization_id:org.id,all_users:true,scope_users:[],start:nil,end:nil,compare:'previous_period')
+    insights('employee');expect(payload.call).to include(all_users:false,scope_users:[person('employee').id],scope_projects:[])
+    insights('manager');manager=payload.call
+    expect(manager[:all_users]).to be(false);expect(manager[:scope_users]).to match_array(AccessPolicy.new(person('manager')).managed_user_ids);expect(manager[:scope_projects]).to eq([project('real-time-payments').id])
+    expect(manager[:scope_users]).not_to include(person('project_lead').id)
+    insights('project_lead');expect(payload.call).to include(scope_users:[person('project_lead').id]);expect(payload.call[:scope_projects]).to eq([project('fraud-detection-engine').id])
+    insights('leadership','memento-ai') rescue nil
+    sign_in('leadership','memento-ai');get '/api/v1/agents/insights'
+    expect(payload.call[:organization_id]).to eq(org('memento-ai').id);expect(payload.call[:organization_id]).not_to eq(org.id)
+    expect(data.dig('scope','organization_id')).to eq(org('memento-ai').id)
   end
 
   it 'denies agents, projects and employees outside the requester scope' do
     usage.insights=insights_response([],visible:false)
-    insights('jordan',agent_id:agent_id);expect(response).to have_http_status(:not_found)
+    insights('employee',agent_id:agent_id);expect(response).to have_http_status(:not_found)
     usage.insights=insights_response([])
-    insights('jordan',user_id:person('olivia').id);expect(response).to have_http_status(:not_found)
-    hidden=(Project.where(organization:org).pluck(:id)-AccessPolicy.new(person('sofia')).projects.pluck(:id)).first
+    insights('employee',user_id:person('financial_operator').id);expect(response).to have_http_status(:not_found)
+    hidden=(Project.where(organization:org).pluck(:id)-AccessPolicy.new(person('colleague')).projects.pluck(:id)).first
     expect(hidden).to be_present
-    insights('sofia',project_id:hidden);expect(response).to have_http_status(:not_found)
-    insights('olivia',project_id:Project.find_by!(organization:org('northstar-labs')).id);expect(response).to have_http_status(:not_found)
-    insights('priya',project_id:project('fraud-detection').id);expect(response).to have_http_status(:ok)
-    expect(usage.calls.last.last).to include(project_id:project('fraud-detection').id)
+    insights('colleague',project_id:hidden);expect(response).to have_http_status(:not_found)
+    insights('financial_operator',project_id:Project.find_by!(organization:org('memento-ai')).id);expect(response).to have_http_status(:not_found)
+    insights('project_lead',project_id:project('fraud-detection-engine').id);expect(response).to have_http_status(:ok)
+    expect(usage.calls.last.last).to include(project_id:project('fraud-detection-engine').id)
   end
 
   it 'scopes ledger cost to the requester even if a cohort row lies outside their population' do
     cost_rise
-    Agents::LedgerCosts.new(Agents::Scope.new(AccessPolicy.new(person('sofia')),{},keys:Agents::Scope::INSIGHT_KEYS)).call(usage.runs).then{|costs|expect(costs).to eq({})}
-    expect(Agents::LedgerCosts.new(Agents::Scope.new(AccessPolicy.new(person('jordan')),{},keys:Agents::Scope::INSIGHT_KEYS)).call(usage.runs).size).to eq(5)
+    Agents::LedgerCosts.new(Agents::Scope.new(AccessPolicy.new(person('colleague')),{},keys:Agents::Scope::INSIGHT_KEYS)).call(usage.runs).then{|costs|expect(costs).to eq({})}
+    expect(Agents::LedgerCosts.new(Agents::Scope.new(AccessPolicy.new(person('employee')),{},keys:Agents::Scope::INSIGHT_KEYS)).call(usage.runs).size).to eq(5)
   end
 
   it 'returns a retryable error instead of partial or estimated findings' do

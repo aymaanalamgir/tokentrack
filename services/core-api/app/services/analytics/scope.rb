@@ -3,6 +3,13 @@ module Analytics
     attr_reader :policy, :filters, :start, :finish, :grain
     UUID=/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i
     KEYS=%w[start end granularity organization_unit_id project_id user_id provider model tool limit offset audit_start audit_end].freeze
+    # Default window when no range is given: the 30 days up to now, or, when the organization's latest funded
+    # month ended before today (for example a historical demo workload), the 30 days up to the end of that month.
+    def self.default_window(organization_id,now=Time.now.utc)
+      latest=BudgetPeriod.where(organization_id:organization_id).maximum(:month_start)
+      boundary=latest && Time.utc(latest.next_month.year,latest.next_month.month,1)
+      boundary && boundary<=now ? [boundary-30.days,boundary] : [now-30.days,now+1.day]
+    end
     def initialize(policy,params)
       @policy=policy
       @filters=params.to_h.stringify_keys

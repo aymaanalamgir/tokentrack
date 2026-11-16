@@ -101,17 +101,4 @@ class AgentInsightRulesTest {
         assertThrows(IllegalArgumentException::class.java){InsightThresholds(criticalMultiplier=BigDecimal.ONE)}
         val strict=InsightThresholds(retryRateIncreasePoints=BigDecimal(20));assertEquals(emptyList<Any>(),InsightRules.detect(row(150,retried=12),row(160,retried=34),emptyMap(),strict))
     }
-    @Test fun `scenario generator is deterministic and independent of the clock`(@TempDir dir:Path) {
-        val mapper=ObjectMapper();val org="00000000-0000-0000-0000-0000000000aa"
-        val projects=listOf("developer-productivity","fraud-detection","customer-analytics","knowledge-automation").mapIndexed{i,slug->mapOf("id" to "00000000-0000-0000-0000-00000000010$i","organization_id" to org,"slug" to slug,"status" to "active")}
-        val users=(1..3).map{mapOf("id" to "00000000-0000-0000-0000-00000000020$it","organization_id" to org,"job_function" to "Engineering")}
-        val snapshot=mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(mapOf("organizations" to listOf(mapOf("id" to org,"slug" to "aperture-technologies")),"projects" to projects,"users" to users,
-            "memberships" to projects.flatMap{p->users.map{u->mapOf("organization_id" to org,"user_id" to u["id"],"project_id" to p["id"],"joined_at" to "2026-11-01T00:00:00Z","left_at" to null)}}))
-        val generator=AgentInsightScenarioGenerator(mapper,SyntheticGenerator(mapper))
-        val first=generator.generate(snapshot,dir.resolve("a.csv"),dir.resolve("a.jsonl"),42);val second=generator.generate(snapshot,dir.resolve("b.csv"),dir.resolve("b.jsonl"),42)
-        assertEquals(Files.readString(dir.resolve("a.csv")),Files.readString(dir.resolve("b.csv")));assertEquals(first["executions_sha256"],second["executions_sha256"]);assertEquals(1630,first["runs"])
-        assertNotEquals(first["executions_sha256"],generator.generate(snapshot,dir.resolve("c.csv"),dir.resolve("c.jsonl"),43)["executions_sha256"])
-        val records=Files.readAllLines(dir.resolve("a.jsonl")).map(mapper::readTree);assertTrue(records.all{it["outcome_source"].asText()=="synthetic_fixture"&&it["started_at"].asText()>="2026-11-12"&&it["started_at"].asText()<"2026-12-10"})
-        assertEquals(6,records.count{it["agent"]["key"].asText()=="incident-scribe"})
-    }
 }
