@@ -2,7 +2,7 @@
 
 | Document | Covers |
 | --- | --- |
-| [Architecture](architecture.md) | Services, data model, trust boundaries, per-slice design notes |
+| [Architecture](architecture.md) | Services, data model, trust boundaries, design notes |
 | [Financial ledger](financial-ledger.md) | Accounts, periods, double entry, corrections, reconciliation |
 | [Model pricing](model-pricing.md) | Effective-dated rates, mappings, schedule closure |
 | [Analytics contract](analytics-contract.md) | Report parameters, bounds, metric definitions |
@@ -14,8 +14,4 @@
 | [UI conventions](ui-conventions.md) | Page structure, colour and navigation rules |
 | [Development](development.md) | Local setup, commands, tests, Docker resource notes |
 
-Folders:
-
-- [`slices/`](slices/): the build history, one report per vertical slice (identity and access through integration and reliability).
-- [`verification/`](verification/): recorded verification runs and results.
 - [`screenshots/`](screenshots/): images used in the top-level README.

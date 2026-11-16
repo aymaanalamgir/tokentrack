@@ -3,7 +3,7 @@ import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 
 const base = process.env.BASE_URL ?? "http://localhost:3000";
-const output = process.env.SCREENSHOT_DIR ?? "/tmp/tokentrack-slice3";
+const output = process.env.SCREENSHOT_DIR ?? "/tmp/tokentrack-project-management";
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch();
 const context = await browser.newContext({
@@ -142,7 +142,7 @@ try {
     name: "Create project",
     exact: true,
   });
-  const name = `Slice 3 Collaboration ${Date.now()}`;
+  const name = `Review Collaboration ${Date.now()}`;
   await create
     .getByRole("textbox", { name: "Project name", exact: true })
     .fill(name);

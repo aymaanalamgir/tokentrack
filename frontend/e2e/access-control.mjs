@@ -3,7 +3,7 @@ import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 
 const base = process.env.BASE_URL ?? "http://localhost:3000";
-const screenshots = process.env.SCREENSHOT_DIR ?? "/tmp/tokentrack-slice2";
+const screenshots = process.env.SCREENSHOT_DIR ?? "/tmp/tokentrack-access-control";
 await mkdir(screenshots, { recursive: true });
 const browser = await chromium.launch();
 const context = await browser.newContext({

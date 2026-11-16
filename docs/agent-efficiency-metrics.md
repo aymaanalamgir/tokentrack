@@ -11,7 +11,7 @@ The `/agents` report has one authorized run population supplied by Rails. Kotlin
 
 Times are UTC and ranges are half-open. Runs are included by `started_at`. Group totals are alternate views of the same population and should not be added together.
 
-Slice 9B adds these derived metrics, computed once in Kotlin (`InsightRules.derive`) and never recomputed elsewhere:
+These derived metrics are computed once in Kotlin (`InsightRules.derive`) and never recomputed elsewhere:
 
 - Success rate is successes divided by concluded runs (success + failure + cancelled). Running/unknown runs are excluded, not counted as failures. No concluded runs gives null.
 - Tokens per run (input, output, cached input, total) divide by runs that have at least one linked usage event, so unlinked runs are not treated as zero-token runs.

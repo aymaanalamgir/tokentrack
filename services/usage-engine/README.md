@@ -15,4 +15,4 @@ docker compose exec usage-engine gradle integrationTest
 
 `bin/usage` compiles classes using the pinned Gradle/JDK container and launches a non-web CLI process with original arguments and DevTools restarts disabled. Exit codes propagate directly. Host development uses the checked-in Gradle wrapper with JDK 21; the server remains `UsageEngineApplicationKt`, and the production image remains a runnable jar. Restart usage-engine after source changes; no host Kotlin toolchain is required.
 
-See [CSV contract](../../contracts/usage-event-v1.md), [Slice 4 architecture and results](../../docs/slices/slice4.md), and [development commands](../../docs/development.md).
+See [CSV contract](../../contracts/usage-event-v1.md), [architecture](../../docs/architecture.md), and [development commands](../../docs/development.md).

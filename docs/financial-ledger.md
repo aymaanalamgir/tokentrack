@@ -26,7 +26,7 @@ Only an explicit organization-scoped `financial_operator` assignment authorizes 
 
 Demo funding is created by `enterprise_demo:fund` (run by `setup-demo.sh`), acting as each company's financial-operator persona through `Finance::Operations`. Normal organizational seeds grant no financial authority beyond those explicit persona grants. For each month it funds the reserve with the planned allocations plus a buffer, then transfers each unit's and project's planned budget (per-person budgets by AI-intensity tier, split between home team and active projects) and a small unassigned share. This is synthetic funding, not spend or usage-derived money. Stable operation keys make it idempotent, and a second profile in the same database is refused. Demo reset refuses organizations with financial history; never remove append-only history to reseed.
 
-Slice 8 funding approvals invoke the same `Finance::Operations#transfer` boundary using the authenticated decision-maker. The request lock, authority recheck, capacity validation, balanced entries, request decision, and execution reference commit atomically. Project leadership and team management permit scoped request creation only; funding approval remains limited to `financial_operator`. Pending/rejected/cancelled request amounts never enter the ledger, and approved transfers remain allocation movements rather than expenditure. Demo reset also refuses append-only request history.
+Funding approvals invoke the same `Finance::Operations#transfer` boundary using the authenticated decision-maker. The request lock, authority recheck, capacity validation, balanced entries, request decision, and execution reference commit atomically. Project leadership and team management permit scoped request creation only; funding approval remains limited to `financial_operator`. Pending/rejected/cancelled request amounts never enter the ledger, and approved transfers remain allocation movements rather than expenditure. Demo reset also refuses append-only request history.
 
 ## Reconciliation
 
@@ -34,7 +34,7 @@ Slice 8 funding approvals invoke the same `Finance::Operations#transfer` boundar
 
 Statuses: `reconciled` (exit 0); `balanced_with_unpriced_usage` or pending work (exit 2); discrepancy (exit 3). A balanced financial ledger does not mean unsupported usage has been billed. Reports expose incomplete coverage explicitly. `finance:report` provides actor-scoped monthly account funding/expenditure/available strings and over-budget flags. Currency conversion, invoices, funding approval workflows and analytics APIs remain future work.
 
-## Slice 7 controls and interactive operations
+## Controls and interactive operations
 
 `/budgets` now exposes authorized existing account reads, reserve funding, transfers, empty-month initialization and funding history through the existing Finance::Operations methods. Organization_budget_reader is read-only; unit/project reader grants remain scoped. Financial_operator remains required for monetary writes. No account balance column or parallel ledger was introduced.
 

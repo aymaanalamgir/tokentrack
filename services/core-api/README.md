@@ -1,6 +1,6 @@
 # Core API
 
-Rails API owns the `business` PostgreSQL schema. Slice 2 adds tenant-scoped organizational entities, revocable server-side demo sessions, reusable authorization policies, directory/management projections, and limited project metadata editing. Health remains public and database-aware.
+Rails API owns the `business` PostgreSQL schema. It holds tenant-scoped organizational entities, revocable server-side demo sessions, reusable authorization policies, directory/management projections, and limited project metadata editing. Health remains public and database-aware.
 
 From the repository root:
 

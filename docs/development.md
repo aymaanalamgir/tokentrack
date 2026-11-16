@@ -9,7 +9,7 @@ cp .env.example .env
 # Edit .env: replace the three example passwords, USAGE_REFERENCE_TOKEN and USAGE_FINANCIAL_TOKEN.
 # Generate each independent backend-only token: openssl rand -hex 32
 docker compose up --build -d
-# Required on a fresh database; repeat safely when setting up Slice 4:
+# Required on a fresh database; safe to repeat:
 docker compose exec core-api bin/rails db:migrate db:seed
 docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
 ```
@@ -24,7 +24,7 @@ docker compose ps
 docker compose logs --tail=100
 ```
 
-`.env` is ignored. Do not commit real passwords, Rails keys, or credentials. Environment examples contain explicitly non-sensitive placeholders. The initialization script creates roles, both schemas, and the Rails test database on first volume startup. Slice 4 still requires the Rails migration/seed commands above; Flyway applies usage migrations when Kotlin starts. Demo entry expects these business tables to exist; health checks test connectivity independently.
+`.env` is ignored. Do not commit real passwords, Rails keys, or credentials. Environment examples contain explicitly non-sensitive placeholders. The initialization script creates roles, both schemas, and the Rails test database on first volume startup. The Rails migration and seed commands above are still required; Flyway applies usage migrations when Kotlin starts. Demo entry expects these business tables to exist; health checks test connectivity independently.
 
 ## Services and variables
 
@@ -131,7 +131,7 @@ docker run --rm --network tokentrack_default \
   mcr.microsoft.com/playwright:v1.56.1-noble npm run test:projects
 ```
 
-This uses `frontend/node_modules`, installed by the first command independently of Compose's dependency volume. Shell/access screenshots are written to `/tmp/tokentrack-browser`, and project screenshots to `/tmp/tokentrack-slice3`, in the test container; bind-mount that directory to preserve them. Add `-e EXPECT_USAGE_DOWN=1` while usage-engine is stopped to check the visible failure state. The browser check is optional for normal startup.
+This uses `frontend/node_modules`, installed by the first command independently of Compose's dependency volume. Shell/access screenshots are written to `/tmp/tokentrack-browser`, and project screenshots to another `/tmp` folder, in the test container; bind-mount that directory to preserve them. Add `-e EXPECT_USAGE_DOWN=1` while usage-engine is stopped to check the visible failure state. The browser check is optional for normal startup.
 
 Rails specs use real PostgreSQL in `tokentrack_test`, seed before the suite, and roll ordinary examples back. The concurrent-transfer spec uses separate committed connections and explicitly cleans up its own generated project. They cover relationships, constraints, grants, tenant scope, sessions, project edits, membership periods, creation, staffing, lifecycle, atomic transfer/revocation, concurrency, and health. Connection failure specs simulate errors; live outage checks separately exercise PostgreSQL. Kotlin application/Actuator tests use an in-memory H2 database with the usage schema and a failing DataSource for the negative case; Flyway is disabled only for these health tests. Parser, validator, reference HTTP-client, and generator tests run in the unit suite. The tagged integrationTest task always executes real Flyway/PostgreSQL tests in USAGE_TEST_DB_NAME using the restricted usage role, covering uniqueness, concurrent imports, chunk rollback, partial retries, durable diagnostics, and business-schema denial. It refuses the development database. No Testcontainers daemon access or new database creation privilege is needed. Live Compose checks separately verify PostgreSQL and full database outages. Frontend tests cover actual response contracts, invalid bodies, invalid JSON, timeouts, and network failures.
 
@@ -159,7 +159,7 @@ docker build --target production -t tokentrack-core-api:production services/core
 docker build --target production -t tokentrack-usage-engine:production services/usage-engine
 ```
 
-These image builds do not deploy anything. Rails production needs a separately supplied `SECRET_KEY_BASE`; application databases, credentials, and URLs must also be configured at runtime. See [slice4.md](slices/slice4.md) for current executed checks and limits; [slice3.md](slices/slice3.md) records historical Slice 3 checks; [slice2.md](slices/slice2.md) records historical Slice 2 checks; [verification.md](verification/README.md) preserves the earlier Slice 1 report.
+These image builds do not deploy anything. Rails production needs a separately supplied `SECRET_KEY_BASE`; application databases, credentials, and URLs must also be configured at runtime.
 
 ## Migrations and demo resets
 
@@ -181,11 +181,11 @@ PostgreSQL-specific checks/triggers are preserved in `db/structure.sql`. The sch
 docker compose exec core-api bin/rails demo:reset
 ```
 
-Both seed/reset require demo mode in development/test. All organizational/project entities remain in business; Slice 4 usage events/import batches/rejections are in usage.
+Both seed/reset require demo mode in development/test. All organizational and project entities live in the business schema; usage events, import batches and rejections live in the usage schema.
 
-Slice 3 migration `20261109000100` preserves existing IDs, adds creator/restore metadata and membership periods, and checks administrator integrity with deferred PostgreSQL triggers. Its rollback is intentionally irreversible: multiple historical periods must be reconciled before restoring the old all-time uniqueness rule. Review/back up real data before adapting demo migrations outside this local workflow.
+Migration `20261109000100` preserves existing IDs, adds creator/restore metadata and membership periods, and checks administrator integrity with deferred PostgreSQL triggers. Its rollback is intentionally irreversible: multiple historical periods must be reconciled before restoring the old all-time uniqueness rule. Review/back up real data before adapting demo migrations outside this local workflow.
 
-Project creation requires an organization-scoped `project_creator` grant; the seed gives one to each company's leader and project-lead persona (for example Amara Lindqvist and Mateo Alvarez). Existing `project_lead` grants explicitly authorize staffing/lifecycle/transfer on that project. `owner` and `lead` membership labels alone do not. Archived projects are read-only until restored. Use the UI to transfer before removing the final administrator. The API has no project-delete action. Browser project checks retain an archived `Slice 3 Collaboration ...` review project/history, restore Mateo's administration, and close other contributors' periods. Repeated runs add review projects; `demo:reset` deliberately removes all demo edits if a clean fixture set is needed.
+Project creation requires an organization-scoped `project_creator` grant; the seed gives one to each company's leader and project-lead persona (for example Amara Lindqvist and Mateo Alvarez). Existing `project_lead` grants explicitly authorize staffing/lifecycle/transfer on that project. `owner` and `lead` membership labels alone do not. Archived projects are read-only until restored. Use the UI to transfer before removing the final administrator. The API has no project-delete action. Browser project checks retain an archived `Review Collaboration ...` review project/history, restore Mateo's administration, and close other contributors' periods. Repeated runs add review projects; `demo:reset` deliberately removes all demo edits if a clean fixture set is needed.
 
 The development migration-check middleware is disabled so a database outage can always reach the health controller and return structured JSON. Run migration commands explicitly after adding migrations. Avoid `db:reset`, `db:create`, or `db:drop` with the restricted application role. Flyway now manages Kotlin tables; do not edit database initialization SQL or Rails snapshots for usage changes.
 
@@ -210,7 +210,7 @@ docker compose exec core-api bin/rails db:migrate db:seed
 docker compose exec -e RAILS_ENV=test core-api bin/rails db:migrate
 ```
 
-Destructive volume resets and host-native service commands were not executed during Slice 2 verification; Compose migrations, repeatable seeds, and the demo-only reset in the isolated test database were tested.
+
 
 - **Port already allocated:** set the corresponding port variable in `.env`; update `FRONTEND_ORIGIN` when changing the UI port.
 - **Password authentication failed after editing `.env`:** initialization runs only on a fresh volume. Restore matching credentials, rotate roles explicitly as administrator, or perform the documented destructive database reset if data is disposable.

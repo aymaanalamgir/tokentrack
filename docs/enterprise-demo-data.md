@@ -92,7 +92,7 @@ The published catalogue rates in this repository start on 2026-11-01. The enterp
 
 Each company also uses a self-hosted model (`local/demo-selfhosted-v1`) with no pricing profile (5% of Alset events, 1.5% Northline, 3% Memento). Those events stay unpriced and their cost is unknown, not zero.
 
-The Slice 9B rate-only comparison considers only non-synthetic published rates, so it reports "unavailable" for these companies.
+The rate-only comparison considers only non-synthetic published rates, so it reports "unavailable" for these companies.
 
 ## Funding and controls
 

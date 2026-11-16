@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';import {mkdir} from 'node:fs/promises';import {chromium} from 'playwright';
-const base=process.env.BASE_URL??'http://localhost:3000';const out=process.env.SCREENSHOT_DIR??'/tmp/tokentrack-slice7';await mkdir(out,{recursive:true});
+const base=process.env.BASE_URL??'http://localhost:3000';const out=process.env.SCREENSHOT_DIR??'/tmp/tokentrack-budgets';await mkdir(out,{recursive:true});
 const browser=await chromium.launch();const context=await browser.newContext({viewport:{width:1440,height:1100},colorScheme:'dark'});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));const main=page.locator('main');
 async function get(path,status=200){const r=await context.request.get(base+'/api/core/'+path);assert.equal(r.status(),status,path);return (await r.json()).data;}
 async function post(path,body,status=200){const r=await context.request.post(base+'/api/core/budgets/'+path,{data:{budget:body},headers:{Origin:base}});assert.equal(r.status(),status,JSON.stringify(await r.json()));return (await r.json()).data;}

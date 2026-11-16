@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';import {mkdir} from 'node:fs/promises';import {chromium} from 'playwright';
-const base=process.env.BASE_URL??'http://localhost:3000';const out=process.env.SCREENSHOT_DIR??'/tmp/tokentrack-slice8';await mkdir(out,{recursive:true});
+const base=process.env.BASE_URL??'http://localhost:3000';const out=process.env.SCREENSHOT_DIR??'/tmp/tokentrack-requests';await mkdir(out,{recursive:true});
 const browser=await chromium.launch();const context=await browser.newContext({viewport:{width:1440,height:1050},colorScheme:'dark'});const page=await context.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));const main=page.locator('main');
 async function get(path,status=200){const response=await context.request.get(base+'/api/core/'+path);assert.equal(response.status(),status,`${path}: ${await response.text()}`);return (await response.json()).data;}
 async function settled(id){for(let i=0;i<40;i++){const r=await get(`requests/${id}`);if(r.status!=='pending')return r;await new Promise(x=>setTimeout(x,500));}throw new Error('request still pending: '+id);}

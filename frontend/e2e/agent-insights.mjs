@@ -2,7 +2,7 @@
 // Expectations come from the deterministic demo workload (seed 42): the Fraud Triage Agent's retry rate and the
 // Reconciliation Agent's success rate drift from September 2026, so Sep–Oct compared with Jul–Aug shows both.
 import assert from 'node:assert/strict';import {mkdir} from 'node:fs/promises';import {chromium} from 'playwright';
-const base=process.env.BASE_URL??'http://localhost:3000';const out=process.env.SCREENSHOT_DIR??'/tmp/tokentrack-slice9b';await mkdir(out,{recursive:true});
+const base=process.env.BASE_URL??'http://localhost:3000';const out=process.env.SCREENSHOT_DIR??'/tmp/tokentrack-agent-insights';await mkdir(out,{recursive:true});
 const browser=await chromium.launch();const context=await browser.newContext({viewport:{width:1440,height:1050},colorScheme:'dark'});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));const main=page.locator('main');
 async function get(path,status=200){const response=await context.request.get(base+'/api/core/'+path);assert.equal(response.status(),status,`${path}: ${await response.text()}`);return status===200?(await response.json()).data:null;}
 const idle=()=>page.waitForFunction(()=>document.querySelector('[data-testid="agents-workspace"]')?.getAttribute('aria-busy')==='false');

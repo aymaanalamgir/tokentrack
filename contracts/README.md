@@ -1,6 +1,6 @@
 # Service contracts
 
-The Slice 1 health contracts remain unchanged:
+Health contracts:
 
 | Endpoint | Healthy response | Unhealthy response |
 | --- | --- | --- |
@@ -10,9 +10,9 @@ The Slice 1 health contracts remain unchanged:
 
 Next.js accepts database connectivity only from a recognized backend health response. Missing fields, invalid JSON, non-success status codes, timeouts, and network errors cannot produce a green service indicator. Database status requires confirmation from both services. If a backend is unreachable, this means its database connection **cannot be confirmed**, not that the PostgreSQL process is necessarily stopped.
 
-Slice 4 adds the [CSV usage-event v1 contract](usage-event-v1.md) and the narrow Rails reference contract below. Slice 5 added priced-event delivery and financial posting; Slice 6 adds analytics; Slice 7 adds budget controls; Slice 8 adds the session-authenticated request endpoints documented in [the implementation report](../docs/slices/slice8.md).
+Usage ingestion follows the [CSV usage-event v1 contract](usage-event-v1.md) and the narrow Rails reference contract below. Priced-event delivery, analytics, budget controls and the session-authenticated request endpoints are described in the sections that follow and in [docs/](../docs/README.md).
 
-## Slice 2 organizational API
+## Organizational API
 
 Browsers call Next.js `/api/core/*`; Rails owns `/api/v1/*`. Except for health and explicitly enabled fictional demo entry, endpoints require the backend session cookie. Responses use `{ "data": ... }` and optional `{ "meta": { "total": 64, "limit": 25, "offset": 0 } }`. Errors use `{ "error": { "code", "message" } }`. Organizational responses have `Cache-Control: no-store, private`.
 
@@ -35,7 +35,7 @@ Missing sessions return 401. Cross-tenant/out-of-scope lookups return 404. Disal
 
 Organizational/project membership and current read/edit grants do not imply future financial approval permission.
 
-## Slice 3 project management API
+## Project management API
 
 The authentication, tenant scope, no-store responses, Origin checks, pagination, and error envelope above also apply to these endpoints. The Next.js proxy permits only the listed route/method combinations.
 
@@ -94,12 +94,12 @@ Lifecycle uses the existing PATCH endpoint:
 
 Planned ↔ active; either → archived; archived → planned or active. Restore UI uses `restore_status` (last unarchived state, legacy fallback active). Archived projects retain IDs and membership periods; staffing, role editing, transfer, and metadata updates are denied until restoration. No project-delete API exists.
 
-Project responses extend the Slice 2 fields with `created_by_id` (null for unknown legacy creators), `administrators`, `permissions` (`edit`, `members_manage`, `ownership_transfer`, `lifecycle_manage`, `history`), `available_statuses`, and `restore_status`. `leads` means owner/lead collaboration labels; `administrators` means actual explicit grants. `/me/access` capabilities summarize granted operations; per-project flags remain authoritative for rendering actions. `/me` and `/me/access` include `scope_key`, a fingerprint used to clear obsolete client caches when effective grants/visibility change.
+Project responses extend the organizational fields with `created_by_id` (null for unknown legacy creators), `administrators`, `permissions` (`edit`, `members_manage`, `ownership_transfer`, `lifecycle_manage`, `history`), `available_statuses`, and `restore_status`. `leads` means owner/lead collaboration labels; `administrators` means actual explicit grants. `/me/access` capabilities summarize granted operations; per-project flags remain authoritative for rendering actions. `/me` and `/me/access` include `scope_key`, a fingerprint used to clear obsolete client caches when effective grants/visibility change.
 
 Validation conflicts/invalid lifecycle/last administrator return 422, missing required parameters 400, absent authentication 401, forbidden visible actions 403, and foreign/out-of-scope users/projects/membership IDs 404. Existing resource authorization is applied before member lookup. A `Lead` label never grants access to private management projections or reporting context.
 
 
-## Slice 4 internal reference API
+## Internal reference API
 
 These routes are Rails-only and are **not** included in the public Next.js proxy. They require `Authorization: Bearer <USAGE_REFERENCE_TOKEN>` (at least 32 configured characters); demo cookies, identity headers, and browser Origins confer no service authority. Tokens are compared through fixed-length SHA-256 digests with constant-time comparison. Replies are no-store/private and contain no employee names, emails, reporting graphs, or private permissions. Credentials belong only to the two backend environments.
 
@@ -119,24 +119,24 @@ Valid entries contain only key and valid=true. Organization/user/project tenancy
 
 `GET /api/v1/internal/usage-references/demo-snapshot` additionally requires demo mode in development/test and returns 404 otherwise. Its data contains snapshot_version=1, policy_version, organization IDs/slugs, active flagged fictional user IDs/job functions/primary unit IDs, project IDs/organization/slugs/current status, and recorded membership periods. The synthetic generator saves this input and its canonical SHA-256 hash; UUID lists are not recreated or maintained separately inside Kotlin. This export is for fictional local fixtures, not an employee export API.
 
-Kotlin exposes public Actuator health and the separately authenticated internal Slice 6 aggregate endpoint. Operational import/list/report/generate commands use the local CLI; CSV structure, fingerprint identity, stable error codes, counts, limits, and exit statuses are defined in [usage-event-v1.md](usage-event-v1.md).
+Kotlin exposes public Actuator health and the separately authenticated internal analytics aggregate endpoint. Operational import/list/report/generate commands use the local CLI; CSV structure, fingerprint identity, stable error codes, counts, limits, and exit statuses are defined in [usage-event-v1.md](usage-event-v1.md).
 
-## Slice 5 financial service contract
+## Financial service contract
 
 [Priced usage event v1](priced-usage-event-v1.md) defines the separate financial bearer credential, exact monetary-string payload, idempotent expense acknowledgement, unresolved-owner retries, and read-only reconciliation. These internal routes are excluded from the browser proxy. Existing usage-event v1 fields/fingerprints are unchanged; resolved price identity is additional immutable provenance.
 
-## Slice 6 analytics
+## Analytics
 
 [Analytics contract v1](../docs/analytics-contract.md) defines the authorized Rails `GET /api/v1/analytics` report and bounded Kotlin `POST /internal/v1/analytics` aggregate request. Only the Rails GET route is allowed through Next.js. A separate analytics service token never reaches browsers. Money comes from Rails ledger entries, tokens from Kotlin; reader scopes, current-home-team semantics, UTC comparisons, coverage and accounting/posting/activity dates are explicit.
 
-## Slice 9B agent insight contracts
+## Agent insight contracts
 
 No ingestion contract changed. `GET /api/v1/agents/insights` and the internal `agent-insights` / `agent-cohort` endpoints are specified in [agent optimization](../docs/agent-optimization.md#api). The internal `agent-analytics` response is now `schema_version` 2: `cohort_runs` was removed, and bodies carry a `retried` key.
 
-## Slice 9A agent execution contract
+## Agent execution contract
 
 [Agent execution JSONL v1](agent-execution-v1.md) defines immutable definitions, runs, outcomes, attempts, errors, and exact usage linkage. Rails exposes scoped `GET /api/v1/agents`; Kotlin's agent aggregate endpoint stays backend-only and Rails supplies corrected ledger money.
 
-## Slice 7 budget and allowance API
+## Budget and allowance API
 
 [Budget/allowance API v1](../docs/budget-allowances.md) specifies the coherent session-authenticated `GET /api/v1/budgets` report and exact scoped POST operations for transfers, reserve funding, empty periods, ceiling revisions, own project partitions and capped delegation/revocation. Monetary values are decimal strings; expected revision IDs and stable operation keys protect writes. BFF allowlists only these exact paths. No internal financial bearer token or unrestricted ledger correction route reaches browsers.

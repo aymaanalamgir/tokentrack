@@ -1,6 +1,6 @@
 # TokenTrack architecture
 
-Slices 1–9B implement the local four-service system, scoped identity/project workflows, canonical ingestion, pricing/outbox, an append-only financial ledger, role-aware analytics, operational budget/spending controls, auditable funding requests, and agent execution telemetry.
+TokenTrack is a local four-service system with scoped identity and project workflows, canonical ingestion, pricing/outbox, an append-only financial ledger, role-aware analytics, operational budget/spending controls, auditable funding requests, and agent execution telemetry.
 
 ```mermaid
 flowchart TB
@@ -116,10 +116,10 @@ Rails supports transactional workflows and authorization; Kotlin provides a sepa
 
 Kotlin events now reference organization/user/project UUIDs through the versioned CSV and tenant-aware Rails reference contract. Kotlin must not write business records. Priced-event delivery will require idempotency, reconciliation, and service authentication; the shared instance does not make cross-service work one transaction. A broker is not required for the planned local flow. Read-only usage views may be granted to Rails later; no cross-schema grants exist now.
 
-Financial operations use an explicit organization-scoped financial_operator grant. Future budget approval permissions need their own scoped additions and policy tests. Project participation, a manager title, or the current read grant must never silently become financial authority. Slice 4 introduced no finance authority. Slice 5 adds a separate explicit organization financial_operator grant; normal organization seeds do not assign it.
+Financial operations use an explicit organization-scoped financial_operator grant. Future budget approval permissions need their own scoped additions and policy tests. Project participation, a manager title, or the current read grant must never silently become financial authority. It is a separate explicit grant; ordinary organizational roles never imply it.
 
 
-## Slice 4 ingestion boundary
+## Ingestion boundary
 
 ```mermaid
 flowchart TD
@@ -146,9 +146,9 @@ Imports use at most 250 rows per normal transaction, with batched reference chec
 
 Malformed-column rows are rejected without dropping neighboring valid rows. Unsafe quoting stops scanning after preceding complete rows are committed. Infrastructure failures preserve earlier chunks and report unknown/unprocessed work instead of inventing invalid employees. Durable fifteen-minute heartbeat leases identify abandoned runs; recovered workers cannot resume committing. Restart/retry uses immutable identity keys rather than overwriting old data. The CSV contract defines exact counts, limits, error categories, and CLI exit codes.
 
-See [usage-event-v1.md](../contracts/usage-event-v1.md) and [Slice 4 report](slices/slice4.md). That Slice 4 change added no pricing, financial delivery, or analytics endpoints; Slice 5 additions follow below.
+See [usage-event-v1.md](../contracts/usage-event-v1.md).
 
-## Slice 5 financial processing
+## Financial processing
 
 ```mermaid
 flowchart TD
@@ -167,9 +167,9 @@ flowchart TD
 
 Snapshot/outbox insertion shares a usage transaction. Claims use SKIP LOCKED, leases and durable attempts. Rails commits receipt resolution, original expense and ledger entry atomically; unique canonical usage identity makes repeated delivery safe. Unsupported metadata remains unpriced; unresolved charge ownership remains held. Financial corrections append linked reversal/replacement entries, preserving original price/acknowledgement. Funding transfers have two equal/opposite funding legs and no expense.
 
-Rails migrations own business tables; additive Flyway V2–V5 own pricing/delivery tables. Existing V1 canonical migration and original fingerprints are unchanged. No direct cross-schema writes, broker, dashboard, or browser financial endpoint is added. The financial bearer token is separate from read-only reference validation. See [financial ledger](financial-ledger.md), [pricing policy](model-pricing.md), [contract](../contracts/priced-usage-event-v1.md), and [executed verification](slices/slice5.md).
+Rails migrations own business tables; additive Flyway V2–V5 own pricing/delivery tables. Existing V1 canonical migration and original fingerprints are unchanged. No direct cross-schema writes, broker, dashboard, or browser financial endpoint is added. The financial bearer token is separate from read-only reference validation. See [financial ledger](financial-ledger.md), [pricing policy](model-pricing.md) and [contract](../contracts/priced-usage-event-v1.md).
 
-## Slice 6 analytics read boundary
+## Analytics read boundary
 
 ```mermaid
 flowchart LR
@@ -185,9 +185,9 @@ Rails derives financial amounts from original expense entries plus actual linked
 
 Existing organization_viewer/team_manager/project_lead/self scopes govern usage; separate explicit budget reader grants govern funding visibility. These reader grants never authorize transfers or corrections. Each service query uses repeatable-read snapshots; combined reports are eventually consistent across HTTP calls. SQL aggregation with tenant/time/user/project indexes serves the verified small dataset. Date ranges, scopes, group counts and detail pagination are bounded.
 
-The client uses TanStack Query keys containing tenant, identity, scope fingerprint and the complete filter/granularity path. Previous data is retained only inside the same identity/scope, and existing session switching cancels/clears caches. Responsive SVG charts use the established visual tokens, accessible focus/hover values and a single native chart implementation; no additional chart library is needed. Decimal strings remain authoritative, with BigInt formatting at the presentation boundary. [Contract](analytics-contract.md) and [Slice 6 report](slices/slice6.md) define metrics and observed verification.
+The client uses TanStack Query keys containing tenant, identity, scope fingerprint and the complete filter/granularity path. Previous data is retained only inside the same identity/scope, and existing session switching cancels/clears caches. Responsive SVG charts use the established visual tokens, accessible focus/hover values and a single native chart implementation; no additional chart library is needed. Decimal strings remain authoritative, with BigInt formatting at the presentation boundary. The [analytics contract](analytics-contract.md) defines the metrics.
 
-## Slice 7 funded accounts and spending controls
+## Funded accounts and spending controls
 
 The budget workspace exposes the existing Finance::Operations funding/transfer behavior through session-authenticated, explicitly authorized Rails endpoints. No parallel ledger or Kotlin financial writer was introduced. Monthly account summaries use ledger deltas; personal consumption reuses the correction-aware recursive ledger query. A new month has explicit empty periods and receives no automatic rollover/funding.
 
@@ -195,18 +195,18 @@ SpendingLimit is a tenant/employee/month/USD parent with an immutable current re
 
 AllowanceDelegation explicitly binds a manager/unit, monthly cap and bounded month range to direct-report ceiling administration. Grantor and revocation audit fields are retained. Existing financial_operator governs money; explicit organization/team/project budget-reader roles govern account visibility; project leadership never reveals unrelated personal ceilings.
 
-Warnings use one configurable threshold definition. Forecasts use current corrected posted costs through an explicit recorded activity day, with sparse/unknown coverage states. The dashboard reuses the analytics chart, existing dialog, identity-aware query cache and session switching. Analytics receives a compact, clearly separate single-month budget context. See [rules/API](budget-allowances.md) and [executed verification](slices/slice7.md).
+Warnings use one configurable threshold definition. Forecasts use current corrected posted costs through an explicit recorded activity day, with sparse/unknown coverage states. The dashboard reuses the analytics chart, existing dialog, identity-aware query cache and session switching. Analytics receives a compact, clearly separate single-month budget context. See [rules/API](budget-allowances.md).
 
-## Slice 8 request workflow
+## Request workflow
 
 Rails owns `FinancialRequest` and append-only `RequestEvent`. Submitted request terms are immutable. Personal requests snapshot the current allowance revision; funding requests snapshot the selected accounts and current amounts. `Requests::ApprovalRouter` derives deterministic non-self reviewers from active explicit authority, while `Requests::DecisionService` locks and revalidates the request at decision time.
 
-Approval nests the existing `Budgets::AllowanceOperations#revise` or `Finance::Operations#transfer` inside the request transaction. The decision is not committed until its business effect and type-correct execution reference exist. Stable request/decision keys, the existing allowance and period locks, and optimistic request locking prevent duplicate effects. Project/team requests remain financial-operator-only; allowance delegation never becomes transfer authority. Requests are intent and audit data, never expense or a second ledger. See [Slice 8](slices/slice8.md).
+Approval nests the existing `Budgets::AllowanceOperations#revise` or `Finance::Operations#transfer` inside the request transaction. The decision is not committed until its business effect and type-correct execution reference exist. Stable request/decision keys, the existing allowance and period locks, and optimistic request locking prevent duplicate effects. Project/team requests remain financial-operator-only; allowance delegation never becomes transfer authority. Requests are intent and audit data, never expense or a second ledger.
 
-## Slice 9B agent insights
+## Agent insights
 
-`GET /api/v1/agents/insights` follows the Slice 9A path: Rails derives the population from `AccessPolicy`, Kotlin returns comparison windows, per-period operational metrics, thresholds and operational findings, and Rails adds corrected ledger cost, cost findings and the cost-driver breakdown. Whole-cohort cost is no longer passed as a run list: Rails pages `POST /internal/v1/agent-cohort` (at most 1,000 runs per page, keyset on `(started_at, id)`), prices each page against the `receipts_agent_run_link` index and keeps only sums, so cohort size is unbounded and memory is not. Thresholds live only in the usage engine's configuration. Insights are computed per request and never stored; no analytics request writes financial data. Details: [agent optimization](agent-optimization.md).
+`GET /api/v1/agents/insights` follows the agent analytics path: Rails derives the population from `AccessPolicy`, Kotlin returns comparison windows, per-period operational metrics, thresholds and operational findings, and Rails adds corrected ledger cost, cost findings and the cost-driver breakdown. Whole-cohort cost is no longer passed as a run list: Rails pages `POST /internal/v1/agent-cohort` (at most 1,000 runs per page, keyset on `(started_at, id)`), prices each page against the `receipts_agent_run_link` index and keeps only sums, so cohort size is unbounded and memory is not. Thresholds live only in the usage engine's configuration. Insights are computed per request and never stored; no analytics request writes financial data. Details: [agent optimization](agent-optimization.md).
 
-## Slice 10 demo reproducibility
+## Demo reproducibility
 
-The demo is date-anchored: fixtures, funding months and scenarios simulate 2026-11-10 to 2026-12-10. Because usage validation and charge attribution depend on membership periods, `DemoData` gives newly seeded fixture memberships a fixed fictional start (2026-11-07 UTC) instead of the wall clock, and never alters an existing row. `scripts/setup-demo.sh` composes the existing idempotent commands; it introduces no new data path and no reset. See [slice10.md](slices/slice10.md).
+The demo companies come from one spec, `demo/enterprise/companies-v1.json`, read by both the Rails seed and the Kotlin generator. Membership periods are recorded once and never rewritten, because usage validation and charge attribution depend on them. `scripts/setup-demo.sh` composes the existing idempotent commands (seed, generate, fund, import, price, deliver, controls, reconcile); it introduces no new data path and no reset.

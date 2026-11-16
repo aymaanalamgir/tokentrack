@@ -6,9 +6,9 @@
 
 ![Analytics: a year of AI spend for Northline Financial, explored by team](docs/screenshots/analytics.png)
 
-> A portfolio systems project. It goes after the parts of internal platforms that are hard to get right: authorization that holds at the data layer, money that can't be silently rewritten, a replay-safe pipeline across two services, and reporting that stays honest when data is incomplete.
+TokenTrack is built around four guarantees: authorization is enforced at the data layer, money is never silently rewritten, every pipeline step can be replayed safely, and reports stay honest when data is incomplete.
 
-## Why this product
+## The problem
 
 Companies now spend real money on model APIs and autonomous agents, and the bill usually arrives as one provider invoice with no owner. Finance can't tell which team or project spent it, managers can't see whether their people are within budget, and nobody notices when an agent starts retrying twice as often until the cost has already landed.
 
@@ -131,7 +131,7 @@ sequenceDiagram
 
 Authorization happens before aggregation, so no filter or parameter can widen a report. Out-of-scope people, projects and tenants return 404 rather than 403, so their existence isn't confirmed.
 
-## Engineering highlights
+## Guarantees
 
 **Money that can't drift**
 - Decimal strings and `BigDecimal` end to end; no floating point anywhere money moves.
@@ -153,15 +153,13 @@ Authorization happens before aggregation, so no filter or parameter can widen a 
 - Equal-length period comparisons; partial weeks and months compare the elapsed portion of both periods.
 - Each finding carries a threshold, evidence quality (sufficient, limited sample, incomplete cost data) and supporting-run links; the cost change is split exactly into volume and per-run effects.
 
-## How it was built
+## Development
 
-**Vertical slices.** The system grew in ten end-to-end slices, each shipping schema, services, UI, tests and a written report ([docs/slice2.md](docs/slices/slice2.md) … [docs/slice10.md](docs/slices/slice10.md)): identity and access → projects → usage ingestion → pricing and ledger → analytics → budgets → requests → agent executions → agent insights → integration and reliability. Each slice kept earlier data and history intact rather than resetting.
+**Contracts.** The usage CSV, priced-usage event and agent-execution JSONL formats are versioned documents in [`contracts/`](contracts/), and both services test against them.
 
-**Contracts first.** The usage CSV, priced-usage event and agent-execution JSONL formats are versioned documents in [`contracts/`](contracts/) before code. Both services test against them.
+**Demo data.** One spec ([`demo/enterprise/companies-v1.json`](demo/enterprise/companies-v1.json)) drives the Rails seed and the Kotlin generator: departments and offices, AI-intensity tiers by job function, dated project rotations, adoption curves, agents that degrade mid-year, and a funding plan that genuinely over- and under-spends. Same seed and spec give byte-identical files (SHA-256 manifest), and every event goes through the real validation and ledger path; no ledger row is inserted directly.
 
-**Deterministic, realistic data.** One spec ([`demo/enterprise/companies-v1.json`](demo/enterprise/companies-v1.json)) drives the Rails seed and the Kotlin generator: departments and offices, AI-intensity tiers by job function, dated project rotations, adoption curves, agents that degrade mid-year, and a funding plan that genuinely over- and under-spends. Same seed and spec give byte-identical files (SHA-256 manifest), and every event goes through the real validation and ledger path; no ledger row is inserted directly.
-
-**Tests at every layer.**
+**Tests.**
 
 | Layer | What it proves |
 | --- | --- |
@@ -171,9 +169,9 @@ Authorization happens before aggregation, so no filter or parameter can widen a 
 | Frontend unit (17) | Money arithmetic and formatting, agent and analytics request building, health aggregation |
 | Playwright (8 workflows) | Each persona end to end: scope boundaries, approvals with simulated lost acknowledgements, idempotent transfers, empty, error and loading states, mobile and dark mode |
 
-**One command each.** `./scripts/setup-demo.sh` builds the demo idempotently and fails on any reconciliation discrepancy; `./scripts/verify.sh` runs every suite above.
+`./scripts/setup-demo.sh` builds the demo idempotently and fails on any reconciliation discrepancy; `./scripts/verify.sh` runs every suite above.
 
-**Measure, then fix.** A full load was spending most of its time delivering to the ledger at ~32 events/s. Sampling `pg_stat_activity` showed the outbox claim query scanning and sorting the whole queue on every batch (`FOR UPDATE SKIP LOCKED` rules out a parallel scan). Two partial indexes and a split claim query took delivery to **~90 events/s**. Batching CLI imports into one JVM per company cut usage import from **~6 min to 76 s**.
+**Throughput.** Ledger delivery runs at about 90 events/s locally. The outbox claim uses two partial-index queries (expired leases, then due work) because a single `FOR UPDATE SKIP LOCKED` query over the whole queue forced a full scan and sort per batch and capped delivery near 32 events/s. Imports take many files per CLI call, one JVM per company, so a year of usage imports in about 76 seconds.
 
 ## Run it
 
@@ -198,7 +196,7 @@ services/usage-engine/  Kotlin: ingestion, pricing, outbox delivery, analytics, 
 contracts/              Versioned usage, priced-usage and agent-execution contracts
 demo/                   Company spec, spec builder, synthetic historical pricing
 scripts/                One-command demo setup and verification
-docs/                   Architecture, ledger, pricing, analytics, agent metrics, slice reports
+docs/                   Architecture, ledger, pricing, analytics, agent metrics, screenshots
 ```
 
 ## Scope and trade-offs
