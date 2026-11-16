@@ -1,4 +1,4 @@
-export type NavigationItem = { label: string; href: string; icon: string };
+export type NavigationItem = { label: string; href: string; icon: string; section?: string | null };
 export type UnitLink = {
   id: string;
   name: string;

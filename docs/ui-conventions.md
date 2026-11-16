@@ -1,6 +1,6 @@
 # UI conventions
 
-TokenTrack's workspaces share one layout system so pages align and stay readable as data grows. The visual identity is unchanged: Geist Sans and Geist Mono, neutral light and dark tokens in `app/globals.css`, thin borders, compact density, restrained colour.
+TokenTrack's workspaces share one layout system so pages align and stay readable as data grows. The visual identity: Geist Sans and Geist Mono, neutral light and dark tokens in `app/globals.css`, thin borders, compact density, restrained colour.
 
 ## Page structure
 
@@ -11,6 +11,22 @@ Every analytical page follows the same three levels:
 3. **Detail**: full tables, audits and diagnostics behind a disclosure or a tab, with search, sorting and pagination.
 
 Spacing is `space-y-5` between sections and `gap-5` within grids. Cards in one row share height (`h-full`); content of very different lengths gets a different composition (for example a full-width section below), not a stretched empty card.
+
+## Colour
+
+The interface is neutral; colour is a signal, used sparingly and always paired with text.
+
+| Token | Meaning | Used for |
+| --- | --- | --- |
+| `success` (green) | AI spend, healthy results | Brand mark, active navigation, spend figures (net expenditure, corrected cost, consumption), trend lines and ranked bars, success rates at or above 90%, approved requests, accounts within limit |
+| `warning` (amber) | Needs attention | Incomplete pricing coverage, success rates of 80–90%, retry rates above 10%, warning-severity insights, budgets from 90% utilization, pending requests |
+| `danger` (red) | Inefficiency or overspend | Success rates below 80%, retry rates above 20%, critical insights, over-budget accounts and negative remainders, rejected requests, failures |
+
+Metric tiles take a `tone` (`spend`, `good`, `warning`, `danger`), which colours the value and adds a small dot; leave most tiles neutral. The agent rate thresholds are display cues only; insight findings use the server's thresholds.
+
+## Navigation
+
+Rails returns the navigation with a `section` per item; the sidebar shows a heading where the section changes: Overview, then **AI spend** (Analytics, Agents, Budgets, Requests), **Organization** (Organization, Teams, People, Projects) and **Account** (Profile & access, Settings).
 
 ## Shared primitives (`components/workspace-ui.tsx`)
 

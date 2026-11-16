@@ -4,13 +4,24 @@ import { ChevronRight } from "lucide-react";
 import { count, money } from "@/lib/analytics";
 import type { AgentRow } from "@/lib/agents";
 import { Button } from "./ui/button";
-import { EmptyState, Panel, SearchInput, ShowMore } from "./workspace-ui";
+import { EmptyState, Panel, SearchInput, ShowMore, toneText, type Tone } from "./workspace-ui";
 
 const PREVIEW = 5;
 const PAGE = 10;
 type Sort = "runs" | "success" | "retry" | "cost";
 const pct = (n: number, d: number) => (d ? (n * 100) / d : null);
 // Success rate excludes running/unknown runs, matching the server-side metric definition.
+// Efficiency colour cues (display only; insight findings use the server's thresholds): success at or above 90% is
+// green, 80–90% amber, below 80% red; retry rates above 10% are amber and above 20% red.
+export function rateTone(successes: number, concluded: number): Tone {
+  if (!concluded) return "default";
+  const rate = (successes * 100) / concluded;
+  return rate >= 90 ? "good" : rate >= 80 ? "warning" : "danger";
+}
+export function retryTone(percent: string | number | null | undefined): Tone {
+  const rate = Number(percent ?? 0);
+  return rate > 20 ? "danger" : rate > 10 ? "warning" : "default";
+}
 export function successRate(a: Pick<AgentRow, "successful_runs" | "failed_runs" | "cancelled_runs">) {
   return pct(a.successful_runs, a.successful_runs + a.failed_runs + a.cancelled_runs);
 }
@@ -53,13 +64,13 @@ export function AgentExplorer({ agents, onOpen }: { agents: AgentRow[]; onOpen: 
                     className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-4 py-3 text-left hover:bg-muted/40 ${selected?.id === a.id ? "bg-muted/50" : ""}`}>
                     <span className="min-w-0">
                       <span className="block truncate text-xs font-medium">{a.name}</span>
-                      <span className="block truncate text-[10px] text-muted-foreground">{a.workflow_type} · {count(a.runs)} runs · {a.retry_rate_percent ? Number(a.retry_rate_percent).toFixed(1) : "0.0"}% retried · {money(a.corrected_modeled_cost, 2)}</span>
+                      <span className="block truncate text-[10px] text-muted-foreground">{a.workflow_type} · {count(a.runs)} runs · <span className={toneText[retryTone(a.retry_rate_percent)]}>{a.retry_rate_percent ? Number(a.retry_rate_percent).toFixed(1) : "0.0"}% retried</span> · <span className="text-success">{money(a.corrected_modeled_cost, 2)}</span></span>
                     </span>
                     <span className="flex items-center gap-2 text-right">
-                      <span><span className="block font-mono text-sm">{rate === null ? "N/A" : rate.toFixed(1) + "%"}</span><span className="block text-[9px] text-muted-foreground">success</span></span>
+                      <span><span className={`block font-mono text-sm ${toneText[rateTone(a.successful_runs, a.successful_runs + a.failed_runs + a.cancelled_runs)]}`}>{rate === null ? "N/A" : rate.toFixed(1) + "%"}</span><span className="block text-[9px] text-muted-foreground">success</span></span>
                       <ChevronRight size={13} className="text-muted-foreground" />
                     </span>
-                    <span className="col-span-2 block h-1 overflow-hidden rounded bg-muted"><span className="block h-1 rounded bg-success/70" style={{ width: `${rate ?? 0}%` }} /></span>
+                    <span className="col-span-2 block h-1 overflow-hidden rounded bg-muted"><span className={`block h-1 rounded ${{ default: "bg-success/70", spend: "bg-success/70", good: "bg-success/70", warning: "bg-warning/80", danger: "bg-danger/80" }[rateTone(a.successful_runs, a.successful_runs + a.failed_runs + a.cancelled_runs)]}`} style={{ width: `${rate ?? 0}%` }} /></span>
                   </button>
                 </li>
               );

@@ -27,7 +27,7 @@ export function ComparisonBar({report,compare,workflow,filter}:{report:InsightRe
     <div className="mt-2 flex flex-wrap gap-1.5">
       {report.partial_current_period&&<Badge className="text-muted-foreground">Partial current period</Badge>}
       {cov.telemetry!=='observed'&&cov.telemetry!=='none'&&<Badge className="text-muted-foreground" data-testid="synthetic-badge">{cov.telemetry==='mixed'?'Includes synthetic demo outcomes':'Synthetic demo outcomes — simulated, not measured telemetry'}</Badge>}
-      <Badge className={cov.cost_completeness==='complete'?'text-muted-foreground':'text-danger'} data-testid="coverage-badge">{COVERAGE_LABEL[cov.cost_completeness]??cov.cost_completeness}{cov.cost_completeness==='partial_unpriced_or_unposted'?` (${count(cov.unpriced_events)} unpriced)`:''}</Badge>
+      <Badge className={cov.cost_completeness==='complete'?'text-muted-foreground':'text-warning'} data-testid="coverage-badge">{COVERAGE_LABEL[cov.cost_completeness]??cov.cost_completeness}{cov.cost_completeness==='partial_unpriced_or_unposted'?` (${count(cov.unpriced_events)} unpriced)`:''}</Badge>
     </div>
   </div>;
 }
@@ -111,10 +111,10 @@ type Scenario={label?:string;recorded_pricing_model?:string;alternative_pricing_
 function InsightCard({insight}:{insight:Insight}){
   const [open,setOpen]=useState(false);const scenario=insight.evidence.savings_scenario as Scenario|undefined;const categories=insight.evidence.categories as Record<string,string|null>|undefined;
   const partial=Object.values(insight.financial_coverage).includes('partial_unpriced_or_unposted');
-  return <article className="border-b border-border p-4 last:border-b-0" data-testid="insight" data-type={insight.type} data-severity={insight.severity}>
+  return <article className={`border-b border-l-2 border-border p-4 last:border-b-0 ${insight.severity==='critical'?'border-l-danger':insight.severity==='warning'?'border-l-warning':'border-l-transparent'}`} data-testid="insight" data-type={insight.type} data-severity={insight.severity}>
     <div className="flex flex-wrap items-start justify-between gap-2">
       <div className="min-w-0"><p className="text-xs font-medium">{insight.agent_name}<span className="ml-2 font-normal text-muted-foreground">{insight.agent_key}</span></p><p className="mt-1.5 text-sm">{insight.finding}</p></div>
-      <div className="flex flex-wrap gap-1.5"><Badge className={insight.severity==='critical'?'text-danger':insight.severity==='warning'?'text-foreground':'text-muted-foreground'}>{insight.severity}</Badge><Badge className="text-muted-foreground">{INSIGHT_TYPE_LABEL[insight.type]??insight.type}</Badge></div>
+      <div className="flex flex-wrap gap-1.5"><Badge className={insight.severity==='critical'?'border-danger/40 text-danger':insight.severity==='warning'?'border-warning/40 text-warning':'text-muted-foreground'}>{insight.severity}</Badge><Badge className="text-muted-foreground">{INSIGHT_TYPE_LABEL[insight.type]??insight.type}</Badge></div>
     </div>
     <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-xs md:grid-cols-4">
       <div><dt className="text-[10px] text-muted-foreground">Previous</dt><dd className="font-mono">{metricLabel(insight.baseline,insight.unit)}</dd></div>

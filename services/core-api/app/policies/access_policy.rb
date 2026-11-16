@@ -112,18 +112,23 @@ class AccessPolicy
   def unit?(unit) = unit.organization_id == organization_id && units.exists?(id: unit.id)
   def team_roster?(unit) = unit.organization_id == organization_id && (organization_viewer? || managed_unit_ids.include?(unit.id))
 
+  # Grouped by what people come to do: spend and agent activity first, then the organization, then their own
+  # account. Each item names its section; the sidebar renders a heading where the section changes.
   def navigation
-    items = [{ label: "Overview", href: "/", icon: "overview" }, { label: "Projects", href: "/projects", icon: "projects" }]
-    items << { label: manager? ? "My teams" : "Teams", href: "/teams", icon: "teams" } if organization_viewer? || manager?
-    items << { label: "People", href: "/people", icon: "teams" } if organization_viewer? || manager?
+    items = [{ label: "Overview", href: "/", icon: "overview", section: nil }]
+    items += [
+      { label: "Analytics", href: "/analytics", icon: "analytics", section: "AI spend" },
+      { label: "Agents", href: "/agents", icon: "agents", section: "AI spend" },
+      { label: "Budgets", href: "/budgets", icon: "budgets", section: "AI spend" },
+      { label: "Requests", href: "/requests", icon: "requests", section: "AI spend" },
+      { label: organization_viewer? ? "Organization" : "My organization", href: "/organization", icon: "organization", section: "Organization" }
+    ]
+    items << { label: manager? ? "My teams" : "Teams", href: "/teams", icon: "teams", section: "Organization" } if organization_viewer? || manager?
+    items << { label: "People", href: "/people", icon: "people", section: "Organization" } if organization_viewer? || manager?
     items + [
-      { label: organization_viewer? ? "Organization" : "My organization", href: "/organization", icon: "organization" },
-      { label: "Profile & access", href: "/profile", icon: "profile" },
-      { label: "Analytics", href: "/analytics", icon: "analytics" },
-      { label: "Agents", href: "/agents", icon: "agents" },
-      { label: "Budgets", href: "/budgets", icon: "budgets" },
-      { label: "Requests", href: "/requests", icon: "requests" },
-      { label: "Settings", href: "/settings", icon: "settings" }
+      { label: "Projects", href: "/projects", icon: "projects", section: "Organization" },
+      { label: "Profile & access", href: "/profile", icon: "profile", section: "Account" },
+      { label: "Settings", href: "/settings", icon: "settings", section: "Account" }
     ]
   end
 

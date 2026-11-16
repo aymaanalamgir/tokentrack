@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
+  Contact,
   Activity,
   AudioLines,
   Bot,
@@ -36,6 +37,7 @@ const icons: Record<string, LucideIcon> = {
   overview: Gauge,
   projects: FolderKanban,
   teams: Users,
+  people: Contact,
   organization: Building2,
   profile: UserRound,
   analytics: ChartNoAxesCombined,
@@ -96,15 +98,22 @@ function Sidebar({ close }: { close?: () => void }) {
             </div>
           </Link>
           <nav aria-label="Main navigation" className="space-y-1 px-3">
-            {me.access.navigation.map((item) => {
+            {me.access.navigation.map((item, index, all) => {
               const Icon = icons[item.icon] ?? Gauge;
               const active =
                 item.href === "/"
                   ? pathname === "/"
                   : pathname.startsWith(item.href);
+              const heading =
+                item.section && item.section !== all[index - 1]?.section ? (
+                  <p className="nav-section" aria-hidden="true">
+                    {item.section}
+                  </p>
+                ) : null;
               return (
+                <div key={item.href}>
+                {heading}
                 <Link
-                  key={item.href}
                   href={item.href}
                   onClick={close}
                   aria-current={active ? "page" : undefined}
@@ -113,6 +122,7 @@ function Sidebar({ close }: { close?: () => void }) {
                   <Icon size={15} />
                   <span>{item.label}</span>
                 </Link>
+                </div>
               );
             })}
           </nav>

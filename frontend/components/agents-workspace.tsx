@@ -9,7 +9,7 @@ import {money,count,dateLabel} from '@/lib/analytics';
 import {AGENT_TABS,agentTab,agentsPath,insightsPath} from '@/lib/agents';
 import type {AgentReport,AgentTab,InsightReport} from '@/lib/agents';
 import {ComparisonBar,EfficiencyView,InsightsView} from './agents-insights';
-import {AgentExplorer} from './agent-explorer';
+import {AgentExplorer,rateTone,retryTone} from './agent-explorer';
 import {Button} from './ui/button';
 import {ErrorState,MetricGrid,Panel,Skeleton} from './workspace-ui';
 
@@ -49,9 +49,9 @@ export function AgentsWorkspace(){
     {tab==='overview'&&<>
     <MetricGrid testId="agent-summary-metrics" columns={6} metrics={[
       {label:'Runs',value:count(t.runs),detail:`${count(t.incomplete_runs)} incomplete`},
-      {label:'Success rate',value:t.successful_runs+t.failed_runs+t.cancelled_runs?(t.successful_runs*100/(t.successful_runs+t.failed_runs+t.cancelled_runs)).toFixed(1)+'%':'N/A',detail:`${count(t.successful_runs)} success · ${count(t.failed_runs)} failed`},
-      {label:'Retry rate',value:t.retry_rate_percent?Number(t.retry_rate_percent).toFixed(1)+'%':'N/A',detail:`${count(t.retries)} retries`},
-      {label:'Corrected cost',value:money(t.corrected_modeled_cost,2),title:`${t.corrected_modeled_cost} USD exact`,detail:t.cost_completeness==='complete'?'Complete coverage':'Known posted cost only'},
+      {label:'Success rate',value:t.successful_runs+t.failed_runs+t.cancelled_runs?(t.successful_runs*100/(t.successful_runs+t.failed_runs+t.cancelled_runs)).toFixed(1)+'%':'N/A',tone:rateTone(t.successful_runs,t.successful_runs+t.failed_runs+t.cancelled_runs),detail:`${count(t.successful_runs)} success · ${count(t.failed_runs)} failed`},
+      {label:'Retry rate',value:t.retry_rate_percent?Number(t.retry_rate_percent).toFixed(1)+'%':'N/A',tone:retryTone(t.retry_rate_percent),detail:`${count(t.retries)} retries`},
+      {label:'Corrected cost',value:money(t.corrected_modeled_cost,2),tone:'spend',title:`${t.corrected_modeled_cost} USD exact`,detail:t.cost_completeness==='complete'?'Complete coverage':'Known posted cost only'},
       {label:'Cost per success',value:t.cost_per_success?money(t.cost_per_success,4):'N/A',title:t.cost_per_success??undefined,detail:'Corrected cost ÷ successes'},
       {label:'Pricing coverage',value:Number(t.usage_events)?(Number(t.priced_events)*100/Number(t.usage_events)).toFixed(1)+'%':'N/A',tone:Number(t.unpriced_events)>0?'warning':'default',detail:`${count(t.unpriced_events)} unpriced events`}]}/>
     <AgentExplorer agents={report.agents} onOpen={(id,target)=>{const q=new URLSearchParams(search);q.set('agent_id',id);q.delete('offset');if(target==='overview')q.delete('tab');else q.set('tab',target);router.push('/agents?'+q.toString(),{scroll:false});}}/>

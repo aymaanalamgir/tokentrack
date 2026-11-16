@@ -11,6 +11,7 @@
   --border: #dde1e5;
   --success: #20764c;
   --danger: #b64040;
+  --warning: #9a6408;
 }
 .dark {
   --background: #101113;
@@ -22,6 +23,7 @@
   --border: #2a2d32;
   --success: #82c8a1;
   --danger: #ec9191;
+  --warning: #e2b15c;
 }
 @theme inline {
   --color-background: var(--background);
@@ -33,6 +35,7 @@
   --color-border: var(--border);
   --color-success: var(--success);
   --color-danger: var(--danger);
+  --color-warning: var(--warning);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -68,7 +71,7 @@ button:not(:disabled) {
   justify-content: center;
   align-items: center;
   border-radius: 6px;
-  background: var(--foreground);
+  background: var(--success);
   color: var(--background);
 }
 .nav-item {
@@ -83,9 +86,32 @@ button:not(:disabled) {
   color: var(--muted-foreground);
 }
 .nav-active {
+  position: relative;
   color: var(--foreground);
   border-color: var(--border);
   background: var(--surface);
+}
+.nav-active svg {
+  color: var(--success);
+}
+.nav-active::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 9px;
+  bottom: 9px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--success);
+}
+.nav-section {
+  padding: 14px 12px 6px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  opacity: 0.75;
 }
 .skip-link {
   position: fixed;

@@ -270,15 +270,19 @@ export function ProjectList({ projects }: { projects: Project[] }) {
 
 // ---- Shared layout primitives (UI refinement) ---------------------------------------------------------
 // One metric tile pattern for every workspace: equal heights per row, mono value, one short context line.
-export type Metric = { label: string; value: React.ReactNode; detail?: React.ReactNode; title?: string; tone?: "default" | "warning" };
+// Tones are sparing accents: green for AI spend and healthy results, amber for attention, red for inefficiency or
+// overspend. Most tiles stay neutral.
+export type Tone = "default" | "spend" | "good" | "warning" | "danger";
+export const toneText: Record<Tone, string> = { default: "", spend: "text-success", good: "text-success", warning: "text-warning", danger: "text-danger" };
+export type Metric = { label: string; value: React.ReactNode; detail?: React.ReactNode; title?: string; tone?: Tone };
 export function MetricGrid({ metrics, columns = 4, testId }: { metrics: Metric[]; columns?: 3 | 4 | 5 | 6; testId?: string }) {
   const cols = { 3: "lg:grid-cols-3", 4: "lg:grid-cols-4", 5: "lg:grid-cols-5", 6: "lg:grid-cols-6" }[columns];
   return (
     <div data-testid={testId} className={`grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border ${cols}`}>
       {metrics.map((m) => (
         <div key={m.label} className="flex min-h-[92px] min-w-0 flex-col justify-between bg-surface p-4 odd:last:col-span-2 lg:odd:last:col-span-1" title={m.title}>
-          <p className="truncate text-[10px] text-muted-foreground">{m.label}</p>
-          <p className={`my-1.5 truncate font-mono text-xl ${m.tone === "warning" ? "text-danger" : ""}`}>{m.value}</p>
+          <p className="flex items-center gap-1.5 truncate text-[10px] text-muted-foreground">{m.tone && m.tone !== "default" && <span aria-hidden="true" className={`size-1.5 shrink-0 rounded-full ${{ spend: "bg-success", good: "bg-success", warning: "bg-warning", danger: "bg-danger" }[m.tone]}`} />}{m.label}</p>
+          <p className={`my-1.5 truncate font-mono text-xl ${toneText[m.tone ?? "default"]}`}>{m.value}</p>
           <p className="truncate text-[10px] text-muted-foreground">{m.detail ?? " "}</p>
         </div>
       ))}
