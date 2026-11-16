@@ -30,7 +30,7 @@ RSpec.describe EnterpriseDemo do
     result = EnterpriseDemo.seed!(spec, only: ["memento-ai"]).first
     expect(result).to include(people: 30, projects: 6, offices: 1)
     org = Organization.find_by!(slug: "memento-ai")
-    expect(User.where(organization: org, demo_identity: true).pluck(:name)).to match_array(["Noor Haddad", "Jonah Whitfield", "Ines Kowalski", "Theo Brennan"])
+    expect(User.where(organization: org, demo_identity: true).pluck(:name)).to match_array(["Noor Haddad", "Jonah Whitfield", "Elena Gallagher", "Ines Kowalski", "Kofi Mensah", "Samir Haddadi", "Theo Brennan", "Priya Natarajan", "Thandi Quintero", "Amir Eriksen"])
     expect(ReportingRelationship.where(organization: org).count).to eq(29)
     noor = User.find_by!(organization: org, name: "Noor Haddad")
     expect(AccessPolicy.new(noor)).to be_financial_operator.and(be_organization_viewer)

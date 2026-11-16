@@ -266,7 +266,7 @@ memento={
   {"key":"follow-up-agent","name":"Automated Follow-Up Agent","lead":"member:product:0","start_month":2,"teams":{"full-stack":0.7,"ai-ml":0.5,"customer-success":1.0}},
   {"key":"workspace-integrations","name":"Workspace Integrations","lead":"member:full-stack:0","start_month":1,"teams":{"full-stack":1.0,"backend":0.4,"growth":0.5}},
   {"key":"evaluation-harness","name":"Internal Evaluation Harness","lead":"member:ai-ml:1","start_month":0,"teams":{"ai-ml":1.0}}],
- "personas":{"leadership":"dept:leadership","financial_operator":"dept:leadership","manager":"dept:engineering","project_lead":"member:ai-ml:0","employee":"member:full-stack:1"},
+ "personas":{"leadership":"dept:leadership","financial_operator":"dept:leadership","manager":"dept:engineering","project_lead":"member:ai-ml:0","employee":"member:full-stack:1","head_of_ai":"team:ai-ml","ml_engineer":"member:ai-ml:1","backend_engineer":"member:backend:0","product_manager":"member:product:0","designer":"member:design:0","growth":"member:growth:0"},
  "names":{"member:ai-ml:0":"Ines Kowalski","member:full-stack:1":"Theo Brennan","member:product:0":"Priya Natarajan","member:backend:0":"Samir Haddadi","member:full-stack:0":"Ava Lindgren","member:ai-ml:1":"Kofi Mensah"},
  "agents":[
   {"key":"meeting-summarizer","name":"Meeting Summarizer","workflow":"meeting-summarization","owner":"member:ai-ml:0","success":0.93,"retry":0.08},
