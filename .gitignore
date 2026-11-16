@@ -1,25 +1,50 @@
+# Secrets: only the example files are committed
 .env
 .env.*
 !.env.example
 !.env.test.example
+**/config/master.key
+**/config/credentials*.yml.enc
+*.pem
+
+# OS and editors
 .DS_Store
 .idea/
 .vscode/
+*.swp
+*~
+
+# Frontend (Next.js)
 node_modules/
 .next/
+next-env.d.ts
 *.tsbuildinfo
+.vercel/
+
+# Tests and screenshots written by local runs
 coverage/
 playwright-report/
 test-results/
-*.log
+e2e-out/
+
+# Rails runtime
 **/.bundle/
 **/vendor/bundle/
 **/log/*
 **/tmp/*
 **/storage/*
-**/config/master.key
-**/config/credentials*.yml.enc
+
+# Kotlin / Gradle
 **/.gradle/
 **/.kotlin/
 **/build/
+
+# Python (demo spec builder)
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# Generated demo workload (reproducible from the spec: scripts/generate-enterprise-demo.sh)
 demo/enterprise/generated/

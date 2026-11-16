@@ -1,6 +1,6 @@
 # Slice 2 — implementation and verification
 
-Implemented and verified locally on **November 7, 2026**. This is the current report; [verification.md](verification.md) preserves the Slice 1 history.
+Implemented and verified locally on **November 7, 2026**. This is the current report; [verification.md](../verification/README.md) preserves the Slice 1 history.
 
 ## A. Implementation summary
 
@@ -120,4 +120,4 @@ Switching identity changes both the backend session and frontend data boundary. 
 
 Future budget approval requires a new explicit scoped permission and workflow tests; current read/project-edit roles imply no financial authority. Future Kotlin events will reference these stable organization/user IDs through validated contracts. Kotlin will process usage in `usage`; Rails will own authorization, attribution, and authoritative financial posting in `business`.
 
-See [development.md](development.md) for exact startup/test/reset commands and [architecture.md](architecture.md) for the system diagram and policy matrix.
+See [development.md](../development.md) for exact startup/test/reset commands and [architecture.md](../architecture.md) for the system diagram and policy matrix.

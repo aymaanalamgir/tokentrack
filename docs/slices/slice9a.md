@@ -14,7 +14,7 @@ docker compose exec usage-engine bin/usage agent-import /app/demo/fixtures/agent
 
 Open `/agents` to filter by UTC dates, authorized project, outcome, agent, or run; inspect cohort metrics, definition comparisons, run history, linked usage, attempt failures, retries, and corrected known cost. Financial gaps are explicit rather than estimated.
 
-See [execution contract](../contracts/agent-execution-v1.md) and [metric definitions](agent-efficiency-metrics.md).
+See [execution contract](../../contracts/agent-execution-v1.md) and [metric definitions](../agent-efficiency-metrics.md).
 
 ## Verified local result
 

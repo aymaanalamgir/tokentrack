@@ -63,7 +63,7 @@ Verification completed on 2026-11-10:
 - Production: Core API and frontend production images built successfully.
 - Reconciliation: `balanced_with_unpriced_usage`; 7,305 priced/posted, no pending/dead/missing/conflicting deliveries, no amount discrepancies, and all four ledger-integrity counters zero. The existing 448 explicitly unpriced events remain unchanged.
 
-[Machine-readable verification](verification/slice8-results.json) records the final counts.
+[Machine-readable verification](../verification/slice8-results.json) records the final counts.
 
 ## Known limitations and next-slice readiness
 

@@ -159,7 +159,7 @@ docker build --target production -t tokentrack-core-api:production services/core
 docker build --target production -t tokentrack-usage-engine:production services/usage-engine
 ```
 
-These image builds do not deploy anything. Rails production needs a separately supplied `SECRET_KEY_BASE`; application databases, credentials, and URLs must also be configured at runtime. See [slice4.md](slice4.md) for current executed checks and limits; [slice3.md](slice3.md) records historical Slice 3 checks; [slice2.md](slice2.md) records historical Slice 2 checks; [verification.md](verification.md) preserves the earlier Slice 1 report.
+These image builds do not deploy anything. Rails production needs a separately supplied `SECRET_KEY_BASE`; application databases, credentials, and URLs must also be configured at runtime. See [slice4.md](slices/slice4.md) for current executed checks and limits; [slice3.md](slices/slice3.md) records historical Slice 3 checks; [slice2.md](slices/slice2.md) records historical Slice 2 checks; [verification.md](verification/README.md) preserves the earlier Slice 1 report.
 
 ## Migrations and demo resets
 

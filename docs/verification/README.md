@@ -1,6 +1,6 @@
 # Slice 1 implementation and verification
 
-This is the historical Slice 1 report. See [slice2.md](slice2.md) for current functionality, tests, and limits.
+This is the historical Slice 1 report. See [slice2.md](../slices/slice2.md) for current functionality, tests, and limits.
 
 Verified locally on **November 7, 2026**, on macOS/Apple Silicon with Docker Desktop. This report distinguishes executed checks from future work.
 

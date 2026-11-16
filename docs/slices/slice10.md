@@ -1,6 +1,6 @@
 # Slice 10 — Final integration and reliability
 
-Slice 10 adds no product features. It ran the whole application, fixed what verification exposed, and made the demo reproducible from an empty database. Measured results are in [verification/final-results.md](verification/final-results.md); the tour is in [demo-walkthrough.md](demo-walkthrough.md).
+Slice 10 adds no product features. It ran the whole application, fixed what verification exposed, and made the demo reproducible from an empty database. Measured results are in [verification/final-results.md](../verification/final-results.md); the tour is in [demo-walkthrough.md](../demo-walkthrough.md).
 
 ## What was added
 

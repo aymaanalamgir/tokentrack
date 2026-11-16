@@ -1,6 +1,6 @@
 # Slice 3 — Project management and cross-functional collaboration
 
-Implemented and verified locally on 2026-11-09, extending the reviewed Slice 2 commit `07f9d8cc1fd84c5e4f94db046af05a6d5f212c9f` (`user db`). The starting branch was `main` with a clean working tree. Existing models, policies, presenters, seeds, proxy, frontend explorers, and architecture were inspected before changes. The baseline Rails suite passed all 52 examples. Historical [Slice 2](slice2.md) and [Slice 1](verification.md) reports are retained unchanged.
+Implemented and verified locally on 2026-11-09, extending the reviewed Slice 2 commit `07f9d8cc1fd84c5e4f94db046af05a6d5f212c9f` (`user db`). The starting branch was `main` with a clean working tree. Existing models, policies, presenters, seeds, proxy, frontend explorers, and architecture were inspected before changes. The baseline Rails suite passed all 52 examples. Historical [Slice 2](slice2.md) and [Slice 1](../verification/README.md) reports are retained unchanged.
 
 ## A. Summary
 
@@ -85,7 +85,7 @@ Membership items include `id`, directory-only `user`, `project_role`, `joined_at
 
 Membership filters: `q` searches name/function; `team` is a primary home unit UUID or `unassigned`; `state` is `active` (default), `past`, or `all`. Pagination accepts `limit` 1–100 and bounded `offset`. Candidate search uses `q`, `limit`, and `offset`; the UI shows ten results and asks the user to refine search. Main member pages contain twenty rows; expanded team pages contain ten.
 
-Missing sessions return 401; foreign/out-of-scope IDs 404; forbidden actions on readable projects 403; validation/duplicate membership/last administrator failures 422; missing required parameters 400. A stale former administrator's next mutation fails server-side regardless of cached UI state. See [full service contracts](../contracts/README.md) for DTO examples and filter details.
+Missing sessions return 401; foreign/out-of-scope IDs 404; forbidden actions on readable projects 403; validation/duplicate membership/last administrator failures 422; missing required parameters 400. A stale former administrator's next mutation fails server-side regardless of cached UI state. See [full service contracts](../../contracts/README.md) for DTO examples and filter details.
 
 ## D. Frontend experience
 
@@ -154,7 +154,7 @@ The project browser test creates a real project, verifies a held pending request
 
 Successful browser runs leave an archived `Slice 3 Collaboration ...` review project and history, return administration to Priya, and close other contributors' active periods. They do not hard-delete history or leave Jordan with new administration. Use the existing deliberate `demo:reset` only if all demo edits should be discarded. Incomplete early browser runs that stopped at a pending-button assertion were also archived with their single creator membership preserved. The local review artifacts are not committed.
 
-Reproduce checks using [development.md](development.md). Run frontend production builds in a separate Docker stage to avoid overwriting the running development `.next` volume. Production artifacts are builds, not a deployment. No cloud deployment, destructive database reset, or live provider integration was performed.
+Reproduce checks using [development.md](../development.md). Run frontend production builds in a separate Docker stage to avoid overwriting the running development `.next` volume. Production artifacts are builds, not a deployment. No cloud deployment, destructive database reset, or live provider integration was performed.
 
 ## G. Files modified
 

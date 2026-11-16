@@ -87,7 +87,7 @@ GET `/api/v1/internal/usage-references/demo-snapshot` additionally requires demo
 
 ## E. CSV contract
 
-[usage-event-v1.md](../contracts/usage-event-v1.md) defines exact fields, patterns, normalization, limits, error codes, count semantics, and exit statuses. Each row has required version/event/org/user/project/provider/model/tool/input/output/time headers; project values can be empty. Optional cached_input_tokens, agent_run_id, and workflow_type headers may be omitted. Arbitrary metadata, prompt/completion fields, and unknown columns are rejected.
+[usage-event-v1.md](../../contracts/usage-event-v1.md) defines exact fields, patterns, normalization, limits, error codes, count semantics, and exit statuses. Each row has required version/event/org/user/project/provider/model/tool/input/output/time headers; project values can be empty. Optional cached_input_tokens, agent_run_id, and workflow_type headers may be omitted. Arbitrary metadata, prompt/completion fields, and unknown columns are rejected.
 
 Example using illustrative UUIDs; the checked-in/generated fixture uses real exported identifiers:
 

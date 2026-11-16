@@ -2,7 +2,7 @@
 
 Implemented and verified November 10, 2026 UTC, starting from clean `main` at reviewed commit `c8a016492d7eb2173329d39e594d0e0967e75123` (`token pricing`). The existing canonical events, rate snapshots, outbox and append-only financial history were preserved. No fixture extension, pricing recalculation, financial reset, or new financial posting was used for this slice.
 
-Open **http://localhost:3000/analytics** after choosing a demo identity. [Analytics contract](analytics-contract.md) defines exact metrics/scopes; [machine-readable verification](verification/slice6-results.json) records actual observed results. The application remains local-only; no hosted deployment was made.
+Open **http://localhost:3000/analytics** after choosing a demo identity. [Analytics contract](../analytics-contract.md) defines exact metrics/scopes; [machine-readable verification](../verification/slice6-results.json) records actual observed results. The application remains local-only; no hosted deployment was made.
 
 ## A. Implementation summary
 
@@ -147,4 +147,4 @@ Ranges are ≤366 days; scoped user lists/rosters and dimension groups are bound
 
 Read-only account funding/expense/remaining/utilization and explicit scoped budget readers provide a foundation for future employee allowances, allocation controls, budget warnings and project sublimits. Existing immutable costs, correction-aware net expenditure, account ownership and scoped drill-down allow those future controls to explain their effects without duplicating charges or treating allowances as money. Funding requests, approval workflows, user-facing transfers and personal limits were deliberately not implemented in this slice.
 
-Reproduce through [development instructions](development.md#slice-6-analytics). Keep the existing persistent usage and financial data; read reports and repeat grant setup idempotently instead of resetting history.
+Reproduce through [development instructions](../development.md#slice-6-analytics). Keep the existing persistent usage and financial data; read reports and repeat grant setup idempotently instead of resetting history.

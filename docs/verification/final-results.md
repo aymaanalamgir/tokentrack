@@ -43,7 +43,7 @@ Run with `./scripts/verify.sh` on the development stack after the last code chan
 | Browser: agents | passed |
 | Browser: agent insights | passed |
 
-The eight browser suites also passed against the from-scratch environment. Three of them needed fixes first; see [slice10.md](../slice10.md#issues-found-and-fixed).
+The eight browser suites also passed against the from-scratch environment. Three of them needed fixes first; see [slice10.md](../slices/slice10.md#issues-found-and-fixed).
 
 ## Production builds
 

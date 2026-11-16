@@ -1,6 +1,6 @@
 # Slice 5 — pricing and financial ledger
 
-Implementation and local verification completed November 10, 2026 UTC. Official rate review is separately dated November 9. Started on `main` at reviewed commit `010b6b2295366f7cdcd65885353b39161749e6c4`, with a clean working tree. No database resets or canonical replacements were performed. [Machine-readable results](verification/slice5-results.json) record the final database reconciliation.
+Implementation and local verification completed November 10, 2026 UTC. Official rate review is separately dated November 9. Started on `main` at reviewed commit `010b6b2295366f7cdcd65885353b39161749e6c4`, with a clean working tree. No database resets or canonical replacements were performed. [Machine-readable results](../verification/slice5-results.json) record the final database reconciliation.
 
 ## A. Summary
 
@@ -10,7 +10,7 @@ The original main fixture has 7,737 events. An additional six pre-existing inges
 
 ## B. Pricing architecture
 
-[Model pricing](model-pricing.md) documents official sources, baseline values, explicit original-model mappings, assumptions and exclusions. Seven rates comprise five baseline models plus two explicitly hypothetical effective-date examples. Ten source-specific mappings preserve original identities; the local model's Google profile is a labeled synthetic proxy. Rate verification date and demo applicability date are distinct.
+[Model pricing](../model-pricing.md) documents official sources, baseline values, explicit original-model mappings, assumptions and exclusions. Seven rates comprise five baseline models plus two explicitly hypothetical effective-date examples. Ten source-specific mappings preserve original identities; the local model's Google profile is a labeled synthetic proxy. Rate verification date and demo applicability date are distinct.
 
 Selection uses exact provider/model/tier/USD and half-open effective intervals. PostgreSQL overlap checks serialize concurrent schedules. Existing snapshots never reprice. Controlled open-interval closure takes locks shared with pricing and refuses to invalidate existing snapshots. A successor rate has its own UUID. No fictional provider price history is asserted.
 
@@ -20,13 +20,13 @@ Actual main fixture result: **7,297 priced**, **440 unsupported**, **500.0120502
 
 ## C. Financial architecture
 
-[Financial ledger](financial-ledger.md) describes reserve/unit/project/unassigned accounts, monthly UTC periods, derived funding/expense balances and database constraints. The explicit local setup created 100,000 USD of synthetic allocation per organization for each of November and December; this is funding, not expenditure. Normal seeds assign no finance authority. Maya/Olivia received separate organization financial_operator grants only through explicit financial setup.
+[Financial ledger](../financial-ledger.md) describes reserve/unit/project/unassigned accounts, monthly UTC periods, derived funding/expense balances and database constraints. The explicit local setup created 100,000 USD of synthetic allocation per organization for each of November and December; this is funding, not expenditure. Normal seeds assign no finance authority. Maya/Olivia received separate organization financial_operator grants only through explicit financial setup.
 
 Rails resolves project membership at usage time, funded project first, then established home-team account, then explicitly funded unassigned. Unknown project history or no eligible funded owner holds the receipt. Expenses can exceed allocation and report negative availability; incurring an expense does not authorize discarding it. Historical archive/inactive status does not erase otherwise valid costs. Tenant-bound FKs and operation authorization protect all owned dimensions.
 
 ## D. Event delivery
 
-[Priced usage event v1](../contracts/priced-usage-event-v1.md) defines the separate backend financial token and immutable payload. Snapshot/outbox commit together. Workers use SKIP LOCKED claims, tokenized leases, durable attempts, bounded concurrency and bounded retry/dead cycles. Only a matching committed-post response is acknowledged. Rails receipt/charge/entry commit together; canonical-usage uniqueness and advisory locking serialize duplicates.
+[Priced usage event v1](../../contracts/priced-usage-event-v1.md) defines the separate backend financial token and immutable payload. Snapshot/outbox commit together. Workers use SKIP LOCKED claims, tokenized leases, durable attempts, bounded concurrency and bounded retry/dead cycles. Only a matching committed-post response is acknowledged. Rails receipt/charge/entry commit together; canonical-usage uniqueness and advisory locking serialize duplicates.
 
 A refused Rails connection was exercised through a temporary worker URL override: two attempts became retryable, while priced snapshots remained durable. Main pricing itself ran with Rails reference URL unavailable and still priced independently. The first actual HTTP batch exposed a Rails autoload error for financial exception constants; moving each exception to its own Zeitwerk file fixed it. Autoload verification and the full test suites passed afterward. A five-event batch then posted, followed by 7,300 more, including retried outage/error attempts: **7,305 delivered, zero remaining retries/dead/leases**. The recorded outage attempts remain in delivery history.
 
@@ -131,4 +131,4 @@ Workers are explicit bounded CLI invocations, without an always-running schedule
 
 Stable usage/user/home-team/project/model/time dimensions, immutable price components and separate funding/expense ledgers support organization expenditure, team trends, project utilization, employee consumption, model comparisons, weekly/monthly aggregation and net-versus-gross views. Future analytics must use one authoritative original charge plus linked corrections, preserve unknown/unpriced coverage and avoid duplicating project costs across team groupings. Build scoped read contracts and dashboards next; they were deliberately not implemented here.
 
-Reproduce with the [development commands](development.md#slice-5-pricing-and-finance-operations). Existing financially initialized tenants must retain their append-only history; repeat setup/operations idempotently instead of resetting.
+Reproduce with the [development commands](../development.md#slice-5-pricing-and-finance-operations). Existing financially initialized tenants must retain their append-only history; repeat setup/operations idempotently instead of resetting.

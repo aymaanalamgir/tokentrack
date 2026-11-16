@@ -2,7 +2,7 @@
 
 Implemented and verified November 10, 2026 UTC, on `main` at `c8a016492d7eb2173329d39e594d0e0967e75123`. The local checkout already contained uncommitted Slice 6 implementation; that work and historical reports were preserved. Inspection focused on existing financial models/operations, reporting scopes, session/query conventions and the budget UI rather than reanalyzing the entire repository.
 
-Open **http://localhost:3000/budgets?month=2026-11**. [Budget and allowance rules/API](budget-allowances.md) defines the contract. [Machine-readable results](verification/slice7-results.json) records actual current balances, controls and audit movements.
+Open **http://localhost:3000/budgets?month=2026-11**. [Budget and allowance rules/API](../budget-allowances.md) defines the contract. [Machine-readable results](../verification/slice7-results.json) records actual current balances, controls and audit movements.
 
 ## A. Implementation summary
 
@@ -151,4 +151,4 @@ Funding requests, delegated approval chains, escalation, approval inboxes and no
 
 Immutable ceiling/partition revisions, expected-version writes, explicit capped manager authority, role-scoped account summaries, warnings/estimates and auditable idempotent financial operations provide the basis for personal allowance increases, project/team funding requests, delegated approval policies and decisions. A future approved action can invoke these existing operations with stable request identity; allowances still must not create funded money. Add request/decision states, routing and escalation next without changing canonical usage, price history or ledger semantics.
 
-Reproduce through [development instructions](development.md#slice-7-budgets-and-allowances). Preserve the persistent data and audit history rather than resetting to repeat the walkthrough.
+Reproduce through [development instructions](../development.md#slice-7-budgets-and-allowances). Preserve the persistent data and audit history rather than resetting to repeat the walkthrough.

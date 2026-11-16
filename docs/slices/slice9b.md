@@ -1,6 +1,6 @@
 # Slice 9B — Agent efficiency intelligence
 
-Slice 9B adds period comparisons, deterministic anomaly detection, a cost-driver breakdown and evidence-backed findings to the Agents workspace. Definitions, thresholds, the API and limitations are in [agent optimization](agent-optimization.md).
+Slice 9B adds period comparisons, deterministic anomaly detection, a cost-driver breakdown and evidence-backed findings to the Agents workspace. Definitions, thresholds, the API and limitations are in [agent optimization](../agent-optimization.md).
 
 ## What changed
 
