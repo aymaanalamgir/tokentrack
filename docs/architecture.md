@@ -176,7 +176,7 @@ flowchart LR
   B[Browser] --> N[Next.js analytics / session-aware query cache]
   N --> R[Rails AccessPolicy + reporting API]
   R --> F[(Business ledger / receipts / accounts)]
-  R -->|Separate analytics bearer token; bounded authorized population| K[Kotlin internal aggregate API]
+  R -->|Separate analytics bearer token, bounded authorized population| K[Kotlin internal aggregate API]
   K --> U[(Canonical usage / immutable prices / outbox)]
   R -->|Authorized combined report| N
 ```

@@ -123,7 +123,7 @@ sequenceDiagram
   participant K as Kotlin
   B->>N: GET /api/core/analytics?filters (session cookie)
   N->>R: forward allow-listed path + cookie
-  R->>R: session → AccessPolicy → scope (users, projects, or all); reject filters outside it with 404
+  R->>R: session → AccessPolicy → scope (users, projects, or all), rejecting outside filters with 404
   R->>K: aggregate tokens and events for exactly that scope (analytics token)
   R->>R: corrected cost from the ledger for the same scope
   R-->>B: one response, reconciled across breakdowns
